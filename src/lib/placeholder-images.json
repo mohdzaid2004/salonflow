@@ -1,3 +1,46 @@
 {
-  "placeholderImages": []
+  "placeholderImages": [
+    {
+      "id": "hero",
+      "description": "A stylish and modern salon interior.",
+      "imageUrl": "https://images.unsplash.com/photo-1633681926022-84c23e8cb2d6?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwyfHxzYWxvbiUyMGludGVyaW9yfGVufDB8fHx8MTc2NTc1NjcxMXww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "salon interior"
+    },
+    {
+      "id": "feature-calendar",
+      "description": "An icon representing a calendar for appointment booking.",
+      "imageUrl": "https://images.unsplash.com/photo-1642360912445-61d71dd98400?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwzfHxjYWxlbmRhciUyMHNjaGVkdWxlfGVufDB8fHx8MTc2NTc3MTIyMXww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "calendar schedule"
+    },
+    {
+      "id": "feature-staff",
+      "description": "An icon representing staff management.",
+      "imageUrl": "https://images.unsplash.com/photo-1549614614-dfc31601c389?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw3fHx0ZWFtJTIwcG9ydHJhaXR8ZW58MHx8fHwxNzY1ODA2NzYyfDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "team portrait"
+    },
+    {
+      "id": "feature-billing",
+      "description": "An icon representing billing and invoices.",
+      "imageUrl": "https://images.unsplash.com/photo-1726137570712-58609cab9eba?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwyfHxyZWNlaXB0JTIwcGF5bWVudHxlbnwwfHx8fDE3NjU4MTMzOTl8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "receipt payment"
+    },
+    {
+      "id": "avatar-1",
+      "description": "A placeholder avatar for a staff member.",
+      "imageUrl": "https://images.unsplash.com/photo-1580489944761-15a19d654956?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxfHx3b21hbiUyMHBvcnRyYWl0fGVufDB8fHx8MTc2NTc3NTIwN3ww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "woman portrait"
+    },
+    {
+      "id": "avatar-2",
+      "description": "A placeholder avatar for a staff member.",
+      "imageUrl": "https://images.unsplash.com/photo-1594672830234-ba4cfe1202dc?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxMHx8bWFuJTIwcG9ydHJhaXR8ZW58MHx8fHwxNzY1NzM3NzQ0fDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "man portrait"
+    },
+    {
+      "id": "avatar-3",
+      "description": "A placeholder avatar for a staff member.",
+      "imageUrl": "https://images.unsplash.com/photo-1563178406-4cdc2923acbc?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxMHx8d29tYW4lMjBzbWlsaW5nfGVufDB8fHx8MTc2NTcwMzQ1OXww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "woman smiling"
+    }
+  ]
 }
