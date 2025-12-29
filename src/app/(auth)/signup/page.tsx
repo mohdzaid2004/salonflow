@@ -84,14 +84,13 @@ export default function SignupPage() {
         // This is the critical step. It MUST succeed.
         const result = await seedInitialDataForSalon({
           userId: firebaseUser.uid,
-          userEmail: firebaseUser.email!,
           salonName: data.salonName,
           phone: data.phone,
         });
 
         // If the server action fails, we throw an error to be caught below.
-        if (result.error) {
-          throw new Error(result.error);
+        if (!result.success || result.error) {
+          throw new Error(result.error || 'Failed to set up your salon account.');
         }
 
       } else {

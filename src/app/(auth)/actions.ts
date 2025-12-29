@@ -24,7 +24,6 @@ const firestore = getFirestore(adminApp);
 
 interface SeedDataPayload {
   userId: string;
-  userEmail: string;
   salonName: string;
   phone: string;
 }
@@ -32,7 +31,6 @@ interface SeedDataPayload {
 export async function seedInitialDataForSalon(payload: SeedDataPayload) {
   const {
     userId,
-    userEmail,
     salonName,
     phone,
   } = payload;
