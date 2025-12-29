@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useTransition } from 'react';
+import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -62,10 +62,18 @@ export function CustomerCheckinForm({
 
   const phoneForm = useForm<PhoneFormValues>({
     resolver: zodResolver(phoneSchema),
+    defaultValues: {
+      phone: '',
+    },
   });
 
   const newCustomerForm = useForm<NewCustomerFormValues>({
     resolver: zodResolver(newCustomerSchema),
+    defaultValues: {
+      phone: '',
+      name: '',
+      dob: '',
+    },
   });
 
   async function onPhoneSubmit(data: PhoneFormValues) {
