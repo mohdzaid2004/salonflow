@@ -59,14 +59,15 @@ export default function LoginPage() {
       router.push('/dashboard');
     }
   }, [user, isUserLoading, router]);
-  
+
   const onSubmit = async (data: LoginFormValues) => {
     setIsSubmitting(true);
     try {
       await initiateEmailSignIn(auth, data.email, data.password);
-      // The onAuthStateChanged listener will handle the redirect
+      // The onAuthStateChanged listener in the provider will handle the redirect
+      // by updating the `user` state, which triggers the useEffect above.
     } catch (error) {
-       if (error instanceof FirebaseError) {
+      if (error instanceof FirebaseError) {
         let errorMessage = 'An unknown error occurred. Please try again.';
         switch (error.code) {
           case 'auth/user-not-found':
@@ -75,10 +76,10 @@ export default function LoginPage() {
             errorMessage = 'Invalid email or password.';
             break;
           case 'auth/invalid-email':
-             errorMessage = 'Please enter a valid email address.';
+            errorMessage = 'Please enter a valid email address.';
             break;
         }
-         toast({
+        toast({
           variant: 'destructive',
           title: 'Login Failed',
           description: errorMessage,
@@ -94,15 +95,6 @@ export default function LoginPage() {
       setIsSubmitting(false);
     }
   };
-
-
-  if (isUserLoading || user) {
-    return (
-      <div className="flex min-h-screen items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin" />
-      </div>
-    );
-  }
 
   return (
     <Card>
@@ -143,8 +135,10 @@ export default function LoginPage() {
             />
           </CardContent>
           <CardFooter className="flex flex-col gap-4">
-            <Button type="submit" className="w-full" disabled={isSubmitting}>
-              {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            <Button type="submit" className="w-full" disabled={isSubmitting || isUserLoading}>
+              {(isSubmitting || isUserLoading) && (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              )}
               Log In
             </Button>
             <div className="text-center text-sm">
