@@ -79,7 +79,7 @@ export async function seedInitialDataForSalon(payload: SeedDataPayload) {
     staffData.forEach((staffMember) => {
       // Generate a new ID locally for the batch
       const staffRef = doc(collection(firestore, `salons/${salonId}/staff`));
-      batch.set(staffRef, { ...staffMember, staffId: staffRef.id, salonId });
+      batch.set(staffRef, { ...staffMember, staffId: staffRef.id, salonId: salonId });
     });
 
     // 4. Create Sample Customers
