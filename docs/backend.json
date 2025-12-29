@@ -219,6 +219,11 @@
           "type": "string",
           "description": "The phone number of the customer."
         },
+        "dob": {
+          "type": "string",
+          "format": "date",
+          "description": "The customer's date of birth (optional)."
+        },
         "visitHistory": {
           "type": "string",
           "description": "A record of the customer's visit history."
