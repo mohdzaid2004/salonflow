@@ -1,16 +1,26 @@
 'use server';
 
-import {
-  getFirestore,
-  doc,
-  writeBatch,
-  serverTimestamp,
-  collection,
-} from 'firebase/firestore';
-import { initializeFirebase } from '@/firebase/server-init';
+import { initializeApp, getApps, App, cert } from 'firebase-admin/app';
+import { getFirestore, WriteBatch } from 'firebase-admin/firestore';
 
-// This is a server-side action, but we will use the client SDKs
-// appropriately initialized for a server environment.
+// This is a server-side action that now uses the Firebase Admin SDK.
+
+// The service account is injected via environment variables on the server.
+// It's crucial to parse the JSON string from the environment variable.
+const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_KEY!);
+
+let adminApp: App;
+if (!getApps().some(app => app.name === 'admin')) {
+  adminApp = initializeApp({
+    credential: cert(serviceAccount)
+  }, 'admin');
+} else {
+  adminApp = getApps().find(app => app.name === 'admin')!;
+}
+
+
+const firestore = getFirestore(adminApp);
+
 
 interface SeedDataPayload {
   userId: string;
@@ -29,11 +39,10 @@ export async function seedInitialDataForSalon(payload: SeedDataPayload) {
   const salonId = userId; // Use userId as the unique salonId
 
   try {
-    const { firestore } = initializeFirebase();
-    const batch = writeBatch(firestore);
+    const batch: WriteBatch = firestore.batch();
 
     // 1. Create Salon Document
-    const salonRef = doc(firestore, 'salons', salonId);
+    const salonRef = firestore.collection('salons').doc(salonId);
     batch.set(salonRef, {
       salonId: salonId,
       name: salonName,
@@ -48,17 +57,17 @@ export async function seedInitialDataForSalon(payload: SeedDataPayload) {
       subscriptionPlanId: 'starter',
       billingStatus: 'trial',
       businessHours: '{}', // Empty JSON object
-      createdAt: serverTimestamp(),
+      createdAt: new Date(),
     });
 
     // 2. Create User (Owner) Document
-    const userRef = doc(firestore, `salons/${salonId}/users`, userId);
+    const userRef = firestore.collection(`salons/${salonId}/users`).doc(userId);
     batch.set(userRef, {
       userId: userId,
       salonId: salonId,
       name: "Owner",
       role: 'owner',
-      phone: phone, // Use the phone from the payload
+      phone: phone,
     });
 
     // 3. Create Sample Staff
@@ -77,8 +86,7 @@ export async function seedInitialDataForSalon(payload: SeedDataPayload) {
       },
     ];
     staffData.forEach((staffMember) => {
-      // Generate a new ID locally for the batch
-      const staffRef = doc(collection(firestore, `salons/${salonId}/staff`));
+      const staffRef = firestore.collection(`salons/${salonId}/staff`).doc();
       batch.set(staffRef, { ...staffMember, staffId: staffRef.id, salonId: salonId });
     });
 
@@ -88,9 +96,7 @@ export async function seedInitialDataForSalon(payload: SeedDataPayload) {
       { name: 'Diya Mehta', phone: '9123456789', visitHistory: '' },
     ];
     customerData.forEach((customer) => {
-      const customerRef = doc(
-        collection(firestore, `salons/${salonId}/customers`)
-      );
+      const customerRef = firestore.collection(`salons/${salonId}/customers`).doc();
       batch.set(customerRef, { ...customer, customerId: customerRef.id, salonId: salonId });
     });
 
@@ -126,9 +132,7 @@ export async function seedInitialDataForSalon(payload: SeedDataPayload) {
       },
     ];
     serviceData.forEach((service) => {
-      const serviceRef = doc(
-        collection(firestore, `salons/${salonId}/services`)
-      );
+      const serviceRef = firestore.collection(`salons/${salonId}/services`).doc();
       batch.set(serviceRef, { ...service, serviceId: serviceRef.id, salonId });
     });
 
@@ -136,7 +140,8 @@ export async function seedInitialDataForSalon(payload: SeedDataPayload) {
 
     return { success: true, salonId: salonId };
   } catch (error) {
-    console.error('Error seeding initial data:', error);
-    return { success: false, error: (error as Error).message };
+    console.error('Error seeding initial data with Admin SDK:', error);
+    // Ensure a clear error is returned to the client
+    return { success: false, error: `Failed to set up salon. ${(error as Error).message}` };
   }
 }
