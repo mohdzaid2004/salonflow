@@ -1,6 +1,8 @@
 
 'use client';
 
+import { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { HeaderActions } from '@/components/dashboard/header-actions';
 import { MainNav } from '@/components/dashboard/main-nav';
 import { UserNav } from '@/components/dashboard/user-nav';
@@ -21,14 +23,22 @@ import type { Salon } from '@/lib/data';
 import { Skeleton } from '@/components/ui/skeleton';
 import { HeaderActionsProvider } from '@/components/dashboard/header-actions-context';
 import { PageHeader } from '@/components/page-header';
+import { Loader2 } from 'lucide-react';
 
 export default function DashboardLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const { user } = useUser();
+  const { user, isUserLoading } = useUser();
   const firestore = useFirestore();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (!isUserLoading && !user) {
+      router.push('/login');
+    }
+  }, [user, isUserLoading, router]);
 
   const salonId = user?.uid;
 
@@ -38,6 +48,14 @@ export default function DashboardLayout({
   }, [firestore, salonId]);
 
   const { data: salon, isLoading: isSalonLoading } = useDoc<Salon>(salonDocRef);
+  
+  if (isUserLoading || !user) {
+    return (
+      <div className="flex h-screen w-full items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   return (
     <HeaderActionsProvider>
