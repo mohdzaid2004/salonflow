@@ -1,0 +1,527 @@
+{
+  "entities": {
+    "Salon": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Salon",
+      "type": "object",
+      "description": "Represents a salon tenant in the multi-tenant application.",
+      "properties": {
+        "salonId": {
+          "type": "string",
+          "description": "Unique identifier for the salon entity."
+        },
+        "name": {
+          "type": "string",
+          "description": "The name of the salon."
+        },
+        "logoUrl": {
+          "type": "string",
+          "description": "URL of the salon's logo.",
+          "format": "uri"
+        },
+        "address": {
+          "type": "string",
+          "description": "The street address of the salon."
+        },
+        "city": {
+          "type": "string",
+          "description": "The city where the salon is located."
+        },
+        "state": {
+          "type": "string",
+          "description": "The state where the salon is located."
+        },
+        "phone": {
+          "type": "string",
+          "description": "The phone number of the salon."
+        },
+        "gstNumber": {
+          "type": "string",
+          "description": "The GST number of the salon (optional)."
+        },
+        "languageDefault": {
+          "type": "string",
+          "description": "The default language of the salon (e.g., en, hi, ta, ml, te)."
+        },
+        "timezone": {
+          "type": "string",
+          "description": "The timezone of the salon (e.g., IST)."
+        },
+        "subscriptionPlanId": {
+          "type": "string",
+          "description": "Reference to SubscriptionPlan. (Relationship: Salon 1:1 SubscriptionPlan)"
+        },
+        "billingStatus": {
+          "type": "string",
+          "description": "The billing status of the salon."
+        },
+        "businessHours": {
+          "type": "string",
+          "description": "The business hours of the salon (e.g., JSON string)."
+        }
+      },
+      "required": [
+        "salonId",
+        "name",
+        "address",
+        "city",
+        "state",
+        "phone",
+        "languageDefault",
+        "timezone",
+        "subscriptionPlanId",
+        "billingStatus",
+        "businessHours"
+      ]
+    },
+    "User": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "User",
+      "type": "object",
+      "description": "Represents a user associated with a specific salon.",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "description": "Unique identifier for the user entity."
+        },
+        "salonId": {
+          "type": "string",
+          "description": "Reference to Salon. (Relationship: Salon 1:N User)"
+        },
+        "name": {
+          "type": "string",
+          "description": "The name of the user."
+        },
+        "role": {
+          "type": "string",
+          "description": "The role of the user (e.g., owner, receptionist, staff)."
+        },
+        "phone": {
+          "type": "string",
+          "description": "The phone number of the user (for OTP login)."
+        }
+      },
+      "required": [
+        "userId",
+        "salonId",
+        "name",
+        "role",
+        "phone"
+      ]
+    },
+    "Service": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Service",
+      "type": "object",
+      "description": "Represents a service offered by a salon.",
+      "properties": {
+        "serviceId": {
+          "type": "string",
+          "description": "Unique identifier for the service entity."
+        },
+        "salonId": {
+          "type": "string",
+          "description": "Reference to Salon. (Relationship: Salon 1:N Service)"
+        },
+        "name": {
+          "type": "string",
+          "description": "The name of the service."
+        },
+        "duration": {
+          "type": "number",
+          "description": "The duration of the service in minutes."
+        },
+        "price": {
+          "type": "number",
+          "description": "The price of the service."
+        },
+        "gstPercent": {
+          "type": "number",
+          "description": "The GST percentage for the service."
+        },
+        "category": {
+          "type": "string",
+          "description": "The category of the service."
+        }
+      },
+      "required": [
+        "serviceId",
+        "salonId",
+        "name",
+        "duration",
+        "price",
+        "gstPercent",
+        "category"
+      ]
+    },
+    "Staff": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Staff",
+      "type": "object",
+      "description": "Represents a staff member working at a salon.",
+      "properties": {
+        "staffId": {
+          "type": "string",
+          "description": "Unique identifier for the staff entity."
+        },
+        "salonId": {
+          "type": "string",
+          "description": "Reference to Salon. (Relationship: Salon 1:N Staff)"
+        },
+        "name": {
+          "type": "string",
+          "description": "The name of the staff member."
+        },
+        "specialties": {
+          "type": "array",
+          "description": "The specialties of the staff member.",
+          "items": {
+            "type": "string"
+          }
+        },
+        "workingHours": {
+          "type": "string",
+          "description": "The working hours of the staff member (e.g., JSON string)."
+        },
+        "commissionPercent": {
+          "type": "number",
+          "description": "The commission percentage for the staff member."
+        }
+      },
+      "required": [
+        "staffId",
+        "salonId",
+        "name",
+        "specialties",
+        "workingHours",
+        "commissionPercent"
+      ]
+    },
+    "Customer": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Customer",
+      "type": "object",
+      "description": "Represents a customer of a salon.",
+      "properties": {
+        "customerId": {
+          "type": "string",
+          "description": "Unique identifier for the customer entity."
+        },
+        "salonId": {
+          "type": "string",
+          "description": "Reference to Salon. (Relationship: Salon 1:N Customer)"
+        },
+        "name": {
+          "type": "string",
+          "description": "The name of the customer."
+        },
+        "phone": {
+          "type": "string",
+          "description": "The phone number of the customer."
+        },
+        "visitHistory": {
+          "type": "string",
+          "description": "A record of the customer's visit history."
+        }
+      },
+      "required": [
+        "customerId",
+        "salonId",
+        "name",
+        "phone",
+        "visitHistory"
+      ]
+    },
+    "Appointment": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Appointment",
+      "type": "object",
+      "description": "Represents an appointment booked at a salon.",
+      "properties": {
+        "appointmentId": {
+          "type": "string",
+          "description": "Unique identifier for the appointment entity."
+        },
+        "salonId": {
+          "type": "string",
+          "description": "Reference to Salon. (Relationship: Salon 1:N Appointment)"
+        },
+        "customerId": {
+          "type": "string",
+          "description": "Reference to Customer. (Relationship: Customer 1:N Appointment)"
+        },
+        "staffId": {
+          "type": "string",
+          "description": "Reference to Staff. (Relationship: Staff 1:N Appointment)"
+        },
+        "serviceIds": {
+          "type": "array",
+          "description": "References to Services. (Relationship: Appointment N:N Service)",
+          "items": {
+            "type": "string"
+          }
+        },
+        "dateTime": {
+          "type": "string",
+          "description": "The date and time of the appointment.",
+          "format": "date-time"
+        },
+        "status": {
+          "type": "string",
+          "description": "The status of the appointment (e.g., booked, completed, cancelled)."
+        },
+        "totalAmount": {
+          "type": "number",
+          "description": "The total amount of the appointment."
+        }
+      },
+      "required": [
+        "appointmentId",
+        "salonId",
+        "customerId",
+        "staffId",
+        "serviceIds",
+        "dateTime",
+        "status",
+        "totalAmount"
+      ]
+    },
+    "Payment": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Payment",
+      "type": "object",
+      "description": "Represents a payment made for an appointment.",
+      "properties": {
+        "paymentId": {
+          "type": "string",
+          "description": "Unique identifier for the payment entity."
+        },
+        "salonId": {
+          "type": "string",
+          "description": "Reference to Salon. (Relationship: Salon 1:N Payment)"
+        },
+        "appointmentId": {
+          "type": "string",
+          "description": "Reference to Appointment. (Relationship: Appointment 1:1 Payment)"
+        },
+        "method": {
+          "type": "string",
+          "description": "The payment method used (e.g., cash, UPI, card)."
+        },
+        "status": {
+          "type": "string",
+          "description": "The status of the payment."
+        }
+      },
+      "required": [
+        "paymentId",
+        "salonId",
+        "appointmentId",
+        "method",
+        "status"
+      ]
+    },
+    "SubscriptionPlan": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "SubscriptionPlan",
+      "type": "object",
+      "description": "Represents a subscription plan for the SaaS application.",
+      "properties": {
+        "subscriptionPlanId": {
+          "type": "string",
+          "description": "Unique identifier for the subscription plan entity."
+        },
+        "name": {
+          "type": "string",
+          "description": "The name of the subscription plan (e.g., Starter, Professional)."
+        },
+        "monthlyPrice": {
+          "type": "number",
+          "description": "The monthly price of the subscription plan."
+        },
+        "yearlyPrice": {
+          "type": "number",
+          "description": "The yearly price of the subscription plan."
+        },
+        "staffLimit": {
+          "type": "number",
+          "description": "The maximum number of staff allowed on the plan."
+        },
+        "whatsappReminders": {
+          "type": "boolean",
+          "description": "Indicates whether WhatsApp reminders are included in the plan."
+        },
+        "gstInvoices": {
+          "type": "boolean",
+          "description": "Indicates whether GST invoices are included in the plan."
+        },
+        "onlineBookingLink": {
+          "type": "boolean",
+          "description": "Indicates whether an online booking link is included in the plan."
+        },
+        "advancedReports": {
+          "type": "boolean",
+          "description": "Indicates whether advanced reports are included in the plan."
+        }
+      },
+      "required": [
+        "subscriptionPlanId",
+        "name",
+        "monthlyPrice",
+        "yearlyPrice",
+        "staffLimit",
+        "whatsappReminders",
+        "gstInvoices",
+        "onlineBookingLink",
+        "advancedReports"
+      ]
+    }
+  },
+  "auth": {
+    "providers": [
+      "password",
+      "anonymous"
+    ]
+  },
+  "firestore": {
+    "structure": [
+      {
+        "path": "/salons/{salonId}",
+        "definition": {
+          "entityName": "Salon",
+          "schema": {
+            "$ref": "#/backend/entities/Salon"
+          },
+          "description": "Represents a salon tenant in the application.",
+          "params": [
+            {
+              "name": "salonId",
+              "description": "Unique identifier for the salon."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/salons/{salonId}/users/{userId}",
+        "definition": {
+          "entityName": "User",
+          "schema": {
+            "$ref": "#/backend/entities/User"
+          },
+          "description": "Represents a user associated with a specific salon. Includes denormalized 'salonId' for authorization independence.",
+          "params": [
+            {
+              "name": "salonId",
+              "description": "Unique identifier for the salon."
+            },
+            {
+              "name": "userId",
+              "description": "Unique identifier for the user."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/salons/{salonId}/services/{serviceId}",
+        "definition": {
+          "entityName": "Service",
+          "schema": {
+            "$ref": "#/backend/entities/Service"
+          },
+          "description": "Represents a service offered by a salon. Includes denormalized 'salonId' for authorization independence.",
+          "params": [
+            {
+              "name": "salonId",
+              "description": "Unique identifier for the salon."
+            },
+            {
+              "name": "serviceId",
+              "description": "Unique identifier for the service."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/salons/{salonId}/staff/{staffId}",
+        "definition": {
+          "entityName": "Staff",
+          "schema": {
+            "$ref": "#/backend/entities/Staff"
+          },
+          "description": "Represents a staff member working at a salon. Includes denormalized 'salonId' for authorization independence.",
+          "params": [
+            {
+              "name": "salonId",
+              "description": "Unique identifier for the salon."
+            },
+            {
+              "name": "staffId",
+              "description": "Unique identifier for the staff member."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/salons/{salonId}/customers/{customerId}",
+        "definition": {
+          "entityName": "Customer",
+          "schema": {
+            "$ref": "#/backend/entities/Customer"
+          },
+          "description": "Represents a customer of a salon. Includes denormalized 'salonId' for authorization independence.",
+          "params": [
+            {
+              "name": "salonId",
+              "description": "Unique identifier for the salon."
+            },
+            {
+              "name": "customerId",
+              "description": "Unique identifier for the customer."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/salons/{salonId}/appointments/{appointmentId}",
+        "definition": {
+          "entityName": "Appointment",
+          "schema": {
+            "$ref": "#/backend/entities/Appointment"
+          },
+          "description": "Represents an appointment booked at a salon. Includes denormalized 'salonId' for authorization independence.",
+          "params": [
+            {
+              "name": "salonId",
+              "description": "Unique identifier for the salon."
+            },
+            {
+              "name": "appointmentId",
+              "description": "Unique identifier for the appointment."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/salons/{salonId}/payments/{paymentId}",
+        "definition": {
+          "entityName": "Payment",
+          "schema": {
+            "$ref": "#/backend/entities/Payment"
+          },
+          "description": "Represents a payment made for an appointment. Includes denormalized 'salonId' for authorization independence.",
+          "params": [
+            {
+              "name": "salonId",
+              "description": "Unique identifier for the salon."
+            },
+            {
+              "name": "paymentId",
+              "description": "Unique identifier for the payment."
+            }
+          ]
+        }
+      }
+    ],
+    "reasoning": "This Firestore structure is designed for a multi-tenant Salon Management SaaS application. The top-level collection, `salons`, represents individual salons. Each salon's data is then stored in subcollections under its respective document. This approach ensures data isolation and scalability for multiple salons within the same application instance.\n\nKey features of this structure:\n\n1.  **Multi-Tenancy:** The `salons` collection serves as the root for tenant isolation. Each salon has its own set of subcollections, preventing data mixing.\n2.  **Authorization Independence:** The `salonId` is present in every document within a salon's subcollections (e.g., `/salons/{salonId}/users/{userId}`). This denormalization allows security rules to validate that a user or resource belongs to the correct salon without needing to perform costly `get()` operations to retrieve parent data. The rule can simply check `request.resource.data.salonId == resource.data.salonId`.\n3.  **QAPs (Rules are not Filters):** The structure facilitates secure `list` operations. For example, listing all `users` associated with a particular `salonId` can be secured by ensuring the `salonId` in the requested documents matches the `salonId` of the user making the request.\n4. **Ownership:** Using hierarchical paths such as `/salons/{salonId}/users/{userId}` establishes a clear ownership model where each document inherently belongs to a specific salon. This simplifies security rules based on ownership.\n\nThis structure also supports easy querying within a specific salon's data. For example, fetching all appointments for a specific staff member in a salon is straightforward using collection group queries (once enabled).\n\nThis design avoids hierarchical authorization dependencies to support atomic operations and simplifies debugging. All rules can rely solely on `request.auth.uid` and the `salonId` denormalized into each document for authorization."
+  }
+}

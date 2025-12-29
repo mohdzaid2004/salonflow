@@ -1,0 +1,191 @@
+/**
+ * Core Philosophy: This ruleset enforces a strict multi-tenant security model for a Salon Management SaaS application.
+ * A user's access is strictly confined to the data belonging to the salon they are a member of. All authorization
+ * decisions are based on this tenancy, ensuring complete data isolation between different salons.
+ *
+ * Data Structure: The database is structured hierarchically with a top-level `/salons` collection. Each document
+ * in this collection represents a unique salon tenant. All data related to a salon—such as its users, services,
+ * staff, and appointments—is stored in dedicated subcollections under its specific salon document
+ * (e.g., /salons/{salonId}/users/{userId}).
+ *
+ * Key Security Decisions:
+ * - Tenant Isolation: The primary goal is to prevent any user from accessing data outside of their own salon.
+ * - No Public Access: All collections and documents require user authentication. There is no publicly readable data.
+ * - Salon Creation: Creation of top-level salon documents (`/salons/{salonId}`) is disabled from the client. This is a
+ *   sensitive operation that should be handled by a trusted backend process or Cloud Function.
+ * - User Self-Management: Users can create and manage their own user profile document, but only within the salon
+ *   they are associated with.
+ * - Shared Salon Data: All authenticated members of a salon are granted full read and write access to the salon's
+ *   shared resources (like services, staff, customers, etc.). This provides flexibility for prototyping. More granular
+ *   role-based permissions (e.g., owner vs. staff) can be layered on top later.
+ * - No Listing of All Salons: To protect tenant privacy, it is forbidden to list all documents in the top-level
+ *   `/salons` collection.
+ *
+ * Denormalization for Authorization: To ensure fast and secure authorization checks, a `salonId` field is
+ * denormalized onto every document within a salon's subcollections. This allows rules to verify a document's
+ * tenancy without performing slow and costly `get()` operations on parent documents. A user's membership
+ * within a salon is verified by checking their own user document at `/salons/{salonId}/users/{auth.uid}`.
+ *
+ * Structural Segregation: The use of distinct subcollections for each data type (users, services, etc.) under a
+ * salon's path provides a clear and secure separation of concerns, simplifying rules and queries.
+ */
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Helper Functions
+
+    /**
+     * Returns true if the user is authenticated.
+     */
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    /**
+     * Returns true if the requesting user's UID matches the provided userId.
+     * This is used to verify document ownership.
+     */
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    /**
+     * Returns true if a document exists and the requesting user owns it.
+     * Used for secure update and delete operations.
+     */
+    function isExistingOwner(userId) {
+      return isOwner(userId) && resource != null;
+    }
+
+    /**
+     * Checks if the currently authenticated user is a member of the specified salon.
+     * It performs a single `get` operation to the user's own profile to verify their salonId.
+     * This is the core function for enforcing multi-tenancy.
+     */
+    function isSalonMember(salonId) {
+      return isSignedIn() && get(/databases/$(database)/documents/salons/$(salonId)/users/$(request.auth.uid)).data.salonId == salonId;
+    }
+
+    /**
+     * Validates that the salonId in a newly created document's body
+     * matches the salonId from the document path. Enforces relational integrity.
+     */
+    function hasValidSalonId(salonId) {
+      return request.resource.data.salonId == salonId;
+    }
+
+    /**
+     * Validates that the salonId of a document cannot be changed during an update.
+     * This prevents documents from being moved between salons.
+     */
+    function isSalonIdImmutable() {
+      return request.resource.data.salonId == resource.data.salonId;
+    }
+
+    /**
+     * @description Rules for the salon tenant root document.
+     * @path /salons/{salonId}
+     * @allow A user (`auth.uid: 'user_abc'`) who is a member of 'salon_123' can read the salon document. (get)
+     * @deny A user from another salon (`'salon_456'`) cannot read the 'salon_123' document. (get)
+     * @principle Enforces data isolation between tenants at the root level.
+     */
+    match /salons/{salonId} {
+      allow get: if isSalonMember(salonId);
+      allow list: if false; // Disallow listing all salons in the database for privacy.
+      allow create: if false; // Salon creation should be handled by a trusted backend.
+      allow update: if isSalonMember(salonId) && resource != null;
+      allow delete: if false; // Prevent accidental tenant deletion from the client.
+    }
+
+    /**
+     * @description Rules for user profiles within a salon.
+     * @path /salons/{salonId}/users/{userId}
+     * @allow User 'user_abc' can create their own profile under `/salons/salon_123/users/user_abc`. (create)
+     * @deny User 'user_abc' cannot read a user profile from a salon they are not a member of. (get)
+     * @principle Users manage their own profile, but other salon members can view profiles for collaboration.
+     */
+    match /salons/{salonId}/users/{userId} {
+      allow get: if isSalonMember(salonId);
+      allow list: if isSalonMember(salonId);
+      allow create: if isOwner(userId) && hasValidSalonId(salonId);
+      allow update: if isExistingOwner(userId) && isSalonIdImmutable();
+      allow delete: if isExistingOwner(userId);
+    }
+
+    /**
+     * @description Rules for generic salon data (services, staff, customers, etc.).
+     * @path /salons/{salonId}/services/{serviceId}
+     * @allow Any member of 'salon_123' can create a new service document for that salon. (create)
+     * @deny A user who is not a member of 'salon_123' cannot read or write services for it. (get/create)
+     * @principle All data within a salon is accessible for read/write to all authenticated members of that salon.
+     */
+    match /salons/{salonId}/services/{serviceId} {
+      allow get: if isSalonMember(salonId);
+      allow list: if isSalonMember(salonId);
+      allow create: if isSalonMember(salonId) && hasValidSalonId(salonId);
+      allow update: if isSalonMember(salonId) && resource != null && isSalonIdImmutable();
+      allow delete: if isSalonMember(salonId) && resource != null;
+    }
+
+    /**
+     * @description Rules for generic salon data (services, staff, customers, etc.).
+     * @path /salons/{salonId}/staff/{staffId}
+     * @allow Any member of 'salon_123' can create a new staff document for that salon. (create)
+     * @deny A user who is not a member of 'salon_123' cannot read or write staff for it. (get/create)
+     * @principle All data within a salon is accessible for read/write to all authenticated members of that salon.
+     */
+    match /salons/{salonId}/staff/{staffId} {
+      allow get: if isSalonMember(salonId);
+      allow list: if isSalonMember(salonId);
+      allow create: if isSalonMember(salonId) && hasValidSalonId(salonId);
+      allow update: if isSalonMember(salonId) && resource != null && isSalonIdImmutable();
+      allow delete: if isSalonMember(salonId) && resource != null;
+    }
+
+    /**
+     * @description Rules for generic salon data (services, staff, customers, etc.).
+     * @path /salons/{salonId}/customers/{customerId}
+     * @allow Any member of 'salon_123' can create a new customer document for that salon. (create)
+     * @deny A user who is not a member of 'salon_123' cannot read or write customers for it. (get/create)
+     * @principle All data within a salon is accessible for read/write to all authenticated members of that salon.
+     */
+    match /salons/{salonId}/customers/{customerId} {
+      allow get: if isSalonMember(salonId);
+      allow list: if isSalonMember(salonId);
+      allow create: if isSalonMember(salonId) && hasValidSalonId(salonId);
+      allow update: if isSalonMember(salonId) && resource != null && isSalonIdImmutable();
+      allow delete: if isSalonMember(salonId) && resource != null;
+    }
+
+    /**
+     * @description Rules for generic salon data (services, staff, customers, etc.).
+     * @path /salons/{salonId}/appointments/{appointmentId}
+     * @allow Any member of 'salon_123' can create a new appointment document for that salon. (create)
+     * @deny A user who is not a member of 'salon_123' cannot read or write appointments for it. (get/create)
+     * @principle All data within a salon is accessible for read/write to all authenticated members of that salon.
+     */
+    match /salons/{salonId}/appointments/{appointmentId} {
+      allow get: if isSalonMember(salonId);
+      allow list: if isSalonMember(salonId);
+      allow create: if isSalonMember(salonId) && hasValidSalonId(salonId);
+      allow update: if isSalonMember(salonId) && resource != null && isSalonIdImmutable();
+      allow delete: if isSalonMember(salonId) && resource != null;
+    }
+
+    /**
+     * @description Rules for generic salon data (services, staff, customers, etc.).
+     * @path /salons/{salonId}/payments/{paymentId}
+     * @allow Any member of 'salon_123' can create a new payment document for that salon. (create)
+     * @deny A user who is not a member of 'salon_123' cannot read or write payments for it. (get/create)
+     * @principle All data within a salon is accessible for read/write to all authenticated members of that salon.
+     */
+    match /salons/{salonId}/payments/{paymentId} {
+      allow get: if isSalonMember(salonId);
+      allow list: if isSalonMember(salonId);
+      allow create: if isSalonMember(salonId) && hasValidSalonId(salonId);
+      allow update: if isSalonMember(salonId) && resource != null && isSalonIdImmutable();
+      allow delete: if isSalonMember(salonId) && resource != null;
+    }
+  }
+}
