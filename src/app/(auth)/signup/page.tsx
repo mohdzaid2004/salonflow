@@ -35,16 +35,10 @@ const signupFormSchema = z.object({
   salonName: z
     .string()
     .min(2, { message: 'Salon name must be at least 2 characters.' }),
-  ownerName: z
-    .string()
-    .min(2, { message: 'Your name must be at least 2 characters.' }),
   email: z.string().email({ message: 'Please enter a valid email address.' }),
   password: z
     .string()
     .min(6, { message: 'Password must be at least 6 characters.' }),
-  address: z.string().min(5, 'Please enter a valid address.'),
-  city: z.string().min(2, 'Please enter a city.'),
-  state: z.string().min(2, 'Please enter a state.'),
   phone: z.string().min(10, 'Please enter a valid 10-digit phone number.'),
 });
 
@@ -61,12 +55,8 @@ export default function SignupPage() {
     resolver: zodResolver(signupFormSchema),
     defaultValues: {
       salonName: '',
-      ownerName: '',
       email: '',
       password: '',
-      address: '',
-      city: '',
-      state: '',
       phone: '',
     },
   });
@@ -89,16 +79,12 @@ export default function SignupPage() {
       const firebaseUser = userCredential.user;
 
       if (firebaseUser) {
-        await updateProfile(firebaseUser, { displayName: data.ownerName });
+        await updateProfile(firebaseUser, { displayName: "Owner" });
 
         const result = await seedInitialDataForSalon({
           userId: firebaseUser.uid,
           userEmail: firebaseUser.email!,
-          userName: data.ownerName,
           salonName: data.salonName,
-          address: data.address,
-          city: data.city,
-          state: data.state,
           phone: data.phone,
         });
 
@@ -167,19 +153,6 @@ export default function SignupPage() {
                 </FormItem>
               )}
             />
-             <FormField
-              control={form.control}
-              name="ownerName"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Your Name</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Ravi Kumar" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
             <FormField
               control={form.control}
               name="email"
@@ -210,47 +183,6 @@ export default function SignupPage() {
                 </FormItem>
               )}
             />
-             <FormField
-              control={form.control}
-              name="address"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Address</FormLabel>
-                  <FormControl>
-                    <Input placeholder="123 Main St" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-             <div className="grid grid-cols-2 gap-4">
-               <FormField
-                control={form.control}
-                name="city"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>City</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Mumbai" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-               <FormField
-                control={form.control}
-                name="state"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>State</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Maharashtra" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
              <FormField
               control={form.control}
               name="phone"

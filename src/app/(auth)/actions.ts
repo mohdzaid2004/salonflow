@@ -15,11 +15,7 @@ import { initializeFirebase } from '@/firebase/server-init';
 interface SeedDataPayload {
   userId: string;
   userEmail: string;
-  userName: string;
   salonName: string;
-  address: string;
-  city: string;
-  state: string;
   phone: string;
 }
 
@@ -27,11 +23,7 @@ export async function seedInitialDataForSalon(payload: SeedDataPayload) {
   const {
     userId,
     userEmail,
-    userName,
     salonName,
-    address,
-    city,
-    state,
     phone,
   } = payload;
   const salonId = userId; // Use userId as the unique salonId
@@ -45,9 +37,9 @@ export async function seedInitialDataForSalon(payload: SeedDataPayload) {
     batch.set(salonRef, {
       salonId: salonId,
       name: salonName,
-      address: address,
-      city: city,
-      state: state,
+      address: "",
+      city: "",
+      state: "",
       phone: phone,
       logoUrl: '',
       gstNumber: '',
@@ -64,7 +56,7 @@ export async function seedInitialDataForSalon(payload: SeedDataPayload) {
     batch.set(userRef, {
       userId: userId,
       salonId: salonId,
-      name: userName,
+      name: "Owner",
       role: 'owner',
       phone: userEmail, // Using email for phone login initially
     });
