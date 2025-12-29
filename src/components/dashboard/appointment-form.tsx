@@ -170,7 +170,7 @@ export function AppointmentForm({
                     <FormControl>
                       <SelectTrigger>
                         <SelectValue placeholder={isLoading ? "Loading..." : "Select a service"} />
-                      </T riggeSelectr>
+                      </SelectTrigger>
                     </FormControl>
                     <SelectContent>
                       {services?.map((service) => (
