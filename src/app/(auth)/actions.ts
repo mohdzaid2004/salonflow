@@ -67,7 +67,7 @@ export async function seedInitialDataForSalon(payload: SeedDataPayload) {
       name: "Owner",
       role: 'owner',
       phone: phone,
-      email: email, // Make sure email is stored
+      email: email,
     });
 
     // 3. Create Sample Staff
@@ -86,7 +86,6 @@ export async function seedInitialDataForSalon(payload: SeedDataPayload) {
       },
     ];
     staffData.forEach((staffMember) => {
-      // Correctly create a new doc ref with an ID for the batch
       const staffRef = firestore.collection(`salons/${salonId}/staff`).doc();
       batch.set(staffRef, { ...staffMember, staffId: staffRef.id, salonId: salonId });
     });
@@ -97,7 +96,6 @@ export async function seedInitialDataForSalon(payload: SeedDataPayload) {
       { name: 'Diya Mehta', phone: '9123456789', visitHistory: '' },
     ];
     customerData.forEach((customer) => {
-      // Correctly create a new doc ref with an ID for the batch
       const customerRef = firestore.collection(`salons/${salonId}/customers`).doc();
       batch.set(customerRef, { ...customer, customerId: customerRef.id, salonId: salonId });
     });
@@ -134,7 +132,6 @@ export async function seedInitialDataForSalon(payload: SeedDataPayload) {
       },
     ];
     serviceData.forEach((service) => {
-      // Correctly create a new doc ref with an ID for the batch
       const serviceRef = firestore.collection(`salons/${salonId}/services`).doc();
       batch.set(serviceRef, { ...service, serviceId: serviceRef.id, salonId: salonId });
     });
