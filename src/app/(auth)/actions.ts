@@ -133,7 +133,7 @@ export async function seedInitialDataForSalon(payload: SeedDataPayload) {
     ];
     serviceData.forEach((service) => {
       const serviceRef = firestore.collection(`salons/${salonId}/services`).doc();
-      batch.set(serviceRef, { ...service, serviceId: serviceRef.id, salonId });
+      batch.set(serviceRef, { ...service, serviceId: serviceRef.id, salonId: salonId });
     });
 
     await batch.commit();
