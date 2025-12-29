@@ -25,10 +25,11 @@ import {
   FormLabel,
   FormMessage,
 } from '@/components/ui/form';
-import { useAuth, useUser, initiateEmailSignIn } from '@/firebase';
+import { useAuth, useUser } from '@/firebase';
 import { Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { FirebaseError } from 'firebase/app';
+import { signInWithEmailAndPassword } from 'firebase/auth';
 
 const loginFormSchema = z.object({
   email: z.string().email({ message: 'Please enter a valid email address.' }),
@@ -54,6 +55,7 @@ export default function LoginPage() {
     },
   });
 
+  // Effect to redirect if user is logged in
   useEffect(() => {
     if (!isUserLoading && user) {
       router.push('/dashboard');
@@ -63,7 +65,8 @@ export default function LoginPage() {
   const onSubmit = async (data: LoginFormValues) => {
     setIsSubmitting(true);
     try {
-      await initiateEmailSignIn(auth, data.email, data.password);
+      // Use the standard signInWithEmailAndPassword function
+      await signInWithEmailAndPassword(auth, data.email, data.password);
       // The onAuthStateChanged listener in the provider will handle the redirect
       // by updating the `user` state, which triggers the useEffect above.
     } catch (error) {
@@ -95,6 +98,15 @@ export default function LoginPage() {
       setIsSubmitting(false);
     }
   };
+
+  // Render a loading state while checking for user
+  if (isUserLoading || user) {
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin" />
+      </div>
+    );
+  }
 
   return (
     <Card>
@@ -135,8 +147,8 @@ export default function LoginPage() {
             />
           </CardContent>
           <CardFooter className="flex flex-col gap-4">
-            <Button type="submit" className="w-full" disabled={isSubmitting || isUserLoading}>
-              {(isSubmitting || isUserLoading) && (
+            <Button type="submit" className="w-full" disabled={isSubmitting}>
+              {isSubmitting && (
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
               )}
               Log In

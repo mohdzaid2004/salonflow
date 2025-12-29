@@ -24,11 +24,11 @@ import {
   FormLabel,
   FormMessage,
 } from '@/components/ui/form';
-import { useAuth, useUser, initiateEmailSignUp } from '@/firebase';
+import { useAuth, useUser } from '@/firebase';
 import { Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { FirebaseError } from 'firebase/app';
-import { updateProfile } from 'firebase/auth';
+import { updateProfile, createUserWithEmailAndPassword } from 'firebase/auth';
 import { seedInitialDataForSalon } from '../actions';
 
 const signupFormSchema = z.object({
@@ -70,7 +70,7 @@ export default function SignupPage() {
   const onSubmit = async (data: SignupFormValues) => {
     setIsSubmitting(true);
     try {
-      const userCredential = await initiateEmailSignUp(
+      const userCredential = await createUserWithEmailAndPassword(
         auth,
         data.email,
         data.password
@@ -81,6 +81,7 @@ export default function SignupPage() {
       if (firebaseUser) {
         await updateProfile(firebaseUser, { displayName: "Owner" });
 
+        // This is the critical step. It MUST succeed.
         const result = await seedInitialDataForSalon({
           userId: firebaseUser.uid,
           userEmail: firebaseUser.email!,
@@ -88,19 +89,20 @@ export default function SignupPage() {
           phone: data.phone,
         });
 
+        // If the server action fails, we throw an error to be caught below.
         if (result.error) {
           throw new Error(result.error);
         }
 
       } else {
-        throw new Error('User not created');
+        throw new Error('User account could not be created in Firebase.');
       }
 
       toast({
         title: 'Account Created!',
         description: "We're redirecting you to your new dashboard.",
       });
-      // The onAuthStateChanged listener will handle the redirect.
+      // The onAuthStateChanged listener in FirebaseProvider will handle the redirect.
     } catch (error) {
       let errorMessage = 'An unknown error occurred. Please try again.';
       if (error instanceof FirebaseError) {
@@ -109,6 +111,7 @@ export default function SignupPage() {
             'This email is already in use. Please log in or use a different email.';
         }
       } else if (error instanceof Error) {
+        // This will now catch errors from the seedInitialDataForSalon action
         errorMessage = error.message;
       }
       toast({
