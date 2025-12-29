@@ -91,7 +91,7 @@ export async function seedInitialDataForSalon(payload: SeedDataPayload) {
       const customerRef = doc(
         collection(firestore, `salons/${salonId}/customers`)
       );
-      batch.set(customerRef, { ...customer, customerId: customerRef.id, salonId });
+      batch.set(customerRef, { ...customer, customerId: customerRef.id, salonId: salonId });
     });
 
     // 5. Create Sample Services
