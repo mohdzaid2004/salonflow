@@ -55,7 +55,6 @@ export async function seedInitialDataForSalon(payload: SeedDataPayload) {
       subscriptionPlanId: 'starter',
       billingStatus: 'trial',
       businessHours: '{}', // Empty JSON object
-      createdAt: new Date(),
     });
 
     // 2. Create User (Owner) Document
