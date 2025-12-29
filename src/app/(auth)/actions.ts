@@ -58,7 +58,7 @@ export async function seedInitialDataForSalon(payload: SeedDataPayload) {
       salonId: salonId,
       name: "Owner",
       role: 'owner',
-      phone: userEmail, // Using email for phone login initially
+      phone: phone, // Use the phone from the payload
     });
 
     // 3. Create Sample Staff
