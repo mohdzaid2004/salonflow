@@ -1,7 +1,6 @@
 'use client';
 
 import { useMemoFirebase, useCollection, useFirestore, useUser } from '@/firebase';
-import { PageHeader } from '@/components/page-header';
 import {
   Table,
   TableBody,
@@ -17,7 +16,7 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-import { MoreHorizontal } from 'lucide-react';
+import { MoreHorizontal, PlusCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -30,10 +29,24 @@ import { Badge } from '@/components/ui/badge';
 import { collection, query } from 'firebase/firestore';
 import type { Service } from '@/lib/data';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useHeaderActions } from '@/components/dashboard/header-actions-context';
+import { useEffect } from 'react';
 
 export default function ServicesPage() {
   const firestore = useFirestore();
   const { user, isUserLoading } = useUser();
+  const { setActions } = useHeaderActions();
+
+  useEffect(() => {
+    setActions(
+      <Button onClick={() => alert('Add new service dialog would open here.')}>
+        <PlusCircle className="mr-2 h-4 w-4" />
+        Add Service
+      </Button>
+    );
+    return () => setActions(null);
+  }, [setActions]);
+
 
   const salonId = user?.uid;
 
@@ -77,13 +90,6 @@ export default function ServicesPage() {
 
   return (
     <div className="grid flex-1 items-start gap-4 md:gap-8">
-      <PageHeader
-        title="Services"
-        actionButtonText="Add Service"
-        onActionButtonClick={() => {
-          alert('Add new service dialog would open here.');
-        }}
-      />
       <Card>
         <CardHeader>
           <CardTitle>Manage Your Services</CardTitle>

@@ -12,26 +12,34 @@ import {
 } from '@/components/ui/dialog';
 import { AppointmentForm } from '@/components/dashboard/appointment-form';
 import { CustomerCheckinForm } from '@/components/dashboard/customer-checkin-form';
+import { useHeaderActions } from '@/components/dashboard/header-actions-context';
+import { useEffect } from 'react';
 
 export default function DashboardPage() {
   const [isNewAppointmentOpen, setIsNewAppointmentOpen] = useState(false);
   const [isCheckinOpen, setIsCheckinOpen] = useState(false);
+  const { setActions } = useHeaderActions();
+
+  useEffect(() => {
+    setActions(
+        <>
+            <Button variant="outline" onClick={() => setIsCheckinOpen(true)}>
+                <UserCheck className="mr-2 h-4 w-4" />
+                Check-in Customer
+            </Button>
+            <Button onClick={() => setIsNewAppointmentOpen(true)}>
+                <PlusCircle className="mr-2 h-4 w-4" />
+                New Appointment
+            </Button>
+        </>
+    );
+
+    // Cleanup on component unmount
+    return () => setActions(null);
+  }, [setActions]);
 
   return (
     <div className="grid flex-1 items-start gap-4 md:gap-8">
-      <div className="flex items-center">
-        <h1 className="font-headline text-3xl md:text-4xl">Dashboard</h1>
-        <div className="ml-auto flex items-center gap-2">
-           <Button variant="outline" onClick={() => setIsCheckinOpen(true)}>
-            <UserCheck className="mr-2 h-4 w-4" />
-            Check-in Customer
-          </Button>
-          <Button onClick={() => setIsNewAppointmentOpen(true)}>
-            <PlusCircle className="mr-2 h-4 w-4" />
-            New Appointment
-          </Button>
-        </div>
-      </div>
       <CalendarView />
       <Dialog open={isNewAppointmentOpen} onOpenChange={setIsNewAppointmentOpen}>
         <DialogContent className="sm:max-w-[425px]">

@@ -16,7 +16,7 @@ import {
   IndianRupee
 } from 'lucide-react';
 
-const links = [
+export const MainNavItems = [
   { href: '/dashboard', label: 'Dashboard', icon: LayoutGrid },
   { href: '/dashboard/services', label: 'Services', icon: Scissors },
   { href: '/dashboard/staff', label: 'Staff', icon: Users },
@@ -30,7 +30,7 @@ export function MainNav() {
 
   return (
     <SidebarMenu>
-      {links.map((link) => (
+      {MainNavItems.map((link) => (
         <SidebarMenuItem key={link.href}>
           <Link href={link.href}>
             <SidebarMenuButton

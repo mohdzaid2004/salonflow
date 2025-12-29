@@ -1,3 +1,4 @@
+import { HeaderActions } from '@/components/dashboard/header-actions';
 import { MainNav } from '@/components/dashboard/main-nav';
 import { UserNav } from '@/components/dashboard/user-nav';
 import { Logo } from '@/components/logo';
@@ -42,6 +43,7 @@ export default function DashboardLayout({
       <SidebarInset>
         <header className="sticky top-0 z-10 flex h-16 items-center gap-4 border-b bg-background px-4 sm:px-6">
             <SidebarTrigger className="md:hidden"/>
+            <HeaderActions />
             <div className="flex-1"></div>
             <UserNav />
         </header>
