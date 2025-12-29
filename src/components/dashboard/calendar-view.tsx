@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
@@ -13,6 +13,12 @@ import { Skeleton } from '../ui/skeleton';
 export function CalendarView() {
   const firestore = useFirestore();
   const { user } = useUser();
+  const [currentDate, setCurrentDate] = useState<Date | null>(null);
+
+  useEffect(() => {
+    // This will run only on the client, after hydration
+    setCurrentDate(new Date());
+  }, []);
 
   const userProfileQuery = useMemoFirebase(() => {
     if (!firestore || !user) return null;
@@ -59,7 +65,7 @@ export function CalendarView() {
   const isLoading = appointmentsLoading || customersLoading || staffLoading || servicesLoading;
 
   const todayAppointments = useMemo(() => {
-    if (!appointments) return [];
+    if (!appointments || !currentDate) return [];
     
     const realAppointments = appointments?.map(appt => ({
         ...appt, 
@@ -69,10 +75,10 @@ export function CalendarView() {
     return realAppointments
       .filter(
         (appt) =>
-          new Date(appt.dateTime).toDateString() === new Date().toDateString()
+          new Date(appt.dateTime).toDateString() === currentDate.toDateString()
       )
       .sort((a, b) => a.dateTime.getTime() - b.dateTime.getTime());
-  }, [appointments]);
+  }, [appointments, currentDate]);
 
 
   const getAppointmentDetails = (appt: Appointment) => {
@@ -117,7 +123,7 @@ export function CalendarView() {
     <Card>
       <CardHeader>
         <CardTitle>Today&apos;s Appointments</CardTitle>
-        <CardDescription>{format(new Date(), 'eeee, MMMM do')}</CardDescription>
+        <CardDescription>{currentDate ? format(currentDate, 'eeee, MMMM do') : <Skeleton className="h-4 w-32" />}</CardDescription>
       </CardHeader>
       <CardContent>
         {isLoading ? renderSkeleton() : 
