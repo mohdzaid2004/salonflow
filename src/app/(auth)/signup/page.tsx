@@ -24,18 +24,12 @@ import {
   FormLabel,
   FormMessage,
 } from '@/components/ui/form';
-import {
-  useAuth,
-  useUser,
-  initiateEmailSignUp,
-  setDocumentNonBlocking,
-} from '@/firebase';
+import { useAuth, useUser, initiateEmailSignUp } from '@/firebase';
 import { Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { doc, serverTimestamp } from 'firebase/firestore';
-import { useFirestore } from '@/firebase';
 import { FirebaseError } from 'firebase/app';
 import { updateProfile } from 'firebase/auth';
+import { seedInitialDataForSalon } from '../actions';
 
 const signupFormSchema = z.object({
   salonName: z
@@ -48,6 +42,10 @@ const signupFormSchema = z.object({
   password: z
     .string()
     .min(6, { message: 'Password must be at least 6 characters.' }),
+  address: z.string().min(5, 'Please enter a valid address.'),
+  city: z.string().min(2, 'Please enter a city.'),
+  state: z.string().min(2, 'Please enter a state.'),
+  phone: z.string().min(10, 'Please enter a valid 10-digit phone number.'),
 });
 
 type SignupFormValues = z.infer<typeof signupFormSchema>;
@@ -55,7 +53,6 @@ type SignupFormValues = z.infer<typeof signupFormSchema>;
 export default function SignupPage() {
   const { user, isUserLoading } = useUser();
   const auth = useAuth();
-  const firestore = useFirestore();
   const router = useRouter();
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -67,6 +64,10 @@ export default function SignupPage() {
       ownerName: '',
       email: '',
       password: '',
+      address: '',
+      city: '',
+      state: '',
+      phone: '',
     },
   });
 
@@ -84,43 +85,29 @@ export default function SignupPage() {
         data.email,
         data.password
       );
+      
+      const firebaseUser = userCredential.user;
 
-      if (auth.currentUser) {
-        await updateProfile(auth.currentUser, { displayName: data.ownerName });
+      if (firebaseUser) {
+        await updateProfile(firebaseUser, { displayName: data.ownerName });
 
-        // TODO: In a real multi-tenant app, salonId should be unique.
-        const salonId = 'salon_123';
-        
-        const salonRef = doc(firestore, 'salons', salonId);
-        const userRef = doc(firestore, `salons/${salonId}/users`, auth.currentUser.uid);
+        const result = await seedInitialDataForSalon({
+          userId: firebaseUser.uid,
+          userEmail: firebaseUser.email!,
+          userName: data.ownerName,
+          salonName: data.salonName,
+          address: data.address,
+          city: data.city,
+          state: data.state,
+          phone: data.phone,
+        });
 
-        // Create the salon document
-        setDocumentNonBlocking(
-          salonRef,
-          {
-            name: data.salonName,
-            ownerId: auth.currentUser.uid,
-            createdAt: serverTimestamp(),
-            // Add other salon properties from your backend.json
-          },
-          { merge: true }
-        );
-
-        // Create the user document
-        setDocumentNonBlocking(
-          userRef,
-          {
-            name: data.ownerName,
-            email: auth.currentUser.email,
-            role: 'owner',
-            salonId: salonId, // Denormalize salonId
-            createdAt: serverTimestamp(),
-          },
-          { merge: true }
-        );
+        if (result.error) {
+          throw new Error(result.error);
+        }
 
       } else {
-         throw new Error("User not created");
+        throw new Error('User not created');
       }
 
       toast({
@@ -135,6 +122,8 @@ export default function SignupPage() {
           errorMessage =
             'This email is already in use. Please log in or use a different email.';
         }
+      } else if (error instanceof Error) {
+        errorMessage = error.message;
       }
       toast({
         variant: 'destructive',
@@ -165,7 +154,7 @@ export default function SignupPage() {
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)}>
           <CardContent className="space-y-4">
-            <FormField
+             <FormField
               control={form.control}
               name="salonName"
               render={({ field }) => (
@@ -178,7 +167,7 @@ export default function SignupPage() {
                 </FormItem>
               )}
             />
-            <FormField
+             <FormField
               control={form.control}
               name="ownerName"
               render={({ field }) => (
@@ -216,6 +205,60 @@ export default function SignupPage() {
                   <FormLabel>Password</FormLabel>
                   <FormControl>
                     <Input type="password" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+             <FormField
+              control={form.control}
+              name="address"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Address</FormLabel>
+                  <FormControl>
+                    <Input placeholder="123 Main St" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+             <div className="grid grid-cols-2 gap-4">
+               <FormField
+                control={form.control}
+                name="city"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>City</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Mumbai" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+               <FormField
+                control={form.control}
+                name="state"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>State</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Maharashtra" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+             <FormField
+              control={form.control}
+              name="phone"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Phone Number</FormLabel>
+                  <FormControl>
+                    <Input placeholder="9876543210" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>

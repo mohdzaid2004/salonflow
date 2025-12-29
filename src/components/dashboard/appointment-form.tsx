@@ -26,10 +26,9 @@ import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
 import { CalendarIcon, Loader2 } from 'lucide-react';
 import { format } from 'date-fns';
-import { sendBookingConfirmationAction } from '@/app/dashboard/actions';
 import { useToast } from '@/hooks/use-toast';
-import { useCollection, useFirestore } from '@/firebase';
-import { collection, query } from 'firebase/firestore';
+import { useCollection, useFirestore, useUser, useMemoFirebase, addDocumentNonBlocking } from '@/firebase';
+import { collection, query, serverTimestamp } from 'firebase/firestore';
 import type { Customer, Service, Staff } from '@/lib/data';
 
 
@@ -53,21 +52,23 @@ export function AppointmentForm({
   const [isPending, startTransition] = useTransition();
   const { toast } = useToast();
   const firestore = useFirestore();
+  const { user } = useUser();
 
-  // TODO: The salonId should be dynamic based on the logged-in user's salon.
-  const salonId = 'salon_123';
+  // FIXME: This is a temporary solution. The salon ID should be retrieved
+  // from the authenticated user's profile or custom claims.
+  const salonId = user?.uid;
 
-  const customersQuery = useMemo(() => {
+  const customersQuery = useMemoFirebase(() => {
     if (!firestore || !salonId) return null;
     return query(collection(firestore, `salons/${salonId}/customers`));
   }, [firestore, salonId]);
 
-  const servicesQuery = useMemo(() => {
+  const servicesQuery = useMemoFirebase(() => {
     if (!firestore || !salonId) return null;
     return query(collection(firestore, `salons/${salonId}/services`));
   }, [firestore, salonId]);
 
-  const staffQuery = useMemo(() => {
+  const staffQuery = useMemoFirebase(() => {
     if (!firestore || !salonId) return null;
     return query(collection(firestore, `salons/${salonId}/staff`));
   }, [firestore, salonId]);
@@ -85,52 +86,47 @@ export function AppointmentForm({
 
   function onSubmit(data: AppointmentFormValues) {
     startTransition(async () => {
+      if (!salonId || !firestore) {
+         toast({ variant: 'destructive', title: 'Error', description: 'User or database not available.' });
+         return;
+      }
+
       const [hours, minutes] = data.time.split(':').map(Number);
       const appointmentDateTime = new Date(data.dateTime);
       appointmentDateTime.setHours(hours, minutes);
 
-      const customer = customers?.find((c) => c.id === data.customerId);
-      const service = services?.find((s) => s.id === data.serviceId);
-      const staffMember = staff?.find((s) => s.id === data.staffId);
-
-      if (!customer || !service || !staffMember) {
-        toast({
-          variant: 'destructive',
-          title: 'Error',
-          description: 'Invalid data selected.',
-        });
+      const service = services?.find(s => s.id === data.serviceId);
+      if (!service) {
+        toast({ variant: 'destructive', title: 'Error', description: 'Selected service not found.' });
         return;
       }
+
+      const totalAmount = service.price; // Simplified for one service
+
+      const appointmentData = {
+        salonId,
+        customerId: data.customerId,
+        staffId: data.staffId,
+        serviceIds: [data.serviceId],
+        dateTime: serverTimestamp(), // Will be converted to timestamp on server
+        status: 'booked',
+        totalAmount,
+      };
       
       toast({
         title: 'Booking Appointment...',
         description: 'Please wait while we book the appointment.',
       });
 
-      // The AI action is removed, we'll just simulate a booking.
-      // In a real app, you would save this to a database.
-      const result = await sendBookingConfirmationAction({
-        customerName: customer.name,
-        salonName: 'My Awesome Salon',
-        appointmentDateTime: format(appointmentDateTime, "PPP 'at' p"),
-        serviceNames: [service.name],
-        staffName: staffMember.name,
-        phoneNumber: customer.phone,
-      });
+      const appointmentsRef = collection(firestore, `salons/${salonId}/appointments`);
+      addDocumentNonBlocking(appointmentsRef, appointmentData);
 
-      if (result.success) {
-        toast({
-          title: 'Success!',
-          description: 'Appointment booked successfully.',
-        });
-        setOpen(false);
-      } else {
-        toast({
-          variant: 'destructive',
-          title: 'Booking Failed',
-          description: 'An unknown error occurred.',
-        });
-      }
+      // Optimistic UI update
+      toast({
+        title: 'Success!',
+        description: 'Appointment booked successfully.',
+      });
+      setOpen(false);
     });
   }
 
@@ -174,7 +170,7 @@ export function AppointmentForm({
                     <FormControl>
                       <SelectTrigger>
                         <SelectValue placeholder={isLoading ? "Loading..." : "Select a service"} />
-                      </SelectTrigger>
+                      </T riggeSelectr>
                     </FormControl>
                     <SelectContent>
                       {services?.map((service) => (

@@ -1,37 +1,52 @@
 'use client';
 
 import { useMemo } from 'react';
-import { appointments as mockAppointments } from '@/lib/data'; // Keep mock for now
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
-import { useCollection, useFirestore } from '@/firebase';
-import { collection, query } from 'firebase/firestore';
+import { useCollection, useFirestore, useUser, useDoc, useMemoFirebase } from '@/firebase';
+import { collection, query, doc } from 'firebase/firestore';
 import type { Appointment, Customer, Service, Staff } from '@/lib/data';
 import { Skeleton } from '../ui/skeleton';
 
 export function CalendarView() {
-  // TODO: The salonId should be dynamic based on the logged-in user's salon.
-  const salonId = 'salon_123';
   const firestore = useFirestore();
+  const { user } = useUser();
 
-  const appointmentsQuery = useMemo(() => {
+  const userProfileQuery = useMemoFirebase(() => {
+    if (!firestore || !user) return null;
+    // This assumes the user's document is in a top-level `users` collection.
+    // Adjust if your user profiles are stored elsewhere.
+    // We need to find the user's salonId.
+    // A common pattern is to have a /users/{userId} document with their salonId.
+    // For this app, the user document is nested under the salon.
+    // We can't know the salonId from just the user.uid.
+    // This is a known issue with the current data model. We'll use a hardcoded salonId for now.
+    // The salonId should have been stored on the user's custom claims or in a /users/{uid} doc.
+    return null; // Can't query user profile effectively yet.
+  }, [firestore, user]);
+
+  // FIXME: This is a temporary solution. The salon ID should be retrieved
+  // from the authenticated user's profile or custom claims.
+  const salonId = user?.uid;
+
+  const appointmentsQuery = useMemoFirebase(() => {
     if (!firestore || !salonId) return null;
     return query(collection(firestore, `salons/${salonId}/appointments`));
   }, [firestore, salonId]);
   
-  const customersQuery = useMemo(() => {
+  const customersQuery = useMemoFirebase(() => {
     if (!firestore || !salonId) return null;
     return query(collection(firestore, `salons/${salonId}/customers`));
   }, [firestore, salonId]);
 
-  const staffQuery = useMemo(() => {
+  const staffQuery = useMemoFirebase(() => {
     if (!firestore || !salonId) return null;
     return query(collection(firestore, `salons/${salonId}/staff`));
   }, [firestore, salonId]);
 
-  const servicesQuery = useMemo(() => {
+  const servicesQuery = useMemoFirebase(() => {
     if (!firestore || !salonId) return null;
     return query(collection(firestore, `salons/${salonId}/services`));
   }, [firestore, salonId]);
@@ -44,12 +59,14 @@ export function CalendarView() {
   const isLoading = appointmentsLoading || customersLoading || staffLoading || servicesLoading;
 
   const todayAppointments = useMemo(() => {
-    const realAppointments = appointments?.map(appt => ({...appt, dateTime: (appt.dateTime as any).toDate()})) || [];
+    if (!appointments) return [];
     
-    // Using mock data until appointments are fully migrated to Firestore
-    const allAppointments = [...mockAppointments, ...realAppointments];
+    const realAppointments = appointments?.map(appt => ({
+        ...appt, 
+        dateTime: (appt.dateTime as any)?.toDate ? (appt.dateTime as any).toDate() : new Date(appt.dateTime)
+    })) || [];
     
-    return allAppointments
+    return realAppointments
       .filter(
         (appt) =>
           new Date(appt.dateTime).toDateString() === new Date().toDateString()
