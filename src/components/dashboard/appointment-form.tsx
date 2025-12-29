@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useTransition } from 'react';
+import { useMemo, useState, useTransition } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -26,9 +26,12 @@ import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
 import { CalendarIcon, Loader2 } from 'lucide-react';
 import { format } from 'date-fns';
-import { customers, services, staff } from '@/lib/data';
 import { sendBookingConfirmationAction } from '@/app/dashboard/actions';
 import { useToast } from '@/hooks/use-toast';
+import { useCollection, useFirestore } from '@/firebase';
+import { collection, query } from 'firebase/firestore';
+import type { Customer, Service, Staff } from '@/lib/data';
+
 
 const appointmentFormSchema = z.object({
   customerId: z.string().min(1, 'Please select a customer.'),
@@ -49,6 +52,29 @@ export function AppointmentForm({
 }) {
   const [isPending, startTransition] = useTransition();
   const { toast } = useToast();
+  const firestore = useFirestore();
+
+  // TODO: The salonId should be dynamic based on the logged-in user's salon.
+  const salonId = 'salon_123';
+
+  const customersQuery = useMemo(() => {
+    if (!firestore || !salonId) return null;
+    return query(collection(firestore, `salons/${salonId}/customers`));
+  }, [firestore, salonId]);
+
+  const servicesQuery = useMemo(() => {
+    if (!firestore || !salonId) return null;
+    return query(collection(firestore, `salons/${salonId}/services`));
+  }, [firestore, salonId]);
+
+  const staffQuery = useMemo(() => {
+    if (!firestore || !salonId) return null;
+    return query(collection(firestore, `salons/${salonId}/staff`));
+  }, [firestore, salonId]);
+
+  const { data: customers, isLoading: customersLoading } = useCollection<Customer>(customersQuery);
+  const { data: services, isLoading: servicesLoading } = useCollection<Service>(servicesQuery);
+  const { data: staff, isLoading: staffLoading } = useCollection<Staff>(staffQuery);
 
   const form = useForm<AppointmentFormValues>({
     resolver: zodResolver(appointmentFormSchema),
@@ -63,9 +89,9 @@ export function AppointmentForm({
       const appointmentDateTime = new Date(data.dateTime);
       appointmentDateTime.setHours(hours, minutes);
 
-      const customer = customers.find((c) => c.id === data.customerId);
-      const service = services.find((s) => s.id === data.serviceId);
-      const staffMember = staff.find((s) => s.id === data.staffId);
+      const customer = customers?.find((c) => c.id === data.customerId);
+      const service = services?.find((s) => s.id === data.serviceId);
+      const staffMember = staff?.find((s) => s.id === data.staffId);
 
       if (!customer || !service || !staffMember) {
         toast({
@@ -108,6 +134,8 @@ export function AppointmentForm({
     });
   }
 
+  const isLoading = customersLoading || servicesLoading || staffLoading;
+
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
@@ -118,14 +146,14 @@ export function AppointmentForm({
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Customer</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <Select onValueChange={field.onChange} defaultValue={field.value} disabled={isLoading}>
                     <FormControl>
                       <SelectTrigger>
-                        <SelectValue placeholder="Select a customer" />
+                        <SelectValue placeholder={isLoading ? "Loading..." : "Select a customer"} />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      {customers.map((customer) => (
+                      {customers?.map((customer) => (
                         <SelectItem key={customer.id} value={customer.id}>
                           {customer.name}
                         </SelectItem>
@@ -142,14 +170,14 @@ export function AppointmentForm({
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Service</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <Select onValueChange={field.onChange} defaultValue={field.value} disabled={isLoading}>
                     <FormControl>
                       <SelectTrigger>
-                        <SelectValue placeholder="Select a service" />
+                        <SelectValue placeholder={isLoading ? "Loading..." : "Select a service"} />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      {services.map((service) => (
+                      {services?.map((service) => (
                         <SelectItem key={service.id} value={service.id}>
                           {service.name}
                         </SelectItem>
@@ -166,16 +194,16 @@ export function AppointmentForm({
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Staff Member</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <Select onValueChange={field.onChange} defaultValue={field.value} disabled={isLoading}>
                     <FormControl>
                       <SelectTrigger>
-                        <SelectValue placeholder="Select a staff member" />
+                        <SelectValue placeholder={isLoading ? "Loading..." : "Select a staff member"} />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      {staff.map((staff) => (
-                        <SelectItem key={staff.id} value={staff.id}>
-                          {staff.name}
+                      {staff?.map((staffMember) => (
+                        <SelectItem key={staffMember.id} value={staffMember.id}>
+                          {staffMember.name}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -243,8 +271,8 @@ export function AppointmentForm({
 
         </div>
 
-        <Button type="submit" className="w-full" disabled={isPending}>
-          {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+        <Button type="submit" className="w-full" disabled={isPending || isLoading}>
+          {(isPending || isLoading) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
           Book Appointment
         </Button>
       </form>

@@ -1,3 +1,6 @@
+'use client';
+
+import { useMemo } from 'react';
 import { PageHeader } from '@/components/page-header';
 import {
   Table,
@@ -14,7 +17,6 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-import { services } from '@/lib/data';
 import { MoreHorizontal } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -25,8 +27,26 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Badge } from '@/components/ui/badge';
+import { useCollection, useFirestore, useUser } from '@/firebase';
+import { collection, query, where } from 'firebase/firestore';
+import type { Service } from '@/lib/data';
+import { Skeleton } from '@/components/ui/skeleton';
 
 export default function ServicesPage() {
+  const firestore = useFirestore();
+  const { user, isUserLoading } = useUser();
+
+  // TODO: The salonId should be dynamic based on the logged-in user's salon.
+  // For this example, we'll use a hardcoded ID.
+  const salonId = 'salon_123';
+
+  const servicesQuery = useMemo(() => {
+    if (!firestore || !salonId) return null;
+    return query(collection(firestore, `salons/${salonId}/services`));
+  }, [firestore, salonId]);
+
+  const { data: services, isLoading } = useCollection<Service>(servicesQuery);
+
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-IN', {
       style: 'currency',
@@ -34,9 +54,39 @@ export default function ServicesPage() {
     }).format(amount);
   };
 
+  const renderSkeleton = () => {
+    return Array.from({ length: 5 }).map((_, i) => (
+      <TableRow key={i}>
+        <TableCell>
+          <Skeleton className="h-5 w-32" />
+        </TableCell>
+        <TableCell>
+          <Skeleton className="h-5 w-16" />
+        </TableCell>
+        <TableCell className="text-right">
+          <Skeleton className="h-5 w-20 ml-auto" />
+        </TableCell>
+        <TableCell className="text-right">
+          <Skeleton className="h-5 w-12 ml-auto" />
+        </TableCell>
+        <TableCell>
+          <div className="flex justify-end">
+            <Skeleton className="h-8 w-8" />
+          </div>
+        </TableCell>
+      </TableRow>
+    ));
+  };
+
   return (
     <div className="grid flex-1 items-start gap-4 md:gap-8">
-      <PageHeader title="Services" actionButtonText="Add Service" onActionButtonClick={() => {alert("Add new service dialog would open here.")}}/>
+      <PageHeader
+        title="Services"
+        actionButtonText="Add Service"
+        onActionButtonClick={() => {
+          alert('Add new service dialog would open here.');
+        }}
+      />
       <Card>
         <CardHeader>
           <CardTitle>Manage Your Services</CardTitle>
@@ -58,39 +108,54 @@ export default function ServicesPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {services.map((service) => (
-                <TableRow key={service.id}>
-                  <TableCell className="font-medium">{service.name}</TableCell>
-                  <TableCell>
-                    <Badge variant="secondary">{service.category}</Badge>
-                  </TableCell>
-                  <TableCell className="text-right">
-                    {formatCurrency(service.price)}
-                  </TableCell>
-                  <TableCell className="text-right">
-                    {service.duration}
-                  </TableCell>
-                  <TableCell>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button
-                          aria-haspopup="true"
-                          size="icon"
-                          variant="ghost"
-                        >
-                          <MoreHorizontal className="h-4 w-4" />
-                          <span className="sr-only">Toggle menu</span>
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                        <DropdownMenuItem>Edit</DropdownMenuItem>
-                        <DropdownMenuItem>Delete</DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
+              {isLoading || isUserLoading ? (
+                renderSkeleton()
+              ) : services && services.length > 0 ? (
+                services.map((service) => (
+                  <TableRow key={service.id}>
+                    <TableCell className="font-medium">
+                      {service.name}
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant="secondary">{service.category}</Badge>
+                    </TableCell>
+                    <TableCell className="text-right">
+                      {formatCurrency(service.price)}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      {service.duration}
+                    </TableCell>
+                    <TableCell>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button
+                            aria-haspopup="true"
+                            size="icon"
+                            variant="ghost"
+                          >
+                            <MoreHorizontal className="h-4 w-4" />
+                            <span className="sr-only">Toggle menu</span>
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                          <DropdownMenuItem>Edit</DropdownMenuItem>
+                          <DropdownMenuItem>Delete</DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </TableCell>
+                  </TableRow>
+                ))
+              ) : (
+                <TableRow>
+                  <TableCell
+                    colSpan={5}
+                    className="h-24 text-center text-muted-foreground"
+                  >
+                    No services found for this salon.
                   </TableCell>
                 </TableRow>
-              ))}
+              )}
             </TableBody>
           </Table>
         </CardContent>

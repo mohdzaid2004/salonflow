@@ -28,14 +28,9 @@ export type Appointment = {
   status: 'booked' | 'completed' | 'cancelled';
 };
 
-export const services: Service[] = [
-  { id: '1', name: 'Men\'s Haircut', duration: 30, price: 300, gstPercent: 18, category: 'Hair' },
-  { id: '2', name: 'Women\'s Haircut', duration: 60, price: 700, gstPercent: 18, category: 'Hair' },
-  { id: '3', name: 'Hair Coloring', duration: 120, price: 3000, gstPercent: 18, category: 'Hair' },
-  { id: '4', name: 'Classic Manicure', duration: 45, price: 500, gstPercent: 18, category: 'Nails' },
-  { id: '5', name: 'Gel Pedicure', duration: 60, price: 900, gstPercent: 18, category: 'Nails' },
-  { id: '6', name: 'Cleanup Facial', duration: 45, price: 800, gstPercent: 18, category: 'Skin' },
-];
+// Mock data is being kept for now to ensure the calendar view functions
+// while other parts of the app are migrated to Firestore.
+export const services: Service[] = [];
 
 export const staff: Staff[] = [
   { id: '1', name: 'Ravi Kumar', specialties: ['Hair', 'Coloring'] },
@@ -52,26 +47,26 @@ export const customers: Customer[] = [
 const now = new Date();
 export const appointments: Appointment[] = [
   {
-    id: '1',
+    id: 'mock-1',
     customerId: '1',
     staffId: '1',
-    serviceIds: ['1'],
+    serviceIds: ['1'], // Corresponds to a service that will be in Firestore
     dateTime: new Date(now.getFullYear(), now.getMonth(), now.getDate(), 9, 30),
     status: 'booked',
   },
   {
-    id: '2',
+    id: 'mock-2',
     customerId: '2',
     staffId: '2',
-    serviceIds: ['4', '6'],
+    serviceIds: ['4', '6'], // Corresponds to services that will be in Firestore
     dateTime: new Date(now.getFullYear(), now.getMonth(), now.getDate(), 11, 0),
     status: 'booked',
   },
   {
-    id: '3',
+    id: 'mock-3',
     customerId: '3',
     staffId: '3',
-    serviceIds: ['2'],
+    serviceIds: ['2'], // Corresponds to a service that will be in Firestore
     dateTime: new Date(now.getFullYear(), now.getMonth(), now.getDate(), 14, 0),
     status: 'completed',
   },
