@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useMemoFirebase, useCollection, useFirestore, useUser } from '@/firebase';
 import { PageHeader } from '@/components/page-header';
 import {
   Table,
@@ -27,8 +27,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Badge } from '@/components/ui/badge';
-import { useCollection, useFirestore, useUser } from '@/firebase';
-import { collection, query, where } from 'firebase/firestore';
+import { collection, query } from 'firebase/firestore';
 import type { Service } from '@/lib/data';
 import { Skeleton } from '@/components/ui/skeleton';
 
@@ -36,11 +35,9 @@ export default function ServicesPage() {
   const firestore = useFirestore();
   const { user, isUserLoading } = useUser();
 
-  // TODO: The salonId should be dynamic based on the logged-in user's salon.
-  // For this example, we'll use a hardcoded ID.
-  const salonId = 'salon_123';
+  const salonId = user?.uid;
 
-  const servicesQuery = useMemo(() => {
+  const servicesQuery = useMemoFirebase(() => {
     if (!firestore || !salonId) return null;
     return query(collection(firestore, `salons/${salonId}/services`));
   }, [firestore, salonId]);
