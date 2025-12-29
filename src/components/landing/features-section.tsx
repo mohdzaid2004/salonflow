@@ -23,13 +23,9 @@ const features = [
     description: 'Generate GST-compliant invoices and receipts effortlessly. Track payments via Cash, UPI, or Card.',
   },
   {
-    icon: (
-        <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10 text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M17.3 2.7a.3.3 0 0 0-.3-.3h-11a.3.3 0 0 0-.3.3L3.1 21.3a.3.3 0 0 0 .3.3h17.2a.3.3 0 0 0 .3-.3zM8.3 13a.4.4 0 0 1-.4.4H6.2a.4.4 0 0 1-.4-.4v-2.2a.4.4 0 0 1 .4-.4h1.7a.4.4 0 0 1 .4.4Zm5.1 0a.4.4 0 0 1-.4.4h-1.7a.4.4 0 0 1-.4-.4v-2.2a.4.4 0 0 1 .4-.4h1.7a.4.4 0 0 1 .4.4Zm5.1 0a.4.4 0 0 1-.4.4h-1.7a.4.4 0 0 1-.4-.4v-2.2a.4.4 0 0 1 .4-.4h1.7a.4.4 0 0 1 .4.4Z" />
-        </svg>
-    ),
-    title: 'WhatsApp Notifications',
-    description: 'Keep your customers informed with automated WhatsApp booking confirmations, reminders, and updates.',
+    icon: <Users className="h-10 w-10 text-primary" />,
+    title: 'Customer Management',
+    description: 'Keep track of your customer base, their visit history, and preferences to provide a personalized experience.',
   },
 ];
 

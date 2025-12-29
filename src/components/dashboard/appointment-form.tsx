@@ -78,9 +78,11 @@ export function AppointmentForm({
       
       toast({
         title: 'Booking Appointment...',
-        description: 'Please wait while we send the confirmation.',
+        description: 'Please wait while we book the appointment.',
       });
 
+      // The AI action is removed, we'll just simulate a booking.
+      // In a real app, you would save this to a database.
       const result = await sendBookingConfirmationAction({
         customerName: customer.name,
         salonName: 'My Awesome Salon',
@@ -93,14 +95,14 @@ export function AppointmentForm({
       if (result.success) {
         toast({
           title: 'Success!',
-          description: 'Appointment booked and confirmation sent.',
+          description: 'Appointment booked successfully.',
         });
         setOpen(false);
       } else {
         toast({
           variant: 'destructive',
           title: 'Booking Failed',
-          description: result.error || 'An unknown error occurred.',
+          description: 'An unknown error occurred.',
         });
       }
     });
@@ -243,7 +245,7 @@ export function AppointmentForm({
 
         <Button type="submit" className="w-full" disabled={isPending}>
           {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-          Book Appointment & Send Confirmation
+          Book Appointment
         </Button>
       </form>
     </Form>
