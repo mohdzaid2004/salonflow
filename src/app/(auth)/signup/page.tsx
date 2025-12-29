@@ -86,6 +86,7 @@ export default function SignupPage() {
           userId: firebaseUser.uid,
           salonName: data.salonName,
           phone: data.phone,
+          email: data.email,
         });
 
         // If the server action fails, we throw an error to be caught below.
