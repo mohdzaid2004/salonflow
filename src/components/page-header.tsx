@@ -1,5 +1,5 @@
-import { Button } from '@/components/ui/button';
-import { PlusCircle } from 'lucide-react';
+'use client';
+
 import { usePathname } from 'next/navigation';
 import { MainNavItems } from './dashboard/main-nav';
 
