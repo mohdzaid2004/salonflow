@@ -28,18 +28,14 @@ import { useAuth, useUser } from '@/firebase';
 import { Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { FirebaseError } from 'firebase/app';
-import { updateProfile, createUserWithEmailAndPassword } from 'firebase/auth';
-import { seedInitialDataForSalon } from '../actions';
+import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
 
+// Simplified schema: Does not need salon name or phone for initial auth.
 const signupFormSchema = z.object({
-  salonName: z
-    .string()
-    .min(2, { message: 'Salon name must be at least 2 characters.' }),
   email: z.string().email({ message: 'Please enter a valid email address.' }),
   password: z
     .string()
     .min(6, { message: 'Password must be at least 6 characters.' }),
-  phone: z.string().min(10, 'Please enter a valid 10-digit phone number.'),
 });
 
 type SignupFormValues = z.infer<typeof signupFormSchema>;
@@ -54,10 +50,8 @@ export default function SignupPage() {
   const form = useForm<SignupFormValues>({
     resolver: zodResolver(signupFormSchema),
     defaultValues: {
-      salonName: '',
       email: '',
       password: '',
-      phone: '',
     },
   });
 
@@ -70,6 +64,7 @@ export default function SignupPage() {
   const onSubmit = async (data: SignupFormValues) => {
     setIsSubmitting(true);
     try {
+      // Step 1: Just create the user in Firebase Auth.
       const userCredential = await createUserWithEmailAndPassword(
         auth,
         data.email,
@@ -78,31 +73,18 @@ export default function SignupPage() {
       
       const firebaseUser = userCredential.user;
 
+      // Step 2: Set a display name (optional but good practice).
       if (firebaseUser) {
         await updateProfile(firebaseUser, { displayName: "Owner" });
-
-        // This is the critical step. It MUST succeed.
-        const result = await seedInitialDataForSalon({
-          userId: firebaseUser.uid,
-          salonName: data.salonName,
-          phone: data.phone,
-          email: data.email,
-        });
-
-        // If the server action fails, we throw an error to be caught below.
-        if (!result.success || result.error) {
-          throw new Error(result.error || 'Failed to set up your salon account.');
-        }
-
-      } else {
-        throw new Error('User account could not be created in Firebase.');
       }
 
+      // NO MORE DATABASE OPERATIONS HERE.
+      // The onAuthStateChanged listener in FirebaseProvider will handle the redirect.
       toast({
         title: 'Account Created!',
-        description: "We're redirecting you to your new dashboard.",
+        description: "We're redirecting you to your dashboard.",
       });
-      // The onAuthStateChanged listener in FirebaseProvider will handle the redirect.
+
     } catch (error) {
       let errorMessage = 'An unknown error occurred. Please try again.';
       if (error instanceof FirebaseError) {
@@ -111,7 +93,6 @@ export default function SignupPage() {
             'This email is already in use. Please log in or use a different email.';
         }
       } else if (error instanceof Error) {
-        // This will now catch errors from the seedInitialDataForSalon action
         errorMessage = error.message;
       }
       toast({
@@ -135,27 +116,14 @@ export default function SignupPage() {
   return (
     <Card>
       <CardHeader className="space-y-1 text-center">
-        <CardTitle className="text-2xl">Create your Salon Account</CardTitle>
+        <CardTitle className="text-2xl">Create an Account</CardTitle>
         <CardDescription>
-          Start your 14-day free trial. No credit card required.
+          Get started with your new salon management dashboard.
         </CardDescription>
       </CardHeader>
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)}>
           <CardContent className="space-y-4">
-             <FormField
-              control={form.control}
-              name="salonName"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Salon Name</FormLabel>
-                  <FormControl>
-                    <Input placeholder="My Awesome Salon" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
             <FormField
               control={form.control}
               name="email"
@@ -181,19 +149,6 @@ export default function SignupPage() {
                   <FormLabel>Password</FormLabel>
                   <FormControl>
                     <Input type="password" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-             <FormField
-              control={form.control}
-              name="phone"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Phone Number</FormLabel>
-                  <FormControl>
-                    <Input placeholder="9876543210" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>

@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useEffect } from 'react';
@@ -17,10 +16,7 @@ import {
   SidebarFooter,
 } from '@/components/ui/sidebar';
 import { Separator } from '@/components/ui/separator';
-import { useDoc, useFirestore, useUser, useMemoFirebase } from '@/firebase';
-import { doc } from 'firebase/firestore';
-import type { Salon } from '@/lib/data';
-import { Skeleton } from '@/components/ui/skeleton';
+import { useUser } from '@/firebase';
 import { HeaderActionsProvider } from '@/components/dashboard/header-actions-context';
 import { PageHeader } from '@/components/page-header';
 import { Loader2 } from 'lucide-react';
@@ -31,24 +27,16 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   const { user, isUserLoading } = useUser();
-  const firestore = useFirestore();
   const router = useRouter();
 
+  // Effect to protect the route.
   useEffect(() => {
     if (!isUserLoading && !user) {
       router.push('/login');
     }
   }, [user, isUserLoading, router]);
 
-  const salonId = user?.uid;
-
-  const salonDocRef = useMemoFirebase(() => {
-    if (!firestore || !salonId) return null;
-    return doc(firestore, 'salons', salonId);
-  }, [firestore, salonId]);
-
-  const { data: salon, isLoading: isSalonLoading } = useDoc<Salon>(salonDocRef);
-  
+  // Main loading state while checking user auth.
   if (isUserLoading || !user) {
     return (
       <div className="flex h-screen w-full items-center justify-center">
@@ -57,6 +45,7 @@ export default function DashboardLayout({
     );
   }
 
+  // Once user is confirmed, render the layout.
   return (
     <HeaderActionsProvider>
       <SidebarProvider>
@@ -65,21 +54,12 @@ export default function DashboardLayout({
             <div className="flex h-16 items-center gap-2 border-b p-2">
               <Logo className="h-8 w-8 shrink-0 text-primary" />
               <div className="flex flex-col overflow-hidden">
-                {isSalonLoading ? (
-                  <>
-                    <Skeleton className="h-6 w-24" />
-                    <Skeleton className="mt-1 h-4 w-32" />
-                  </>
-                ) : (
-                  <>
-                    <span className="truncate font-headline text-lg">
-                      {salon?.name || 'SalonFlow'}
-                    </span>
-                    <span className="truncate text-xs text-muted-foreground">
-                      {salon?.name || 'Your Salon'}
-                    </span>
-                  </>
-                )}
+                <span className="truncate font-headline text-lg">
+                  SalonFlow
+                </span>
+                <span className="truncate text-xs text-muted-foreground">
+                  Your Dashboard
+                </span>
               </div>
             </div>
           </SidebarHeader>
@@ -97,7 +77,7 @@ export default function DashboardLayout({
           <header className="sticky top-0 z-10 flex h-16 items-center gap-4 border-b bg-background px-4 sm:px-6">
             <SidebarTrigger className="md:hidden" />
             <div className="flex items-center gap-4">
-               <PageHeader />
+              <PageHeader />
             </div>
             <div className="ml-auto flex items-center gap-2">
               <HeaderActions />
