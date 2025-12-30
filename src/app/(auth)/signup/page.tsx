@@ -29,7 +29,7 @@ import { Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { FirebaseError } from 'firebase/app';
 import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
-import { createSalonForUser } from './actions';
+import { createSalonForUser } from '../actions';
 
 // Add salon name to the schema
 const signupFormSchema = z.object({
