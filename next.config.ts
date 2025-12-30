@@ -30,6 +30,9 @@ const nextConfig: NextConfig = {
       },
     ],
   },
+  experimental: {
+    turbopack: true
+  }
 };
 
 export default nextConfig;
