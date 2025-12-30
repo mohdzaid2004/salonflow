@@ -1,6 +1,7 @@
 'use client';
 
-import { useMemoFirebase, useCollection, useFirestore, useUser } from '@/firebase';
+import { useMemo, useState, useEffect } from 'react';
+import { useCollection, useFirestore, useUser, useMemoFirebase } from '@/firebase';
 import {
   Table,
   TableBody,
@@ -16,6 +17,13 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog';
 import { MoreHorizontal, PlusCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -29,22 +37,34 @@ import { collection, query } from 'firebase/firestore';
 import type { Service } from '@/lib/data';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useHeaderActions } from '@/components/dashboard/header-actions-context';
-import { useEffect } from 'react';
+import { AddServiceForm } from '@/components/dashboard/services/add-service-form';
 
 export default function ServicesPage() {
   const firestore = useFirestore();
   const { user, isUserLoading } = useUser();
   const { setActions } = useHeaderActions();
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
 
   useEffect(() => {
     setActions(
-      <Button onClick={() => alert('Add new service dialog would open here.')}>
-        <PlusCircle className="mr-2 h-4 w-4" />
-        Add Service
-      </Button>
+      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <DialogTrigger asChild>
+          <Button>
+            <PlusCircle className="mr-2 h-4 w-4" />
+            Add Service
+          </Button>
+        </DialogTrigger>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Add a New Service</DialogTitle>
+          </DialogHeader>
+          <AddServiceForm setOpen={setIsDialogOpen} />
+        </DialogContent>
+      </Dialog>
     );
+    // Cleanup on unmount
     return () => setActions(null);
-  }, [setActions]);
+  }, [setActions, isDialogOpen]);
 
 
   const salonId = user?.uid;
@@ -151,5 +171,3 @@ export default function ServicesPage() {
     </div>
   );
 }
-
-    
