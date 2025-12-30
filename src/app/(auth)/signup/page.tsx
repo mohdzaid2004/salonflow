@@ -24,12 +24,12 @@ import {
   FormLabel,
   FormMessage,
 } from '@/components/ui/form';
-import { useAuth, useUser } from '@/firebase';
+import { useAuth, useUser, useFirestore } from '@/firebase';
 import { Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { FirebaseError } from 'firebase/app';
 import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
-import { createSalonForUser } from '../actions';
+import { doc, setDoc } from 'firebase/firestore';
 
 // Add salon name to the schema
 const signupFormSchema = z.object({
@@ -45,6 +45,7 @@ type SignupFormValues = z.infer<typeof signupFormSchema>;
 export default function SignupPage() {
   const { user, isUserLoading } = useUser();
   const auth = useAuth();
+  const firestore = useFirestore();
   const router = useRouter();
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -66,6 +67,16 @@ export default function SignupPage() {
 
   const onSubmit = async (data: SignupFormValues) => {
     setIsSubmitting(true);
+    if (!firestore) {
+      toast({
+        variant: 'destructive',
+        title: 'Sign-up Failed',
+        description: 'Firestore is not available. Please try again later.',
+      });
+      setIsSubmitting(false);
+      return;
+    }
+
     try {
       // Step 1: Create the user in Firebase Auth.
       const userCredential = await createUserWithEmailAndPassword(
@@ -80,16 +91,36 @@ export default function SignupPage() {
         // Step 2: Set a display name (optional but good practice).
         await updateProfile(firebaseUser, { displayName: "Owner" });
 
-        // Step 3: Create the salon and user document in Firestore.
-        const result = await createSalonForUser({
-          userId: firebaseUser.uid,
-          salonName: data.salonName,
-          userEmail: firebaseUser.email!,
+        // Step 3: Create the salon and user documents directly from the client.
+        const salonId = firebaseUser.uid;
+        const salonRef = doc(firestore, 'salons', salonId);
+        const userRef = doc(firestore, `salons/${salonId}/users`, salonId);
+
+        // Create the salon document
+        await setDoc(salonRef, {
+          salonId: salonId,
+          name: data.salonName,
+          address: '',
+          city: '',
+          state: '',
+          phone: '',
+          languageDefault: 'en',
+          timezone: 'IST',
+          subscriptionPlanId: 'free',
+          billingStatus: 'trial',
+          businessHours: '{}',
+          logoUrl: '',
+          gstNumber: '',
         });
 
-        if (!result.success) {
-          throw new Error(result.error || 'Failed to set up your salon. Please contact support.');
-        }
+        // Create the user document (for permissions)
+        await setDoc(userRef, {
+          userId: salonId,
+          salonId: salonId, // Denormalized for security rules
+          name: 'Owner',
+          role: 'owner',
+          phone: '',
+        });
       }
 
       toast({
