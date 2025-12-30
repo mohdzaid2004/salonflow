@@ -30,7 +30,7 @@ export function HeroSection() {
           </p>
           <div className="flex flex-col gap-2 min-[400px]:flex-row">
             <Button asChild size="lg">
-              <Link href="/login">Get Started</Link>
+              <Link href="/signup">Get Started</Link>
             </Button>
           </div>
           <p className="text-sm text-primary-foreground/60">

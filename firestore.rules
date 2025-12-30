@@ -11,8 +11,7 @@
  * Key Security Decisions:
  * - Tenant Isolation: The primary goal is to prevent any user from accessing data outside of their own salon.
  * - No Public Access: All collections and documents require user authentication. There is no publicly readable data.
- * - Salon Creation: Creation of top-level salon documents (`/salons/{salonId}`) is disabled from the client. This is a
- *   sensitive operation that should be handled by a trusted backend process or Cloud Function.
+ * - Salon Creation: Creation of top-level salon documents (`/salons/{salonId}`) is allowed only if the user's UID matches the salonId.
  * - User Self-Management: Users can create and manage their own user profile document, but only within the salon
  *   they are associated with.
  * - Shared Salon Data: All authenticated members of a salon are granted full read and write access to the salon's
@@ -95,7 +94,7 @@ service cloud.firestore {
     match /salons/{salonId} {
       allow get: if isSalonMember(salonId);
       allow list: if false; // Disallow listing all salons in the database for privacy.
-      allow create: if false; // Salon creation should be handled by a trusted backend.
+      allow create: if isOwner(salonId); // Allow a user to create their own salon document.
       allow update: if isSalonMember(salonId) && resource != null;
       allow delete: if false; // Prevent accidental tenant deletion from the client.
     }
@@ -191,5 +190,3 @@ service cloud.firestore {
     }
   }
 }
-
-    

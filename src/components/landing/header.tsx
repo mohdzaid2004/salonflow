@@ -32,6 +32,9 @@ export function Header() {
           <Button variant="ghost" asChild>
             <Link href="/login">Log In</Link>
           </Button>
+          <Button asChild>
+            <Link href="/signup">Sign Up</Link>
+          </Button>
         </div>
       </div>
     </header>
