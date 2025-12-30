@@ -26,10 +26,6 @@ import { collection } from 'firebase/firestore';
 const addServiceFormSchema = z.object({
   name: z.string().min(2, 'Service name must be at least 2 characters.'),
   price: z.coerce.number().min(0, 'Price must be a positive number.'),
-  gstPercent: z.coerce
-    .number()
-    .min(0, 'GST must be a positive number.')
-    .max(100, 'GST cannot exceed 100%.'),
 });
 
 type AddServiceFormValues = z.infer<typeof addServiceFormSchema>;
@@ -51,7 +47,6 @@ export function AddServiceForm({
     defaultValues: {
       name: '',
       price: 0,
-      gstPercent: 18,
     },
   });
 
@@ -100,34 +95,19 @@ export function AddServiceForm({
               </FormItem>
             )}
           />
-          <div className="grid grid-cols-2 gap-4">
-            <FormField
-              control={form.control}
-              name="price"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Price (INR)</FormLabel>
-                  <FormControl>
-                    <Input type="number" placeholder="e.g., 250" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="gstPercent"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>GST (%)</FormLabel>
-                  <FormControl>
-                    <Input type="number" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          </div>
+          <FormField
+            control={form.control}
+            name="price"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Price (INR)</FormLabel>
+                <FormControl>
+                  <Input type="number" placeholder="e.g., 250" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
         </div>
 
         <Button type="submit" className="w-full" disabled={isPending}>
@@ -138,3 +118,5 @@ export function AddServiceForm({
     </Form>
   );
 }
+
+    

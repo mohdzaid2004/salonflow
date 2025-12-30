@@ -130,18 +130,13 @@
         "price": {
           "type": "number",
           "description": "The price of the service."
-        },
-        "gstPercent": {
-          "type": "number",
-          "description": "The GST percentage for the service."
         }
       },
       "required": [
         "serviceId",
         "salonId",
         "name",
-        "price",
-        "gstPercent"
+        "price"
       ]
     },
     "Staff": {
