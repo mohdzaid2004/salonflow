@@ -29,9 +29,11 @@ import { Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { FirebaseError } from 'firebase/app';
 import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
+import { createSalonForUser } from './actions';
 
-// Simplified schema: Does not need salon name or phone for initial auth.
+// Add salon name to the schema
 const signupFormSchema = z.object({
+  salonName: z.string().min(2, { message: 'Salon name must be at least 2 characters.' }),
   email: z.string().email({ message: 'Please enter a valid email address.' }),
   password: z
     .string()
@@ -50,6 +52,7 @@ export default function SignupPage() {
   const form = useForm<SignupFormValues>({
     resolver: zodResolver(signupFormSchema),
     defaultValues: {
+      salonName: '',
       email: '',
       password: '',
     },
@@ -64,7 +67,7 @@ export default function SignupPage() {
   const onSubmit = async (data: SignupFormValues) => {
     setIsSubmitting(true);
     try {
-      // Step 1: Just create the user in Firebase Auth.
+      // Step 1: Create the user in Firebase Auth.
       const userCredential = await createUserWithEmailAndPassword(
         auth,
         data.email,
@@ -73,17 +76,27 @@ export default function SignupPage() {
       
       const firebaseUser = userCredential.user;
 
-      // Step 2: Set a display name (optional but good practice).
       if (firebaseUser) {
+        // Step 2: Set a display name (optional but good practice).
         await updateProfile(firebaseUser, { displayName: "Owner" });
+
+        // Step 3: Create the salon and user document in Firestore.
+        const result = await createSalonForUser({
+          userId: firebaseUser.uid,
+          salonName: data.salonName,
+          userEmail: firebaseUser.email!,
+        });
+
+        if (!result.success) {
+          throw new Error(result.error || 'Failed to set up your salon. Please contact support.');
+        }
       }
 
-      // NO MORE DATABASE OPERATIONS HERE.
-      // The onAuthStateChanged listener in FirebaseProvider will handle the redirect.
       toast({
         title: 'Account Created!',
         description: "We're redirecting you to your dashboard.",
       });
+      // The onAuthStateChanged listener will handle the final redirect
 
     } catch (error) {
       let errorMessage = 'An unknown error occurred. Please try again.';
@@ -116,7 +129,7 @@ export default function SignupPage() {
   return (
     <Card>
       <CardHeader className="space-y-1 text-center">
-        <CardTitle className="text-2xl">Create an Account</CardTitle>
+        <CardTitle className="text-2xl">Create your Salon Account</CardTitle>
         <CardDescription>
           Get started with your new salon management dashboard.
         </CardDescription>
@@ -124,6 +137,22 @@ export default function SignupPage() {
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)}>
           <CardContent className="space-y-4">
+            <FormField
+              control={form.control}
+              name="salonName"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Salon Name</FormLabel>
+                  <FormControl>
+                    <Input
+                      placeholder="Your Salon's Name"
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
             <FormField
               control={form.control}
               name="email"

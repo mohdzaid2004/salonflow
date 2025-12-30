@@ -2,7 +2,6 @@
 
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { HeaderActions } from '@/components/dashboard/header-actions';
 import { MainNav } from '@/components/dashboard/main-nav';
 import { UserNav } from '@/components/dashboard/user-nav';
 import { Logo } from '@/components/logo';
@@ -16,10 +15,14 @@ import {
   SidebarFooter,
 } from '@/components/ui/sidebar';
 import { Separator } from '@/components/ui/separator';
-import { useUser } from '@/firebase';
+import { useDoc, useFirestore, useUser, useMemoFirebase } from '@/firebase';
 import { HeaderActionsProvider } from '@/components/dashboard/header-actions-context';
 import { PageHeader } from '@/components/page-header';
 import { Loader2 } from 'lucide-react';
+import { HeaderActions } from '@/components/dashboard/header-actions';
+import { doc } from 'firebase/firestore';
+import type { Salon } from '@/lib/data';
+import { Skeleton } from '@/components/ui/skeleton';
 
 export default function DashboardLayout({
   children,
@@ -28,6 +31,16 @@ export default function DashboardLayout({
 }) {
   const { user, isUserLoading } = useUser();
   const router = useRouter();
+  const firestore = useFirestore();
+
+  const salonId = user?.uid;
+
+  const salonDocRef = useMemoFirebase(() => {
+    if (!firestore || !salonId) return null;
+    return doc(firestore, 'salons', salonId);
+  }, [firestore, salonId]);
+
+  const { data: salon, isLoading: isSalonLoading } = useDoc<Salon>(salonDocRef);
 
   // Effect to protect the route.
   useEffect(() => {
@@ -37,12 +50,18 @@ export default function DashboardLayout({
   }, [user, isUserLoading, router]);
 
   // Main loading state while checking user auth.
-  if (isUserLoading || !user) {
+  if (isUserLoading) {
     return (
       <div className="flex h-screen w-full items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
     );
+  }
+  
+  // If user is resolved but not logged in, we shouldn't render anything
+  // as the useEffect will trigger a redirect.
+  if (!user) {
+    return null;
   }
 
   // Once user is confirmed, render the layout.
@@ -54,10 +73,14 @@ export default function DashboardLayout({
             <div className="flex h-16 items-center gap-2 border-b p-2">
               <Logo className="h-8 w-8 shrink-0 text-primary" />
               <div className="flex flex-col overflow-hidden">
-                <span className="truncate font-headline text-lg">
-                  SalonFlow
-                </span>
-                <span className="truncate text-xs text-muted-foreground">
+                {isSalonLoading ? (
+                   <Skeleton className="h-6 w-24" />
+                ) : (
+                  <span className="truncate font-headline text-lg">
+                    {salon?.name || 'SalonFlow'}
+                  </span>
+                )}
+                 <span className="truncate text-xs text-muted-foreground">
                   Your Dashboard
                 </span>
               </div>
