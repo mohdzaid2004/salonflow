@@ -100,7 +100,7 @@ export function PricingSection() {
                   variant={plan.isPopular ? 'default' : 'outline'}
                   asChild
                 >
-                  <Link href="/signup">Choose Plan</Link>
+                  <Link href="/login">Choose Plan</Link>
                 </Button>
               </CardFooter>
             </Card>

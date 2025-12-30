@@ -30,11 +30,11 @@ export function HeroSection() {
           </p>
           <div className="flex flex-col gap-2 min-[400px]:flex-row">
             <Button asChild size="lg">
-              <Link href="/signup">Start Your 14-Day Free Trial</Link>
+              <Link href="/login">Get Started</Link>
             </Button>
           </div>
           <p className="text-sm text-primary-foreground/60">
-            No credit card required. Simple setup in minutes.
+            Simple setup in minutes.
           </p>
         </div>
       </div>

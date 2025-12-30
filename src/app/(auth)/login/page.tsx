@@ -15,8 +15,6 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import Link from 'next/link';
 import {
   Form,
   FormControl,
@@ -65,10 +63,8 @@ export default function LoginPage() {
   const onSubmit = async (data: LoginFormValues) => {
     setIsSubmitting(true);
     try {
-      // Use the standard signInWithEmailAndPassword function
       await signInWithEmailAndPassword(auth, data.email, data.password);
-      // The onAuthStateChanged listener in the provider will handle the redirect
-      // by updating the `user` state, which triggers the useEffect above.
+      // The onAuthStateChanged listener in the provider will handle the redirect.
     } catch (error) {
       if (error instanceof FirebaseError) {
         let errorMessage = 'An unknown error occurred. Please try again.';
@@ -113,7 +109,7 @@ export default function LoginPage() {
       <CardHeader className="space-y-1 text-center">
         <CardTitle className="text-2xl">Welcome Back</CardTitle>
         <CardDescription>
-          Enter your credentials to access your salon dashboard.
+          Enter your credentials to access your dashboard.
         </CardDescription>
       </CardHeader>
       <Form {...form}>
@@ -153,12 +149,6 @@ export default function LoginPage() {
               )}
               Log In
             </Button>
-            <div className="text-center text-sm">
-              Don&apos;t have an account?{' '}
-              <Link href="/signup" className="underline" prefetch={false}>
-                Sign up
-              </Link>
-            </div>
           </CardFooter>
         </form>
       </Form>
