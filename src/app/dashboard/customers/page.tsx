@@ -1,4 +1,14 @@
-import { PageHeader } from '@/components/page-header';
+'use client';
+
+import { useMemoFirebase, useCollection, useFirestore, useUser } from '@/firebase';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
 import {
   Card,
   CardContent,
@@ -6,20 +16,141 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
+import { MoreHorizontal } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { collection, query } from 'firebase/firestore';
+import type { Customer } from '@/lib/data';
+import { Skeleton } from '@/components/ui/skeleton';
 
 export default function CustomersPage() {
+  const firestore = useFirestore();
+  const { user, isUserLoading } = useUser();
+
+  const salonId = user?.uid;
+
+  const customersQuery = useMemoFirebase(() => {
+    if (!firestore || !salonId) return null;
+    return query(collection(firestore, `salons/${salonId}/customers`));
+  }, [firestore, salonId]);
+
+  const { data: customers, isLoading } = useCollection<Customer>(customersQuery);
+
+  const getInitials = (name: string) => {
+    return name
+      .split(' ')
+      .map((n) => n[0])
+      .join('');
+  };
+
+  const renderSkeleton = () => {
+    return Array.from({ length: 5 }).map((_, i) => (
+      <TableRow key={i}>
+        <TableCell>
+          <div className="flex items-center gap-4">
+            <Skeleton className="h-10 w-10 rounded-full" />
+            <div className="flex flex-col gap-1">
+              <Skeleton className="h-4 w-24" />
+              <Skeleton className="h-3 w-32" />
+            </div>
+          </div>
+        </TableCell>
+        <TableCell>
+          <Skeleton className="h-4 w-16" />
+        </TableCell>
+        <TableCell>
+          <div className="flex justify-end">
+            <Skeleton className="h-8 w-8" />
+          </div>
+        </TableCell>
+      </TableRow>
+    ));
+  };
+
   return (
     <div className="grid flex-1 items-start gap-4 md:gap-8">
-      <PageHeader title="Customers" />
       <Card>
         <CardHeader>
-          <CardTitle>Customer Management</CardTitle>
+          <CardTitle>Customer List</CardTitle>
           <CardDescription>
-            This section is under construction.
+            Here is a list of all customers for your salon.
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <p>Customer list and CRM features will be available here soon.</p>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Name</TableHead>
+                <TableHead>Phone</TableHead>
+                <TableHead>
+                  <span className="sr-only">Actions</span>
+                </TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {isLoading || isUserLoading ? (
+                renderSkeleton()
+              ) : customers && customers.length > 0 ? (
+                customers.map((customer) => (
+                  <TableRow key={customer.id}>
+                    <TableCell className="font-medium">
+                      <div className="flex items-center gap-4">
+                        <Avatar>
+                          <AvatarFallback>
+                            {getInitials(customer.name)}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div>
+                            <div className="font-medium">{customer.name}</div>
+                            <div className="text-sm text-muted-foreground">{customer.dob || ''}</div>
+                        </div>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      {customer.phone}
+                    </TableCell>
+                    <TableCell>
+                      <div className='flex justify-end'>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button
+                              aria-haspopup="true"
+                              size="icon"
+                              variant="ghost"
+                            >
+                              <MoreHorizontal className="h-4 w-4" />
+                              <span className="sr-only">Toggle menu</span>
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                            <DropdownMenuItem>View Details</DropdownMenuItem>
+                            <DropdownMenuItem>Delete</DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))
+              ) : (
+                <TableRow>
+                  <TableCell
+                    colSpan={3}
+                    className="h-24 text-center text-muted-foreground"
+                  >
+                    No customers found. Use the "Customer Check-in" button to add one.
+                  </TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
         </CardContent>
       </Card>
     </div>

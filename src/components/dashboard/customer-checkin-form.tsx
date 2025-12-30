@@ -16,13 +16,14 @@ import {
 import { Input } from '@/components/ui/input';
 import { Loader2, Search, UserPlus } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { useFirestore, useUser, addDocumentNonBlocking } from '@/firebase';
+import { useFirestore, useUser } from '@/firebase';
 import {
   collection,
   query,
   where,
   getDocs,
   limit,
+  addDoc,
 } from 'firebase/firestore';
 import type { Customer } from '@/lib/data';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
@@ -100,6 +101,7 @@ export function CustomerCheckinForm({
         setStep('create');
       }
     } catch (error) {
+      console.error(error);
       toast({
         variant: 'destructive',
         title: 'Error',
@@ -110,7 +112,7 @@ export function CustomerCheckinForm({
     }
   }
 
-  function onNewCustomerSubmit(data: NewCustomerFormValues) {
+  async function onNewCustomerSubmit(data: NewCustomerFormValues) {
     if (!salonId || !firestore) return;
     setIsCreating(true);
 
@@ -119,21 +121,29 @@ export function CustomerCheckinForm({
       salonId,
       visitHistory: '', // Initialize visit history
     };
-
-    const customersRef = collection(firestore, `salons/${salonId}/customers`);
-    addDocumentNonBlocking(customersRef, customerData);
-
-    toast({
-      title: 'Customer Created',
-      description: `${data.name} has been added to your customers.`,
-    });
-    setIsCreating(false);
-    setOpen(false);
+    
+    try {
+        await addDoc(collection(firestore, `salons/${salonId}/customers`), customerData);
+        toast({
+          title: 'Customer Created',
+          description: `${data.name} has been added to your customers.`,
+        });
+        setIsCreating(false);
+        setOpen(false);
+    } catch (error) {
+        console.error(error);
+        toast({
+          variant: 'destructive',
+          title: 'Error',
+          description: 'Failed to create new customer.',
+        });
+        setIsCreating(false);
+    }
   }
 
   const renderSearchStep = () => (
     <Form {...phoneForm}>
-      <form onSubmit={phoneForm.handleSubmit(onPhoneSubmit)} className="space-y-4">
+      <form onSubmit={phoneForm.handleSubmit(onPhoneSubmit)} className="space-y-4 py-4">
         <FormField
           control={phoneForm.control}
           name="phone"
@@ -177,57 +187,60 @@ export function CustomerCheckinForm({
   );
 
   const renderCreateStep = () => (
-    <Form {...newCustomerForm}>
-      <form onSubmit={newCustomerForm.handleSubmit(onNewCustomerSubmit)} className="space-y-4">
-        <FormField
-          control={newCustomerForm.control}
-          name="phone"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Phone</FormLabel>
-              <FormControl>
-                <Input {...field} readOnly disabled />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        <FormField
-          control={newCustomerForm.control}
-          name="name"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Full Name</FormLabel>
-              <FormControl>
-                <Input placeholder="Enter customer's name" {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        <FormField
-          control={newCustomerForm.control}
-          name="dob"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Date of Birth (Optional)</FormLabel>
-              <FormControl>
-                <Input type="date" {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        <Button type="submit" className="w-full" disabled={isCreating}>
-          {isCreating ? (
-            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-          ) : (
-             <UserPlus className="mr-2 h-4 w-4" />
-          )}
-          Create New Customer
-        </Button>
-      </form>
-    </Form>
+    <div>
+        <p className="text-center text-sm text-muted-foreground py-2">Customer not found. Please add their details.</p>
+        <Form {...newCustomerForm}>
+        <form onSubmit={newCustomerForm.handleSubmit(onNewCustomerSubmit)} className="space-y-4">
+            <FormField
+            control={newCustomerForm.control}
+            name="phone"
+            render={({ field }) => (
+                <FormItem>
+                <FormLabel>Phone</FormLabel>
+                <FormControl>
+                    <Input {...field} readOnly disabled />
+                </FormControl>
+                <FormMessage />
+                </FormItem>
+            )}
+            />
+            <FormField
+            control={newCustomerForm.control}
+            name="name"
+            render={({ field }) => (
+                <FormItem>
+                <FormLabel>Full Name</FormLabel>
+                <FormControl>
+                    <Input placeholder="Enter customer's name" {...field} />
+                </FormControl>
+                <FormMessage />
+                </FormItem>
+            )}
+            />
+            <FormField
+            control={newCustomerForm.control}
+            name="dob"
+            render={({ field }) => (
+                <FormItem>
+                <FormLabel>Date of Birth (Optional)</FormLabel>
+                <FormControl>
+                    <Input type="date" {...field} />
+                </FormControl>
+                <FormMessage />
+                </FormItem>
+            )}
+            />
+            <Button type="submit" className="w-full" disabled={isCreating}>
+            {isCreating ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            ) : (
+                <UserPlus className="mr-2 h-4 w-4" />
+            )}
+            Create New Customer
+            </Button>
+        </form>
+        </Form>
+    </div>
   );
 
   return (
