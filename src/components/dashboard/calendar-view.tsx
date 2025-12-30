@@ -94,7 +94,6 @@ export function CalendarView() {
             <div key={index} className="flex gap-4">
                 <div className="w-20 text-right text-sm">
                     <Skeleton className="h-4 w-16 mb-1" />
-                    <Skeleton className="h-3 w-16" />
                 </div>
                 <div className="relative w-full">
                     <div className="absolute left-0 top-1 h-full w-0.5 bg-border"></div>
@@ -133,16 +132,10 @@ export function CalendarView() {
               const { customer, staffMember, apptServices } = getAppointmentDetails(appt);
               if (!customer || !staffMember) return null; // Don't render if details are missing
 
-              const totalDuration = apptServices.reduce((acc, s) => acc + s.duration, 0);
-              const endTime = new Date(appt.dateTime.getTime() + totalDuration * 60000);
-
               return (
                 <div key={appt.id} className="flex gap-4">
                   <div className="w-20 text-right text-sm text-muted-foreground">
                     <p>{format(appt.dateTime, 'h:mm a')}</p>
-                    <p className="text-xs">
-                        {format(endTime, 'h:mm a')}
-                    </p>
                   </div>
                   <div className="relative w-full">
                     <div className="absolute left-0 top-1 h-full w-0.5 bg-border"></div>
@@ -184,3 +177,5 @@ export function CalendarView() {
     </Card>
   );
 }
+
+    

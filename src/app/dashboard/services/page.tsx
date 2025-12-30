@@ -25,7 +25,6 @@ import {
   DropdownMenuLabel,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Badge } from '@/components/ui/badge';
 import { collection, query } from 'firebase/firestore';
 import type { Service } from '@/lib/data';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -70,14 +69,8 @@ export default function ServicesPage() {
         <TableCell>
           <Skeleton className="h-5 w-32" />
         </TableCell>
-        <TableCell>
-          <Skeleton className="h-5 w-16" />
-        </TableCell>
         <TableCell className="text-right">
           <Skeleton className="h-5 w-20 ml-auto" />
-        </TableCell>
-        <TableCell className="text-right">
-          <Skeleton className="h-5 w-12 ml-auto" />
         </TableCell>
         <TableCell>
           <div className="flex justify-end">
@@ -102,9 +95,7 @@ export default function ServicesPage() {
             <TableHeader>
               <TableRow>
                 <TableHead>Name</TableHead>
-                <TableHead>Category</TableHead>
                 <TableHead className="text-right">Price</TableHead>
-                <TableHead className="text-right">Duration (min)</TableHead>
                 <TableHead>
                   <span className="sr-only">Actions</span>
                 </TableHead>
@@ -119,14 +110,8 @@ export default function ServicesPage() {
                     <TableCell className="font-medium">
                       {service.name}
                     </TableCell>
-                    <TableCell>
-                      <Badge variant="secondary">{service.category}</Badge>
-                    </TableCell>
                     <TableCell className="text-right">
                       {formatCurrency(service.price)}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      {service.duration}
                     </TableCell>
                     <TableCell>
                       <DropdownMenu>
@@ -152,7 +137,7 @@ export default function ServicesPage() {
               ) : (
                 <TableRow>
                   <TableCell
-                    colSpan={5}
+                    colSpan={3}
                     className="h-24 text-center text-muted-foreground"
                   >
                     No services found for this salon.
@@ -166,3 +151,5 @@ export default function ServicesPage() {
     </div>
   );
 }
+
+    

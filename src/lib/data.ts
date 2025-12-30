@@ -11,10 +11,8 @@ export type Salon = {
 export type Service = {
   id: string;
   name: string;
-  duration: number; // in minutes
   price: number;
   gstPercent: number;
-  category: string;
 };
 
 export type Staff = {
@@ -49,3 +47,5 @@ export const staff: Staff[] = [];
 export const customers: Customer[] = [];
 
 export const appointments: Appointment[] = [];
+
+    
