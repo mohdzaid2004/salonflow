@@ -13,11 +13,13 @@ import {
   Users,
   BookUser,
   Settings,
-  IndianRupee
+  IndianRupee,
+  CalendarClock
 } from 'lucide-react';
 
 export const MainNavItems = [
-  { href: '/dashboard', label: 'Dashboard', icon: LayoutGrid },
+  { href: '/dashboard/overview', label: 'Dashboard', icon: LayoutGrid },
+  { href: '/dashboard', label: 'Appointments', icon: CalendarClock },
   { href: '/dashboard/services', label: 'Services', icon: Scissors },
   { href: '/dashboard/staff', label: 'Staff', icon: Users },
   { href: '/dashboard/customers', label: 'Customers', icon: BookUser },
