@@ -38,7 +38,6 @@ import type { Staff } from '@/lib/data';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useHeaderActions } from '@/components/dashboard/header-actions-context';
 import { AddStaffForm } from '@/components/dashboard/staff/add-staff-form';
-import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 
 export default function StaffPage() {
@@ -94,15 +93,6 @@ export default function StaffPage() {
           </div>
         </TableCell>
         <TableCell>
-          <div className="flex gap-2">
-            <Skeleton className="h-5 w-16" />
-            <Skeleton className="h-5 w-20" />
-          </div>
-        </TableCell>
-        <TableCell className="text-right">
-          <Skeleton className="h-4 w-12 ml-auto" />
-        </TableCell>
-        <TableCell>
           <div className="flex justify-end">
             <Skeleton className="h-8 w-8" />
           </div>
@@ -125,8 +115,6 @@ export default function StaffPage() {
             <TableHeader>
               <TableRow>
                 <TableHead>Name</TableHead>
-                <TableHead>Specialties</TableHead>
-                <TableHead className="text-right">Commission</TableHead>
                 <TableHead>
                   <span className="sr-only">Actions</span>
                 </TableHead>
@@ -147,20 +135,6 @@ export default function StaffPage() {
                         </Avatar>
                         <span className="font-medium">{staffMember.name}</span>
                       </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex flex-wrap gap-1">
-                        {staffMember.specialties?.map((spec) => (
-                          <Badge key={spec} variant="secondary">
-                            {spec}
-                          </Badge>
-                        ))}
-                      </div>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      {staffMember.commissionPercent
-                        ? `${staffMember.commissionPercent}%`
-                        : 'N/A'}
                     </TableCell>
                     <TableCell>
                       <div className="flex justify-end">
@@ -188,7 +162,7 @@ export default function StaffPage() {
               ) : (
                 <TableRow>
                   <TableCell
-                    colSpan={4}
+                    colSpan={2}
                     className="h-24 text-center text-muted-foreground"
                   >
                     No staff found. Click "Add Staff" to get started.
@@ -202,3 +176,5 @@ export default function StaffPage() {
     </div>
   );
 }
+
+    

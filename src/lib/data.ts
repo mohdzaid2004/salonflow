@@ -19,9 +19,6 @@ export type Service = {
 export type Staff = {
   id: string;
   name: string;
-  specialties: string[];
-  workingHours: string;
-  commissionPercent: number;
 };
 
 export type Customer = {
@@ -50,3 +47,5 @@ export const staff: Staff[] = [];
 export const customers: Customer[] = [];
 
 export const appointments: Appointment[] = [];
+
+    

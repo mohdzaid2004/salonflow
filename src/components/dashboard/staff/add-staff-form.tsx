@@ -14,7 +14,6 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
 import { Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import {
@@ -26,12 +25,6 @@ import { collection } from 'firebase/firestore';
 
 const addStaffFormSchema = z.object({
   name: z.string().min(2, 'Staff name must be at least 2 characters.'),
-  specialties: z.string().min(1, 'Please enter at least one specialty.'),
-  workingHours: z.string().min(1, 'Please describe their working hours.'),
-  commissionPercent: z.coerce
-    .number()
-    .min(0, 'Commission must be 0 or more.')
-    .max(100, 'Commission cannot exceed 100.'),
 });
 
 type AddStaffFormValues = z.infer<typeof addStaffFormSchema>;
@@ -52,9 +45,6 @@ export function AddStaffForm({
     resolver: zodResolver(addStaffFormSchema),
     defaultValues: {
       name: '',
-      specialties: '',
-      workingHours: 'Mon-Fri: 9am-6pm',
-      commissionPercent: 10,
     },
   });
 
@@ -72,7 +62,6 @@ export function AddStaffForm({
       const staffData = {
         ...data,
         salonId,
-        specialties: data.specialties.split(',').map((s) => s.trim()),
       };
 
       const staffRef = collection(firestore, `salons/${salonId}/staff`);
@@ -103,52 +92,6 @@ export function AddStaffForm({
               </FormItem>
             )}
           />
-          <FormField
-            control={form.control}
-            name="specialties"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Specialties</FormLabel>
-                <FormControl>
-                  <Input
-                    placeholder="e.g., Hair Coloring, Bridal Makeup"
-                    {...field}
-                  />
-                </FormControl>
-                <p className="text-xs text-muted-foreground">Enter specialties separated by commas.</p>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <FormField
-            control={form.control}
-            name="workingHours"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Working Hours</FormLabel>
-                <FormControl>
-                  <Textarea
-                    placeholder="e.g., Mon-Fri: 9am-6pm, Sat: 10am-4pm"
-                    {...field}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-           <FormField
-            control={form.control}
-            name="commissionPercent"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Commission (%)</FormLabel>
-                <FormControl>
-                  <Input type="number" placeholder="e.g., 10" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
         </div>
 
         <Button type="submit" className="w-full" disabled={isPending}>
@@ -159,3 +102,5 @@ export function AddStaffForm({
     </Form>
   );
 }
+
+    
