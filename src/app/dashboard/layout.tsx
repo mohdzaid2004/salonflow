@@ -15,12 +15,14 @@ import {
   SidebarFooter,
 } from '@/components/ui/sidebar';
 import { Separator } from '@/components/ui/separator';
-import { useUser } from '@/firebase';
+import { useDoc, useFirestore, useUser, useMemoFirebase } from '@/firebase';
 import { HeaderActionsProvider } from '@/components/dashboard/header-actions-context';
 import { PageHeader } from '@/components/page-header';
 import { Loader2 } from 'lucide-react';
 import { HeaderActions } from '@/components/dashboard/header-actions';
 import { Skeleton } from '@/components/ui/skeleton';
+import { doc } from 'firebase/firestore';
+import type { Salon } from '@/lib/data';
 
 export default function DashboardLayout({
   children,
@@ -28,6 +30,7 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   const { user, isUserLoading } = useUser();
+  const firestore = useFirestore();
   const router = useRouter();
 
   // Effect to protect the route.
@@ -37,8 +40,15 @@ export default function DashboardLayout({
     }
   }, [user, isUserLoading, router]);
 
+  const salonId = user?.uid;
+  const salonDocRef = useMemoFirebase(() => {
+    if (!firestore || !salonId) return null;
+    return doc(firestore, 'salons', salonId);
+  }, [firestore, salonId]);
+  const { data: salon, isLoading: isSalonLoading } = useDoc<Salon>(salonDocRef);
+
   // Main loading state while checking user auth.
-  if (isUserLoading) {
+  if (isUserLoading || (salonId && isSalonLoading)) {
     return (
       <div className="flex h-screen w-full items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -62,7 +72,7 @@ export default function DashboardLayout({
               <Logo className="h-8 w-8 shrink-0 text-primary" />
               <div className="flex flex-col overflow-hidden">
                 <span className="truncate font-headline text-lg">
-                  SalonFlow
+                  {salon?.name || 'SalonFlow'}
                 </span>
                  <span className="truncate text-xs text-muted-foreground">
                   Your Dashboard
@@ -71,7 +81,7 @@ export default function DashboardLayout({
             </div>
           </SidebarHeader>
           <SidebarContent className="p-2">
-            <MainNav />
+            <MainNav salon={salon} />
           </SidebarContent>
           <SidebarFooter>
             <Separator className="my-2" />

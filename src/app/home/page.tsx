@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { useUser } from '@/firebase';
+import { useDoc, useFirestore, useUser, useMemoFirebase } from '@/firebase';
 import { Loader2, PlusCircle, UserPlus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -10,6 +10,7 @@ import {
   CardContent,
   CardHeader,
   CardTitle,
+  CardDescription,
 } from '@/components/ui/card';
 import {
   Dialog,
@@ -24,12 +25,23 @@ import { CalendarView } from '@/components/dashboard/calendar-view';
 import { Logo } from '@/components/logo';
 import { UserNav } from '@/components/dashboard/user-nav';
 import Link from 'next/link';
+import { doc } from 'firebase/firestore';
+import type { Salon } from '@/lib/data';
+import { Skeleton } from '@/components/ui/skeleton';
 
 export default function HomePage() {
   const { user, isUserLoading } = useUser();
+  const firestore = useFirestore();
   const router = useRouter();
   const [isCheckinOpen, setCheckinOpen] = useState(false);
   const [isAppointmentOpen, setAppointmentOpen] = useState(false);
+  
+  const salonId = user?.uid;
+  const salonDocRef = useMemoFirebase(() => {
+    if (!firestore || !salonId) return null;
+    return doc(firestore, 'salons', salonId);
+  }, [firestore, salonId]);
+  const { data: salon, isLoading: isSalonLoading } = useDoc<Salon>(salonDocRef);
 
   useEffect(() => {
     if (!isUserLoading && !user) {
@@ -37,7 +49,7 @@ export default function HomePage() {
     }
   }, [user, isUserLoading, router]);
 
-  if (isUserLoading || !user) {
+  if (isUserLoading || !user || isSalonLoading) {
     return (
       <div className="flex h-screen w-full items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -50,7 +62,7 @@ export default function HomePage() {
       <header className="sticky top-0 z-10 flex h-16 items-center gap-4 border-b bg-background px-4 sm:px-6">
         <Link href="/dashboard" className="flex items-center gap-2">
           <Logo className="h-8 w-8 text-primary" />
-          <span className="font-headline text-2xl font-bold">SalonFlow</span>
+          <span className="font-headline text-2xl font-bold">{salon?.name || 'SalonFlow'}</span>
         </Link>
         <div className="ml-auto flex items-center gap-2">
           <UserNav />
@@ -78,23 +90,25 @@ export default function HomePage() {
                     <CustomerCheckinForm setOpen={setCheckinOpen} />
                   </DialogContent>
                 </Dialog>
-                <Dialog
-                  open={isAppointmentOpen}
-                  onOpenChange={setAppointmentOpen}
-                >
-                  <DialogTrigger asChild>
-                    <Button size="lg" className="w-full justify-start py-6 text-base">
-                      <PlusCircle className="mr-4 h-5 w-5" />
-                      New Appointment
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent className="sm:max-w-[425px]">
-                    <DialogHeader>
-                      <DialogTitle>New Appointment</DialogTitle>
-                    </DialogHeader>
-                    <AppointmentForm setOpen={setAppointmentOpen} />
-                  </DialogContent>
-                </Dialog>
+                {salon?.appointmentsEnabled && (
+                  <Dialog
+                    open={isAppointmentOpen}
+                    onOpenChange={setAppointmentOpen}
+                  >
+                    <DialogTrigger asChild>
+                      <Button size="lg" className="w-full justify-start py-6 text-base">
+                        <PlusCircle className="mr-4 h-5 w-5" />
+                        New Appointment
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent className="sm:max-w-[425px]">
+                      <DialogHeader>
+                        <DialogTitle>New Appointment</DialogTitle>
+                      </DialogHeader>
+                      <AppointmentForm setOpen={setAppointmentOpen} />
+                    </DialogContent>
+                  </Dialog>
+                )}
               </CardContent>
             </Card>
             <div className="mt-4 text-center text-sm">
@@ -104,7 +118,27 @@ export default function HomePage() {
             </div>
           </div>
           <div className="lg:col-span-2">
-            <CalendarView />
+             {salon?.appointmentsEnabled ? (
+                <CalendarView />
+              ) : (
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Appointments Disabled</CardTitle>
+                    <CardDescription>
+                      The appointment feature is currently turned off.
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <p>
+                      To enable it, go to{' '}
+                      <Link href="/dashboard/settings" className="font-medium text-primary underline-offset-4 hover:underline">
+                        Settings
+                      </Link>{' '}
+                      and turn on appointment management.
+                    </p>
+                  </CardContent>
+                </Card>
+              )}
           </div>
         </div>
       </main>

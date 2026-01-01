@@ -16,23 +16,31 @@ import {
   IndianRupee,
   CalendarClock
 } from 'lucide-react';
+import type { Salon } from '@/lib/data';
 
 export const MainNavItems = [
-  { href: '/dashboard/overview', label: 'Dashboard', icon: LayoutGrid },
-  { href: '/dashboard', label: 'Appointments', icon: CalendarClock },
-  { href: '/dashboard/services', label: 'Services', icon: Scissors },
-  { href: '/dashboard/staff', label: 'Staff', icon: Users },
-  { href: '/dashboard/customers', label: 'Customers', icon: BookUser },
-  { href: '/dashboard/billing', label: 'Billing', icon: IndianRupee },
-  { href: '/dashboard/settings', label: 'Settings', icon: Settings },
+  { href: '/dashboard/overview', label: 'Dashboard', icon: LayoutGrid, feature: 'core' },
+  { href: '/dashboard', label: 'Appointments', icon: CalendarClock, feature: 'appointments' },
+  { href: '/dashboard/services', label: 'Services', icon: Scissors, feature: 'core' },
+  { href: '/dashboard/staff', label: 'Staff', icon: Users, feature: 'core' },
+  { href: '/dashboard/customers', label: 'Customers', icon: BookUser, feature: 'core' },
+  { href: '/dashboard/billing', label: 'Billing', icon: IndianRupee, feature: 'core' },
+  { href: '/dashboard/settings', label: 'Settings', icon: Settings, feature: 'core' },
 ];
 
-export function MainNav() {
+export function MainNav({ salon }: { salon: Salon | null }) {
   const pathname = usePathname();
+
+  const visibleNavItems = MainNavItems.filter(item => {
+    if (item.feature === 'appointments') {
+      return salon?.appointmentsEnabled;
+    }
+    return true;
+  });
 
   return (
     <SidebarMenu>
-      {MainNavItems.map((link) => (
+      {visibleNavItems.map((link) => (
         <SidebarMenuItem key={link.href}>
           <Link href={link.href}>
             <SidebarMenuButton

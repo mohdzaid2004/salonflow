@@ -89,6 +89,7 @@ export default function SignupPage() {
       await setDoc(salonRef, {
         name: data.salonName,
         ownerId: user.uid,
+        appointmentsEnabled: true, // Default to true on creation
         // Add any other default salon properties here
         address: '',
         city: '',
@@ -111,7 +112,7 @@ export default function SignupPage() {
       });
 
       // 5. Redirect to the dashboard
-      router.push('/dashboard');
+      router.push('/home');
 
     } catch (error) {
       console.error(error);

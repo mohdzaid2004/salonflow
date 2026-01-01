@@ -6,6 +6,7 @@ export type Salon = {
   city: string;
   state: string;
   phone: string;
+  appointmentsEnabled?: boolean;
 }
 
 export type Service = {
@@ -46,5 +47,3 @@ export const staff: Staff[] = [];
 export const customers: Customer[] = [];
 
 export const appointments: Appointment[] = [];
-
-    
