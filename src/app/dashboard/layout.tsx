@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { MainNav } from '@/components/dashboard/main-nav';
 import { UserNav } from '@/components/dashboard/user-nav';
@@ -23,6 +23,9 @@ import { HeaderActions } from '@/components/dashboard/header-actions';
 import { doc } from 'firebase/firestore';
 import type { Salon } from '@/lib/data';
 
+const THEME_COLOR_KEY = 'salonflow-theme-color';
+const DEFAULT_THEME_COLOR = '275 100% 25.3%';
+
 export default function DashboardLayout({
   children,
 }: {
@@ -31,6 +34,7 @@ export default function DashboardLayout({
   const { user, isUserLoading } = useUser();
   const firestore = useFirestore();
   const router = useRouter();
+  const [themeColor, setThemeColor] = useState<string | null>(null);
 
   // Effect to protect the route.
   useEffect(() => {
@@ -45,6 +49,29 @@ export default function DashboardLayout({
     return doc(firestore, 'salons', salonId);
   }, [firestore, salonId]);
   const { data: salon, isLoading: isSalonLoading } = useDoc<Salon>(salonDocRef);
+
+  // Effect for efficient theme loading
+  useEffect(() => {
+    // On initial load, try to get color from localStorage for speed
+    const storedColor = localStorage.getItem(THEME_COLOR_KEY);
+    if (storedColor) {
+      setThemeColor(storedColor);
+      document.documentElement.style.setProperty('--primary', storedColor);
+    } else {
+      document.documentElement.style.setProperty('--primary', DEFAULT_THEME_COLOR);
+    }
+
+    // When salon data loads from Firestore, update theme and localStorage
+    if (salon) {
+      const newColor = salon.themeColor || DEFAULT_THEME_COLOR;
+      if (newColor !== themeColor) {
+        setThemeColor(newColor);
+        localStorage.setItem(THEME_COLOR_KEY, newColor);
+        document.documentElement.style.setProperty('--primary', newColor);
+      }
+    }
+  }, [salon, themeColor]);
+
 
   // Main loading state while checking user auth.
   if (isUserLoading || (salonId && isSalonLoading)) {
@@ -63,7 +90,7 @@ export default function DashboardLayout({
 
   // Once user is confirmed, render the layout.
   return (
-    <div style={{ '--primary': salon?.themeColor } as React.CSSProperties}>
+    <div>
       <HeaderActionsProvider>
         <SidebarProvider>
           <Sidebar>
