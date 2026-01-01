@@ -20,7 +20,6 @@ import { HeaderActionsProvider } from '@/components/dashboard/header-actions-con
 import { PageHeader } from '@/components/page-header';
 import { Loader2 } from 'lucide-react';
 import { HeaderActions } from '@/components/dashboard/header-actions';
-import { Skeleton } from '@/components/ui/skeleton';
 import { doc } from 'firebase/firestore';
 import type { Salon } from '@/lib/data';
 
@@ -64,48 +63,50 @@ export default function DashboardLayout({
 
   // Once user is confirmed, render the layout.
   return (
-    <HeaderActionsProvider>
-      <SidebarProvider>
-        <Sidebar>
-          <SidebarHeader>
-            <div className="flex h-16 items-center gap-2 border-b p-2">
-              <Logo className="h-8 w-8 shrink-0 text-primary" />
-              <div className="flex flex-col overflow-hidden">
-                <span className="truncate font-headline text-lg">
-                  {salon?.name || 'SalonFlow'}
-                </span>
-                 <span className="truncate text-xs text-muted-foreground">
-                  Your Dashboard
-                </span>
+    <div style={{ '--primary': salon?.themeColor } as React.CSSProperties}>
+      <HeaderActionsProvider>
+        <SidebarProvider>
+          <Sidebar>
+            <SidebarHeader>
+              <div className="flex h-16 items-center gap-2 border-b p-2">
+                <Logo className="h-8 w-8 shrink-0 text-primary" />
+                <div className="flex flex-col overflow-hidden">
+                  <span className="truncate font-headline text-lg">
+                    {salon?.name || 'SalonFlow'}
+                  </span>
+                  <span className="truncate text-xs text-muted-foreground">
+                    Your Dashboard
+                  </span>
+                </div>
               </div>
-            </div>
-          </SidebarHeader>
-          <SidebarContent className="p-2">
-            <MainNav salon={salon} />
-          </SidebarContent>
-          <SidebarFooter>
-            <Separator className="my-2" />
-            <div className="p-2 text-center text-xs text-muted-foreground">
-              <p>&copy; {new Date().getFullYear()} SalonFlow India</p>
-            </div>
-          </SidebarFooter>
-        </Sidebar>
-        <SidebarInset>
-          <header className="sticky top-0 z-10 flex h-16 items-center gap-4 border-b bg-background px-4 sm:px-6">
-            <SidebarTrigger className="md:hidden" />
-            <div className="flex items-center gap-4">
-              <PageHeader />
-            </div>
-            <div className="ml-auto flex items-center gap-2">
-              <HeaderActions />
-              <UserNav />
-            </div>
-          </header>
-          <main className="flex flex-1 flex-col gap-4 bg-background p-4 md:gap-8 md:p-10">
-            {children}
-          </main>
-        </SidebarInset>
-      </SidebarProvider>
-    </HeaderActionsProvider>
+            </SidebarHeader>
+            <SidebarContent className="p-2">
+              <MainNav salon={salon} />
+            </SidebarContent>
+            <SidebarFooter>
+              <Separator className="my-2" />
+              <div className="p-2 text-center text-xs text-muted-foreground">
+                <p>&copy; {new Date().getFullYear()} SalonFlow India</p>
+              </div>
+            </SidebarFooter>
+          </Sidebar>
+          <SidebarInset>
+            <header className="sticky top-0 z-10 flex h-16 items-center gap-4 border-b bg-background px-4 sm:px-6">
+              <SidebarTrigger className="md:hidden" />
+              <div className="flex items-center gap-4">
+                <PageHeader />
+              </div>
+              <div className="ml-auto flex items-center gap-2">
+                <HeaderActions />
+                <UserNav />
+              </div>
+            </header>
+            <main className="flex flex-1 flex-col gap-4 bg-background p-4 md:gap-8 md:p-10">
+              {children}
+            </main>
+          </SidebarInset>
+        </SidebarProvider>
+      </HeaderActionsProvider>
+    </div>
   );
 }

@@ -62,6 +62,10 @@
         "appointmentsEnabled": {
           "type": "boolean",
           "description": "Indicates whether the appointments feature is enabled for the salon."
+        },
+        "themeColor": {
+          "type": "string",
+          "description": "The HSL value for the primary theme color of the salon."
         }
       },
       "required": [

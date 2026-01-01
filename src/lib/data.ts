@@ -7,6 +7,7 @@ export type Salon = {
   state: string;
   phone: string;
   appointmentsEnabled?: boolean;
+  themeColor?: string;
 }
 
 export type Service = {
