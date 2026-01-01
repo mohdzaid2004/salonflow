@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useDoc, useFirestore, useUser, useMemoFirebase } from '@/firebase';
-import { Loader2, PlusCircle, UserPlus } from 'lucide-react';
+import { Loader2, PlusCircle, User, UserPlus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -26,8 +26,8 @@ import { Logo } from '@/components/logo';
 import { UserNav } from '@/components/dashboard/user-nav';
 import Link from 'next/link';
 import { doc } from 'firebase/firestore';
-import type { Salon } from '@/lib/data';
-import { Skeleton } from '@/components/ui/skeleton';
+import type { Salon, Customer } from '@/lib/data';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 
 export default function HomePage() {
   const { user, isUserLoading } = useUser();
@@ -35,6 +35,7 @@ export default function HomePage() {
   const router = useRouter();
   const [isCheckinOpen, setCheckinOpen] = useState(false);
   const [isAppointmentOpen, setAppointmentOpen] = useState(false);
+  const [lastCheckedInCustomer, setLastCheckedInCustomer] = useState<Customer | null>(null);
   
   const salonId = user?.uid;
   const salonDocRef = useMemoFirebase(() => {
@@ -56,6 +57,10 @@ export default function HomePage() {
       </div>
     );
   }
+
+  const handleCustomerCheckedIn = (customer: Customer) => {
+    setLastCheckedInCustomer(customer);
+  };
 
   return (
     <div className="flex min-h-dvh flex-col bg-background">
@@ -87,7 +92,7 @@ export default function HomePage() {
                     <DialogHeader>
                       <DialogTitle>Customer Check-in</DialogTitle>
                     </DialogHeader>
-                    <CustomerCheckinForm setOpen={setCheckinOpen} />
+                    <CustomerCheckinForm setOpen={setCheckinOpen} onCustomerCheckedIn={handleCustomerCheckedIn} />
                   </DialogContent>
                 </Dialog>
                 {salon?.appointmentsEnabled && (
@@ -111,6 +116,24 @@ export default function HomePage() {
                 )}
               </CardContent>
             </Card>
+            {lastCheckedInCustomer && (
+              <Card className="mt-4">
+                <CardHeader>
+                  <CardTitle className="text-lg">Last Checked-in Customer</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex items-center gap-4">
+                    <Avatar>
+                      <AvatarFallback>{lastCheckedInCustomer.name.charAt(0)}</AvatarFallback>
+                    </Avatar>
+                    <div>
+                      <div className="font-semibold">{lastCheckedInCustomer.name}</div>
+                      <div className="text-sm text-muted-foreground">{lastCheckedInCustomer.phone}</div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
             <div className="mt-4 text-center text-sm">
                 <Link href="/dashboard/overview" className="text-muted-foreground hover:text-primary underline-offset-4 hover:underline">
                     Go to Full Dashboard

@@ -24,6 +24,7 @@ import {
   getDocs,
   limit,
   addDoc,
+  DocumentData,
 } from 'firebase/firestore';
 import type { Customer } from '@/lib/data';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
@@ -47,8 +48,10 @@ type NewCustomerFormValues = z.infer<typeof newCustomerSchema>;
 
 export function CustomerCheckinForm({
   setOpen,
+  onCustomerCheckedIn,
 }: {
   setOpen: (open: boolean) => void;
+  onCustomerCheckedIn?: (customer: Customer) => void;
 }) {
   const { toast } = useToast();
   const firestore = useFirestore();
@@ -58,7 +61,6 @@ export function CustomerCheckinForm({
   const [isSearching, setIsSearching] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
   const [foundCustomer, setFoundCustomer] = useState<Customer | null>(null);
-  const [searchedPhone, setSearchedPhone] = useState<string | null>(null);
   const [step, setStep] = useState<'search' | 'create' | 'found'>('search');
 
   const phoneForm = useForm<PhoneFormValues>({
@@ -93,10 +95,13 @@ export function CustomerCheckinForm({
 
       if (!querySnapshot.empty) {
         const customerDoc = querySnapshot.docs[0];
-        setFoundCustomer({ id: customerDoc.id, ...customerDoc.data() } as Customer);
+        const customer = { id: customerDoc.id, ...customerDoc.data() } as Customer;
+        setFoundCustomer(customer);
+        if (onCustomerCheckedIn) {
+          onCustomerCheckedIn(customer);
+        }
         setStep('found');
       } else {
-        setSearchedPhone(data.phone);
         newCustomerForm.setValue('phone', data.phone);
         setStep('create');
       }
@@ -123,10 +128,19 @@ export function CustomerCheckinForm({
     };
     
     try {
-        await addDoc(collection(firestore, `salons/${salonId}/customers`), customerData);
+        const docRef = await addDoc(collection(firestore, `salons/${salonId}/customers`), customerData);
+        const newCustomer: Customer = {
+          id: docRef.id,
+          name: data.name,
+          phone: data.phone,
+          dob: data.dob
+        };
+        if (onCustomerCheckedIn) {
+          onCustomerCheckedIn(newCustomer);
+        }
         toast({
           title: 'Customer Created',
-          description: `${data.name} has been added to your customers.`,
+          description: `${data.name} has been added to your customers and checked in.`,
         });
         setIsCreating(false);
         setOpen(false);
@@ -236,7 +250,7 @@ export function CustomerCheckinForm({
             ) : (
                 <UserPlus className="mr-2 h-4 w-4" />
             )}
-            Create New Customer
+            Create & Check-in
             </Button>
         </form>
         </Form>
