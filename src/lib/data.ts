@@ -31,3 +31,14 @@ export type Customer = {
   phone: string;
   dob?: string;
 };
+
+export type Appointment = {
+  id: string;
+  salonId: string;
+  customerId: string;
+  customerName: string; // denormalized for easy display
+  staffId: string;
+  serviceIds: string[];
+  date: unknown; // Firebase Timestamp
+  status: 'booked' | 'completed' | 'cancelled';
+};
