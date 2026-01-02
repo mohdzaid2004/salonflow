@@ -149,29 +149,5 @@ service cloud.firestore {
     match /salons/{salonId}/customers/{customerId} {
       allow read, write: if isSalonMember(salonId);
     }
-
-    /**
-     * @description Rules for generic salon data (services, staff, customers, etc.).
-     * @path /salons/{salonId}/appointments/{appointmentId}
-     * @allow Any member of 'salon_123' can create a new appointment document for that salon. (create)
-     * @deny A user who is not a member of 'salon_123' cannot read or write appointments for it. (get/create)
-     * @principle All data within a salon is accessible for read/write to all authenticated members of that salon.
-     */
-    match /salons/{salonId}/appointments/{appointmentId} {
-      allow read, write: if isSalonMember(salonId);
-    }
-
-    /**
-     * @description Rules for generic salon data (services, staff, customers, etc.).
-     * @path /salons/{salonId}/payments/{paymentId}
-     * @allow Any member of 'salon_123' can create a new payment document for that salon. (create)
-     * @deny A user who is not a member of 'salon_123' cannot read or write payments for it. (get/create)
-     * @principle All data within a salon is accessible for read/write to all authenticated members of that salon.
-     */
-    match /salons/{salonId}/payments/{paymentId} {
-      allow read, write: if isSalonMember(salonId);
-    }
   }
 }
-
-    

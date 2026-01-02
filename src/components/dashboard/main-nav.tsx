@@ -13,7 +13,6 @@ import {
   BookUser,
   Settings,
   IndianRupee,
-  CalendarClock,
   Home,
   LayoutGrid,
 } from 'lucide-react';
@@ -22,7 +21,6 @@ import type { Salon } from '@/lib/data';
 export const MainNavItems = [
   { href: '/home', label: 'Home', icon: Home, feature: 'core' },
   { href: '/dashboard/overview', label: 'Overview', icon: LayoutGrid, feature: 'core' },
-  { href: '/dashboard', label: 'Appointments', icon: CalendarClock, feature: 'appointments' },
   { href: '/dashboard/services', label: 'Services', icon: Scissors, feature: 'core' },
   { href: '/dashboard/staff', label: 'Staff', icon: Users, feature: 'core' },
   { href: '/dashboard/customers', label: 'Customers', icon: BookUser, feature: 'core' },
@@ -34,9 +32,7 @@ export function MainNav({ salon }: { salon: Salon | null }) {
   const pathname = usePathname();
 
   const visibleNavItems = MainNavItems.filter(item => {
-    if (item.feature === 'appointments' && !salon?.appointmentsEnabled) {
-      return false;
-    }
+    // This can be extended later if more features are conditional
     return true;
   });
 

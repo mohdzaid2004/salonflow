@@ -5,7 +5,11 @@ export default {
   content: [
     './src/pages/**/*.{js,ts,jsx,tsx,mdx}',
     './src/components/**/*.{js,ts,jsx,tsx,mdx}',
-    './src/app/**/*.tsx',
+    './src/app/*.tsx',
+    './src/app/layout.tsx',
+    './src/app/(auth)/**/*.tsx',
+    './src/app/dashboard/**/*.tsx',
+    './src/app/home/**/*.tsx',
   ],
   theme: {
     extend: {

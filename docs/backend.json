@@ -234,95 +234,6 @@
         "visitHistory"
       ]
     },
-    "Appointment": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
-      "title": "Appointment",
-      "type": "object",
-      "description": "Represents an appointment booked at a salon.",
-      "properties": {
-        "appointmentId": {
-          "type": "string",
-          "description": "Unique identifier for the appointment entity."
-        },
-        "salonId": {
-          "type": "string",
-          "description": "Reference to Salon. (Relationship: Salon 1:N Appointment)"
-        },
-        "customerId": {
-          "type": "string",
-          "description": "Reference to Customer. (Relationship: Customer 1:N Appointment)"
-        },
-        "staffId": {
-          "type": "string",
-          "description": "Reference to Staff. (Relationship: Staff 1:N Appointment)"
-        },
-        "serviceIds": {
-          "type": "array",
-          "description": "References to Services. (Relationship: Appointment N:N Service)",
-          "items": {
-            "type": "string"
-          }
-        },
-        "dateTime": {
-          "type": "string",
-          "description": "The date and time of the appointment.",
-          "format": "date-time"
-        },
-        "status": {
-          "type": "string",
-          "description": "The status of the appointment (e.g., booked, completed, cancelled)."
-        },
-        "totalAmount": {
-          "type": "number",
-          "description": "The total amount of the appointment."
-        }
-      },
-      "required": [
-        "appointmentId",
-        "salonId",
-        "customerId",
-        "staffId",
-        "serviceIds",
-        "dateTime",
-        "status",
-        "totalAmount"
-      ]
-    },
-    "Payment": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
-      "title": "Payment",
-      "type": "object",
-      "description": "Represents a payment made for an appointment.",
-      "properties": {
-        "paymentId": {
-          "type": "string",
-          "description": "Unique identifier for the payment entity."
-        },
-        "salonId": {
-          "type": "string",
-          "description": "Reference to Salon. (Relationship: Salon 1:N Payment)"
-        },
-        "appointmentId": {
-          "type": "string",
-          "description": "Reference to Appointment. (Relationship: Appointment 1:1 Payment)"
-        },
-        "method": {
-          "type": "string",
-          "description": "The payment method used (e.g., cash, UPI, card)."
-        },
-        "status": {
-          "type": "string",
-          "description": "The status of the payment."
-        }
-      },
-      "required": [
-        "paymentId",
-        "salonId",
-        "appointmentId",
-        "method",
-        "status"
-      ]
-    },
     "SubscriptionPlan": {
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "SubscriptionPlan",
@@ -482,50 +393,8 @@
             }
           ]
         }
-      },
-      {
-        "path": "/salons/{salonId}/appointments/{appointmentId}",
-        "definition": {
-          "entityName": "Appointment",
-          "schema": {
-            "$ref": "#/backend/entities/Appointment"
-          },
-          "description": "Represents an appointment booked at a salon. Includes denormalized 'salonId' for authorization independence.",
-          "params": [
-            {
-              "name": "salonId",
-              "description": "Unique identifier for the salon."
-            },
-            {
-              "name": "appointmentId",
-              "description": "Unique identifier for the appointment."
-            }
-          ]
-        }
-      },
-      {
-        "path": "/salons/{salonId}/payments/{paymentId}",
-        "definition": {
-          "entityName": "Payment",
-          "schema": {
-            "$ref": "#/backend/entities/Payment"
-          },
-          "description": "Represents a payment made for an appointment. Includes denormalized 'salonId' for authorization independence.",
-          "params": [
-            {
-              "name": "salonId",
-              "description": "Unique identifier for the salon."
-            },
-            {
-              "name": "paymentId",
-              "description": "Unique identifier for the payment."
-            }
-          ]
-        }
       }
     ],
     "reasoning": "This Firestore structure is designed for a multi-tenant Salon Management SaaS application. The top-level collection, `salons`, represents individual salons. Each salon's data is then stored in subcollections under its respective document. This approach ensures data isolation and scalability for multiple salons within the same application instance.\n\nKey features of this structure:\n\n1.  **Multi-Tenancy:** The `salons` collection serves as the root for tenant isolation. Each salon has its own set of subcollections, preventing data mixing.\n2.  **Authorization Independence:** The `salonId` is present in every document within a salon's subcollections (e.g., `/salons/{salonId}/users/{userId}`). This denormalization allows security rules to validate that a user or resource belongs to the correct salon without needing to perform costly `get()` operations to retrieve parent data. The rule can simply check `request.resource.data.salonId == resource.data.salonId`.\n3.  **QAPs (Rules are not Filters):** The structure facilitates secure `list` operations. For example, listing all `users` associated with a particular `salonId` can be secured by ensuring the `salonId` in the requested documents matches the `salonId` of the user making the request.\n4. **Ownership:** Using hierarchical paths such as `/salons/{salonId}/users/{userId}` establishes a clear ownership model where each document inherently belongs to a specific salon. This simplifies security rules based on ownership.\n\nThis structure also supports easy querying within a specific salon's data. For example, fetching all appointments for a specific staff member in a salon is straightforward using collection group queries (once enabled).\n\nThis design avoids hierarchical authorization dependencies to support atomic operations and simplifies debugging. All rules can rely solely on `request.auth.uid` and the `salonId` denormalized into each document for authorization."
   }
 }
-
-    
