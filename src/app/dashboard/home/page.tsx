@@ -16,7 +16,7 @@ export default function HomePage() {
   return (
     <div className="flex h-full flex-col items-center justify-center">
       <div className="w-full max-w-lg">
-        <Card>
+        <Card className="py-4 mb-8">
           <CardHeader className="items-center text-center">
              <div className="mb-4 flex items-center gap-2">
                 <Logo className="h-8 w-8 text-primary" />
