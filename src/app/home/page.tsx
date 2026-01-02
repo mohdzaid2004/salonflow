@@ -28,6 +28,7 @@ import Link from 'next/link';
 import { doc } from 'firebase/firestore';
 import type { Salon, Customer } from '@/lib/data';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { cn } from '@/lib/utils';
 
 export default function HomePage() {
   const { user, isUserLoading } = useUser();
@@ -65,7 +66,7 @@ export default function HomePage() {
   return (
     <div className="flex min-h-dvh flex-col bg-background">
       <header className="sticky top-0 z-10 flex h-16 items-center gap-4 border-b bg-background px-4 sm:px-6">
-        <Link href="/dashboard" className="flex items-center gap-2">
+        <Link href="/dashboard/overview" className="flex items-center gap-2">
           <Logo className="h-8 w-8 text-primary" />
           <span className="font-headline text-2xl font-bold">{salon?.name || 'SalonFlow'}</span>
         </Link>
@@ -74,8 +75,8 @@ export default function HomePage() {
         </div>
       </header>
       <main className="flex-1 p-4 md:p-8">
-        <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
-          <div className="lg:col-span-1">
+        <div className={cn("grid grid-cols-1 gap-8", salon?.appointmentsEnabled && "lg:grid-cols-3")}>
+          <div className={cn("lg:col-span-1", !salon?.appointmentsEnabled && "max-w-md mx-auto w-full")}>
             <Card>
               <CardHeader>
                 <CardTitle>Check In</CardTitle>
@@ -140,29 +141,11 @@ export default function HomePage() {
                 </Link>
             </div>
           </div>
-          <div className="lg:col-span-2">
-             {salon?.appointmentsEnabled ? (
+          {salon?.appointmentsEnabled && (
+            <div className="lg:col-span-2">
                 <CalendarView />
-              ) : (
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Appointments Disabled</CardTitle>
-                    <CardDescription>
-                      The appointment feature is currently turned off.
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <p>
-                      To enable it, go to{' '}
-                      <Link href="/dashboard/settings" className="font-medium text-primary underline-offset-4 hover:underline">
-                        Settings
-                      </Link>{' '}
-                      and turn on appointment management.
-                    </p>
-                  </CardContent>
-                </Card>
-              )}
-          </div>
+            </div>
+          )}
         </div>
       </main>
     </div>
