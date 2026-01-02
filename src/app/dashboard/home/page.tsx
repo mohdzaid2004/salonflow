@@ -36,7 +36,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { Loader2, Search } from 'lucide-react';
+import { Loader2, Search, ArrowRight } from 'lucide-react';
 import { Logo } from '@/components/logo';
 import { useFirestore, useUser, useCollection, useMemoFirebase } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
@@ -300,6 +300,14 @@ export default function HomePage() {
             </Card>
           )}
 
+      </div>
+
+      <div className="mt-12 flex w-full justify-center">
+        <Button asChild size="lg" variant="outline">
+          <Link href="/dashboard/overview">
+            Go To Dashboard <ArrowRight className="ml-2" />
+          </Link>
+        </Button>
       </div>
 
       {/* New Customer Registration Dialog */}
