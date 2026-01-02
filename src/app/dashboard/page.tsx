@@ -17,6 +17,7 @@ import { useDoc, useFirestore, useUser, useMemoFirebase } from '@/firebase';
 import { doc } from 'firebase/firestore';
 import type { Salon } from '@/lib/data';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { useRouter } from 'next/navigation';
 
 export default function DashboardPage() {
   const { setActions } = useHeaderActions();
@@ -24,6 +25,7 @@ export default function DashboardPage() {
   const [isAppointmentOpen, setAppointmentOpen] = useState(false);
   const { user } = useUser();
   const firestore = useFirestore();
+  const router = useRouter();
 
   const salonId = user?.uid;
   const salonDocRef = useMemoFirebase(() => {
@@ -31,6 +33,13 @@ export default function DashboardPage() {
     return doc(firestore, 'salons', salonId);
   }, [firestore, salonId]);
   const { data: salon, isLoading: isSalonLoading } = useDoc<Salon>(salonDocRef);
+
+  useEffect(() => {
+    // If appointments are disabled, redirect to the main home page
+    if (salon && !salon.appointmentsEnabled) {
+      router.replace('/home');
+    }
+  }, [salon, router]);
 
   useEffect(() => {
     if (salon?.appointmentsEnabled) {
@@ -73,33 +82,13 @@ export default function DashboardPage() {
     return () => setActions(null);
   }, [setActions, isCheckinOpen, isAppointmentOpen, salon]);
 
-  if (isSalonLoading) {
-    return null; // Or a skeleton loader
+  if (isSalonLoading || (salon && !salon.appointmentsEnabled)) {
+    return null; // Or a skeleton loader while redirecting
   }
 
   return (
     <div className="grid flex-1 items-start gap-4 md:gap-8">
-      {salon?.appointmentsEnabled ? (
         <CalendarView />
-      ) : (
-        <Card>
-          <CardHeader>
-            <CardTitle>Appointments Disabled</CardTitle>
-            <CardDescription>
-              The appointment feature is currently turned off.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <p>
-              To enable it, go to{' '}
-              <a href="/dashboard/settings" className="font-medium text-primary underline-offset-4 hover:underline">
-                Settings
-              </a>{' '}
-              and turn on the appointment management feature.
-            </p>
-          </CardContent>
-        </Card>
-      )}
     </div>
   );
 }

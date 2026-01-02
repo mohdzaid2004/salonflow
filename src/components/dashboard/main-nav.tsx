@@ -8,7 +8,6 @@ import {
   SidebarMenuButton,
 } from '@/components/ui/sidebar';
 import {
-  LayoutGrid,
   Scissors,
   Users,
   BookUser,
@@ -33,10 +32,10 @@ export function MainNav({ salon }: { salon: Salon | null }) {
   const pathname = usePathname();
 
   const visibleNavItems = MainNavItems.filter(item => {
-    if (item.feature === 'appointments') {
-      return salon?.appointmentsEnabled;
+    if (item.href === '/dashboard' && !salon?.appointmentsEnabled) {
+      return false;
     }
-    return true; // Show all other core items
+    return true;
   });
 
   return (
