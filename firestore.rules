@@ -63,7 +63,6 @@ service cloud.firestore {
      * This is the core function for enforcing multi-tenancy.
      */
     function isSalonMember(salonId) {
-      // The user must be signed in, and their user profile must exist in the salon's subcollection.
       let userProfile = get(/databases/$(database)/documents/salons/$(salonId)/users/$(request.auth.uid));
       return isSignedIn() && userProfile.data.salonId == salonId;
     }

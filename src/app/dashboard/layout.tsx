@@ -43,11 +43,14 @@ export default function DashboardLayout({
     }
   }, [user, isUserLoading, router]);
 
+  // The user's UID is the salon's ID upon signup.
   const salonId = user?.uid;
   const salonDocRef = useMemoFirebase(() => {
     if (!firestore || !salonId) return null;
     return doc(firestore, 'salons', salonId);
   }, [firestore, salonId]);
+
+  // Fetch the salon document. The dashboard will wait until this is loaded.
   const { data: salon, isLoading: isSalonLoading } = useDoc<Salon>(salonDocRef);
 
   // Effect for efficient theme loading
@@ -73,8 +76,9 @@ export default function DashboardLayout({
   }, [salon, themeColor]);
 
 
-  // Main loading state while checking user auth.
-  if (isUserLoading || (salonId && isSalonLoading)) {
+  // Show a full-page loader while authenticating the user OR fetching the essential salon data.
+  // This prevents child components from rendering and making data requests prematurely.
+  if (isUserLoading || (user && isSalonLoading)) {
     return (
       <div className="flex h-screen w-full items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -88,7 +92,7 @@ export default function DashboardLayout({
     return null;
   }
 
-  // Once user is confirmed, render the layout.
+  // Once user and salon data are confirmed, render the full dashboard layout.
   return (
     <div>
       <HeaderActionsProvider>
