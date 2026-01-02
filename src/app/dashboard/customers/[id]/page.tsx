@@ -91,9 +91,7 @@ export default function CustomerDetailPage() {
 
   return (
     <div className="grid flex-1 items-start gap-4 md:gap-8">
-      <div className="flex items-center justify-between">
-         <PageHeader />
-      </div>
+      <PageHeader />
       <Card>
         <CardHeader className="flex-row items-center gap-4 space-y-0 border-b pb-6">
           <Avatar className="h-16 w-16 text-2xl">

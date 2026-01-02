@@ -39,8 +39,11 @@ export type Appointment = {
   salonId: string;
   customerId: string;
   customerName: string; // denormalized for easy display
+  customerPhone: string; // denormalized for easy display
   staffId: string;
   serviceIds: string[];
   date: unknown; // Firebase Timestamp
   status: 'booked' | 'completed' | 'cancelled';
+  paymentMethod: 'Cash' | 'Card' | 'UPI';
+  amountPaid: number;
 };

@@ -13,7 +13,7 @@ export function PageHeader() {
 
     // Handle dynamic routes like /customers/[id]
     if (pathname.startsWith('/dashboard/customers/')) {
-        return 'Customers';
+        return 'Customer Details';
     }
 
     // Default title

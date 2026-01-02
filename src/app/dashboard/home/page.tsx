@@ -1,7 +1,6 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -12,7 +11,6 @@ import {
   getDocs,
   limit,
   addDoc,
-  DocumentData,
 } from 'firebase/firestore';
 import {
   Card,
@@ -40,9 +38,9 @@ import {
 } from '@/components/ui/dialog';
 import { Loader2, Search } from 'lucide-react';
 import { Logo } from '@/components/logo';
-import { useFirestore, useUser } from '@/firebase';
+import { useFirestore, useUser, useCollection, useMemoFirebase } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
-import type { Customer } from '@/lib/data';
+import type { Customer, Service, Staff, Appointment } from '@/lib/data';
 import {
     Table,
     TableBody,
@@ -53,6 +51,7 @@ import {
 } from '@/components/ui/table';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import Link from 'next/link';
+import { CreateBillForm } from '@/components/dashboard/home/create-bill-form';
 
 
 const searchSchema = z.object({
@@ -68,16 +67,35 @@ type SearchFormValues = z.infer<typeof searchSchema>;
 type NewCustomerFormValues = z.infer<typeof newCustomerSchema>;
 
 export default function HomePage() {
-  const router = useRouter();
   const firestore = useFirestore();
   const { user } = useUser();
   const { toast } = useToast();
 
   const [isSearching, setIsSearching] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
+  
   const [showNewCustomerDialog, setShowNewCustomerDialog] = useState(false);
+  const [showCreateBillDialog, setShowCreateBillDialog] = useState(false);
+  
   const [newCustomerPhone, setNewCustomerPhone] = useState('');
-  const [checkedInCustomers, setCheckedInCustomers] = useState<Customer[]>([]);
+  const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
+  const [checkedInAppointments, setCheckedInAppointments] = useState<Appointment[]>([]);
+
+  const salonId = user?.uid;
+
+  // Fetch services and staff for the new bill form
+  const servicesQuery = useMemoFirebase(() => {
+    if (!firestore || !salonId) return null;
+    return query(collection(firestore, `salons/${salonId}/services`));
+  }, [firestore, salonId]);
+  const { data: services } = useCollection<Service>(servicesQuery);
+
+  const staffQuery = useMemoFirebase(() => {
+    if (!firestore || !salonId) return null;
+    return query(collection(firestore, `salons/${salonId}/staff`));
+  }, [firestore, salonId]);
+  const { data: staff } = useCollection<Staff>(staffQuery);
+
 
   const searchForm = useForm<SearchFormValues>({
     resolver: zodResolver(searchSchema),
@@ -96,6 +114,11 @@ export default function HomePage() {
       .join('');
   };
 
+  const openBillDialog = (customer: Customer) => {
+    setSelectedCustomer(customer);
+    setShowCreateBillDialog(true);
+  }
+
   const handleSearch = async ({ phone }: SearchFormValues) => {
     if (!firestore || !user) return;
     setIsSearching(true);
@@ -112,18 +135,10 @@ export default function HomePage() {
         newCustomerForm.reset();
         setShowNewCustomerDialog(true);
       } else {
-        // Customer found, add to check-in list
+        // Customer found, open bill creation dialog
         const customerDoc = querySnapshot.docs[0];
         const customer = { id: customerDoc.id, ...customerDoc.data() } as Customer;
-        
-        if (!checkedInCustomers.some(c => c.id === customer.id)) {
-            setCheckedInCustomers(prev => [customer, ...prev]);
-        }
-        
-        toast({
-            title: 'Customer Checked In',
-            description: `${customer.name} has been checked in.`,
-        });
+        openBillDialog(customer);
       }
     } catch (error) {
       console.error("Error searching for customer:", error);
@@ -161,15 +176,13 @@ export default function HomePage() {
             visitHistory: ''
         };
 
-        setCheckedInCustomers(prev => [newCustomer, ...prev]);
-
         toast({
-            title: 'Customer Registered & Checked In!',
-            description: `${data.name} has been added and checked in.`,
+            title: 'Customer Registered!',
+            description: `${data.name} has been added. Now create their bill.`,
         });
         
-        // Close dialog
         setShowNewCustomerDialog(false);
+        openBillDialog(newCustomer);
 
     } catch (error) {
         console.error("Error creating customer:", error);
@@ -183,10 +196,20 @@ export default function HomePage() {
     }
   };
 
+  const handleBillCreated = (appointment: Appointment) => {
+    setCheckedInAppointments(prev => [appointment, ...prev]);
+    toast({
+        title: 'Customer Billed & Checked In',
+        description: `${appointment.customerName} has been checked in.`,
+    });
+  }
+
+  const getStaffName = (staffId: string) => staff?.find(s => s.id === staffId)?.name || 'Unknown';
+
   return (
     <>
-      <div className={`grid w-full items-start gap-8 ${checkedInCustomers.length > 0 ? 'grid-cols-1 md:grid-cols-5' : 'flex justify-center'}`}>
-          <Card className={`py-4 ${checkedInCustomers.length > 0 ? 'md:col-span-2' : 'w-full max-w-md'}`}>
+      <div className={`grid w-full items-start gap-8 ${checkedInAppointments.length > 0 ? 'grid-cols-1 md:grid-cols-5' : 'flex justify-center'}`}>
+          <Card className={`py-4 ${checkedInAppointments.length > 0 ? 'md:col-span-2' : 'w-full max-w-md'}`}>
             <CardHeader className="items-center text-center">
               <div className="mb-4 flex items-center gap-2">
                 <Logo className="h-8 w-8 text-primary" />
@@ -196,7 +219,7 @@ export default function HomePage() {
                 Customer Check-in
               </CardTitle>
               <CardDescription>
-                Enter a customer's phone number to begin.
+                Enter a customer's phone number to create a bill.
               </CardDescription>
             </CardHeader>
             <Form {...searchForm}>
@@ -234,42 +257,41 @@ export default function HomePage() {
             </Form>
           </Card>
           
-          {checkedInCustomers.length > 0 && (
+          {checkedInAppointments.length > 0 && (
              <Card className="md:col-span-3 flex flex-col">
                 <CardHeader>
-                    <CardTitle>Checked-in Customers</CardTitle>
+                    <CardTitle>Today's Bills</CardTitle>
                      <CardDescription>
-                      Customers who have been checked in today.
+                      Customers who have been billed today.
                     </CardDescription>
                 </CardHeader>
                 <CardContent className="flex-grow">
                 <Table>
                     <TableHeader>
                     <TableRow>
-                        <TableHead>Name</TableHead>
-                        <TableHead>Phone</TableHead>
-                        <TableHead><span className="sr-only">Actions</span></TableHead>
+                        <TableHead>Customer</TableHead>
+                        <TableHead>Staff</TableHead>
+                        <TableHead className="text-right">Amount</TableHead>
                     </TableRow>
                     </TableHeader>
                     <TableBody>
-                    {checkedInCustomers.map((customer) => (
-                        <TableRow key={customer.id}>
+                    {checkedInAppointments.map((appt) => (
+                        <TableRow key={appt.id}>
                         <TableCell>
                             <div className="flex items-center gap-4">
                                 <Avatar className="h-9 w-9">
                                     <AvatarFallback>
-                                        {getInitials(customer.name)}
+                                        {getInitials(appt.customerName)}
                                     </AvatarFallback>
                                 </Avatar>
-                                <span className="font-medium">{customer.name}</span>
+                                <div>
+                                    <div className="font-medium">{appt.customerName}</div>
+                                    <div className="text-sm text-muted-foreground">{appt.customerPhone}</div>
+                                </div>
                             </div>
                         </TableCell>
-                        <TableCell>{customer.phone}</TableCell>
-                        <TableCell className="text-right">
-                           <Button variant="outline" size="sm" asChild>
-                             <Link href={`/dashboard/customers/${customer.id}`}>View</Link>
-                           </Button>
-                        </TableCell>
+                        <TableCell>{getStaffName(appt.staffId)}</TableCell>
+                        <TableCell className="text-right font-medium">₹{appt.amountPaid}</TableCell>
                         </TableRow>
                     ))}
                     </TableBody>
@@ -323,6 +345,27 @@ export default function HomePage() {
               </Button>
             </form>
           </Form>
+        </DialogContent>
+      </Dialog>
+      
+      {/* Create Bill Dialog */}
+      <Dialog open={showCreateBillDialog} onOpenChange={setShowCreateBillDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Create Bill for {selectedCustomer?.name}</DialogTitle>
+            <DialogDescription>
+              Select services, staff, and payment details for this visit.
+            </DialogDescription>
+          </DialogHeader>
+          {selectedCustomer && services && staff && (
+            <CreateBillForm
+              customer={selectedCustomer}
+              services={services}
+              staff={staff}
+              setOpen={setShowCreateBillDialog}
+              onBillCreated={handleBillCreated}
+            />
+          )}
         </DialogContent>
       </Dialog>
     </>
