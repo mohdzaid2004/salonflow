@@ -174,9 +174,14 @@ export function CustomerCheckinForm({
           render={({ field }) => (
             <FormItem>
               <FormLabel>Customer Phone Number</FormLabel>
-              <FormControl>
-                <Input placeholder="9876543210" {...field} />
-              </FormControl>
+              <div className="flex items-center">
+                <span className="inline-flex h-10 items-center rounded-l-md border border-r-0 border-input bg-background px-3 text-sm text-muted-foreground">
+                  +91
+                </span>
+                <FormControl>
+                  <Input placeholder="9876543210" {...field} className="rounded-l-none" />
+                </FormControl>
+              </div>
               <FormMessage />
             </FormItem>
           )}
@@ -221,9 +226,14 @@ export function CustomerCheckinForm({
             render={({ field }) => (
                 <FormItem>
                 <FormLabel>Phone</FormLabel>
-                <FormControl>
-                    <Input {...field} readOnly disabled />
-                </FormControl>
+                 <div className="flex items-center">
+                    <span className="inline-flex h-10 items-center rounded-l-md border border-r-0 border-input bg-background px-3 text-sm text-muted-foreground">
+                      +91
+                    </span>
+                    <FormControl>
+                      <Input {...field} readOnly disabled className="rounded-l-none" />
+                    </FormControl>
+                  </div>
                 <FormMessage />
                 </FormItem>
             )}
