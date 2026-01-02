@@ -16,13 +16,17 @@ export default function OverviewPage() {
   const firestore = useFirestore();
   const salonId = user?.uid;
 
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const tomorrow = new Date(today);
-  tomorrow.setDate(tomorrow.getDate() + 1);
-
-  const todayTimestamp = Timestamp.fromDate(today);
-  const tomorrowTimestamp = Timestamp.fromDate(tomorrow);
+  // Timestamps are now memoized to prevent re-renders
+  const { todayTimestamp, tomorrowTimestamp } = useMemo(() => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    return {
+      todayTimestamp: Timestamp.fromDate(today),
+      tomorrowTimestamp: Timestamp.fromDate(tomorrow),
+    };
+  }, []);
 
   const appointmentsQuery = useMemoFirebase(() => {
     if (!salonId || !firestore) return null;
@@ -72,6 +76,35 @@ export default function OverviewPage() {
     }).format(amount);
   };
 
+  if (isLoading) {
+    return (
+        <div className="grid gap-4 md:grid-cols-2 md:gap-8 lg:grid-cols-4">
+            <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">
+                    Today&apos;s Revenue
+                </CardTitle>
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" className="h-4 w-4 text-muted-foreground"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" /></svg>
+                </CardHeader>
+                <CardContent>
+                    <Skeleton className="h-8 w-3/4" />
+                    <Skeleton className="mt-2 h-4 w-1/2" />
+                </CardContent>
+            </Card>
+            <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Appointments</CardTitle>
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" className="h-4 w-4 text-muted-foreground"><rect width="18" height="18" x="3" y="4" rx="2" ry="2" /><line x1="16" x2="16" y1="2" y2="6" /><line x1="8" x2="8" y1="2" y2="6" /><line x1="3" x2="21" y1="10" y2="10" /></svg>
+                </CardHeader>
+                <CardContent>
+                    <Skeleton className="h-8 w-1/2" />
+                    <Skeleton className="mt-2 h-4 w-1/2" />
+                </CardContent>
+            </Card>
+        </div>
+    )
+  }
+
   return (
     <div className="grid gap-4 md:grid-cols-2 md:gap-8 lg:grid-cols-4">
       <Card>
@@ -93,14 +126,10 @@ export default function OverviewPage() {
           </svg>
         </CardHeader>
         <CardContent>
-          {isLoading ? (
-            <Skeleton className="h-8 w-3/4" />
-          ) : (
             <div className="text-2xl font-bold">{formatCurrency(todaysStats.totalRevenue)}</div>
-          )}
-          <p className="text-xs text-muted-foreground">
-            Based on completed appointments
-          </p>
+            <p className="text-xs text-muted-foreground">
+                Based on completed appointments
+            </p>
         </CardContent>
       </Card>
       <Card>
@@ -123,13 +152,9 @@ export default function OverviewPage() {
           </svg>
         </CardHeader>
         <CardContent>
-           {isLoading ? (
-            <Skeleton className="h-8 w-1/2" />
-          ) : (
             <div className="text-2xl font-bold">
               +{todaysStats.completedAppointments}
             </div>
-          )}
           <p className="text-xs text-muted-foreground">
             Completed today
           </p>
