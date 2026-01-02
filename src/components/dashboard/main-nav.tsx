@@ -21,7 +21,6 @@ import type { Salon } from '@/lib/data';
 
 export const MainNavItems = [
   { href: '/home', label: 'Home', icon: Home, feature: 'core' },
-  { href: '/dashboard/overview', label: 'Dashboard', icon: LayoutGrid, feature: 'core' },
   { href: '/dashboard', label: 'Appointments', icon: CalendarClock, feature: 'appointments' },
   { href: '/dashboard/services', label: 'Services', icon: Scissors, feature: 'core' },
   { href: '/dashboard/staff', label: 'Staff', icon: Users, feature: 'core' },
@@ -37,7 +36,7 @@ export function MainNav({ salon }: { salon: Salon | null }) {
     if (item.feature === 'appointments') {
       return salon?.appointmentsEnabled;
     }
-    return true;
+    return true; // Show all other core items
   });
 
   return (

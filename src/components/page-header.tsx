@@ -6,6 +6,7 @@ import { MainNavItems } from './dashboard/main-nav';
 export function PageHeader() {
   const pathname = usePathname();
   const currentNavItem = MainNavItems.find(item => item.href === pathname);
+  // Default to 'Dashboard' or a relevant title if no match is found
   const title = currentNavItem ? currentNavItem.label : 'Dashboard';
 
   return (

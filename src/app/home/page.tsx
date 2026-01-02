@@ -167,7 +167,7 @@ export default function HomePage() {
   return (
     <div className="flex min-h-dvh flex-col bg-background">
       <header className="sticky top-0 z-10 flex h-16 items-center gap-4 border-b bg-background px-4 sm:px-6">
-        <Link href="/dashboard/overview" className="flex items-center gap-2">
+        <Link href="/dashboard" className="flex items-center gap-2">
           <Logo className="h-8 w-8 text-primary" />
           <span className="font-headline text-2xl font-bold">{salon?.name || 'SalonFlow'}</span>
         </Link>
@@ -273,7 +273,7 @@ export default function HomePage() {
             )}
 
             <div className="mt-4 text-center text-sm">
-                <Link href="/dashboard/overview" className="text-muted-foreground underline-offset-4 hover:text-primary hover:underline">
+                <Link href="/dashboard" className="text-muted-foreground underline-offset-4 hover:text-primary hover:underline">
                     Go to Full Dashboard
                 </Link>
             </div>
