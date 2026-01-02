@@ -165,12 +165,33 @@
         "name": {
           "type": "string",
           "description": "The name of the staff member."
+        },
+        "aadharNumber": {
+          "type": "string",
+          "description": "The staff member's Aadhar card number."
+        },
+        "phone": {
+          "type": "string",
+          "description": "The staff member's phone number."
+        },
+        "address": {
+          "type": "string",
+          "description": "The staff member's address."
+        },
+        "dob": {
+          "type": "string",
+          "description": "The staff member's date of birth.",
+          "format": "date"
         }
       },
       "required": [
         "staffId",
         "salonId",
-        "name"
+        "name",
+        "aadharNumber",
+        "phone",
+        "address",
+        "dob"
       ]
     },
     "Customer": {

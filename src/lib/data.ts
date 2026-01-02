@@ -19,6 +19,10 @@ export type Service = {
 export type Staff = {
   id: string;
   name: string;
+  aadharNumber: string;
+  phone: string;
+  address: string;
+  dob: string;
 };
 
 export type Customer = {
@@ -47,3 +51,5 @@ export const staff: Staff[] = [];
 export const customers: Customer[] = [];
 
 export const appointments: Appointment[] = [];
+
+    
