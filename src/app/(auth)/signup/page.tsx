@@ -79,32 +79,35 @@ export default function SignupPage() {
       );
       const user = userCredential.user;
 
-      // 2. Update the user's profile
-      await updateProfile(user, { displayName: "Owner" });
+      // The salonId for a new salon is the UID of the user who created it.
+      const salonId = user.uid;
 
-      const salonId = user.uid; // The salon is identified by the owner's UID
+      // 2. Create the user's own profile document within their salon's subcollection
+      // This is CRITICAL for the security rules to work. The `isSalonMember` check
+      // needs this document to exist to verify the user belongs to the salon.
+      const userRef = doc(firestore, `salons/${salonId}/users`, user.uid);
+      await setDoc(userRef, {
+        name: 'Owner', // Set a default name
+        role: 'owner',
+        email: user.email,
+        salonId: salonId, // Denormalize salonId for rule validation
+      });
 
-      // 3. Create the salon document
+      // 3. Create the salon document itself
       const salonRef = doc(firestore, 'salons', salonId);
       await setDoc(salonRef, {
+        salonId: salonId, // Denormalize salonId
         name: data.salonName,
         ownerId: user.uid,
         appointmentsEnabled: true, // Default to true on creation
-        // Add any other default salon properties here
         address: '',
         city: '',
         state: '',
         phone: '',
       });
 
-      // 4. Create the user document within the salon subcollection for permissions
-      const userRef = doc(firestore, `salons/${salonId}/users`, user.uid);
-      await setDoc(userRef, {
-        name: 'Owner',
-        role: 'owner',
-        email: user.email,
-        salonId: salonId,
-      });
+      // 4. Update the user's display name in Firebase Auth (optional but good practice)
+      await updateProfile(user, { displayName: "Owner" });
 
       toast({
         title: 'Success!',
