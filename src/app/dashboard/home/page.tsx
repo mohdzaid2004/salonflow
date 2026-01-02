@@ -1,4 +1,3 @@
-
 'use client';
 
 import {
@@ -9,42 +8,33 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ArrowRight, Calendar } from 'lucide-react';
-import Link from 'next/link';
+import { Input } from '@/components/ui/input';
+import { Search } from 'lucide-react';
 
 export default function HomePage() {
   return (
-    <div className="grid grid-cols-1 gap-8">
-      <div className="lg:col-span-3">
+    <div className="flex h-full flex-col items-center justify-center">
+      <div className="w-full max-w-md">
         <Card>
-          <CardHeader>
-            <CardTitle>Welcome Back!</CardTitle>
+          <CardHeader className="text-center">
+            <CardTitle className="font-headline text-3xl">
+              Customer Check-in
+            </CardTitle>
             <CardDescription>
-              Here's a quick look at your day.
+              Enter a customer's phone number to begin.
             </CardDescription>
           </CardHeader>
-        </Card>
-      </div>
-
-      <div>
-        <Card className="flex h-full flex-col justify-between">
-          <CardHeader>
-            <CardTitle>Full Calendar</CardTitle>
-            <CardDescription>
-              View and manage all appointments for the day, week, or month.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="flex-grow">
-            <div className="flex h-full items-center justify-center rounded-lg bg-accent p-8">
-              <Calendar className="h-16 w-16 text-primary" />
-            </div>
-          </CardContent>
           <CardContent>
-             <Button asChild className="w-full">
-                <Link href="/dashboard/calendar">
-                    View Calendar <ArrowRight className="ml-2 h-4 w-4" />
-                </Link>
-             </Button>
+            <div className="flex items-center space-x-2">
+              <Input
+                type="tel"
+                placeholder="Customer Phone Number"
+                className="flex-1"
+              />
+              <Button type="submit">
+                <Search className="mr-2 h-4 w-4" /> Search / Check-in
+              </Button>
+            </div>
           </CardContent>
         </Card>
       </div>

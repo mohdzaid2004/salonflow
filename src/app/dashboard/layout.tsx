@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { MainNav } from '@/components/dashboard/main-nav';
 import { UserNav } from '@/components/dashboard/user-nav';
 import { Logo } from '@/components/logo';
@@ -34,7 +34,10 @@ export default function DashboardLayout({
   const { user, isUserLoading } = useUser();
   const firestore = useFirestore();
   const router = useRouter();
+  const pathname = usePathname();
   const [themeColor, setThemeColor] = useState<string | null>(null);
+
+  const isHomePage = pathname === '/dashboard/home';
 
   // Effect to protect the route.
   useEffect(() => {
@@ -97,38 +100,40 @@ export default function DashboardLayout({
     <div>
       <HeaderActionsProvider>
         <SidebarProvider>
-          <Sidebar>
-            <SidebarHeader>
-              <div className="flex h-16 items-center gap-2 border-b p-2">
-                <Logo className="h-8 w-8 shrink-0 text-primary" />
-                <div className="flex flex-col overflow-hidden">
-                  <span className="truncate font-headline text-lg">
-                    {salon?.name || 'SalonFlow'}
-                  </span>
-                  <span className="truncate text-xs text-muted-foreground">
-                    Your Dashboard
-                  </span>
+          {!isHomePage && (
+            <Sidebar>
+              <SidebarHeader>
+                <div className="flex h-16 items-center gap-2 border-b p-2">
+                  <Logo className="h-8 w-8 shrink-0 text-primary" />
+                  <div className="flex flex-col overflow-hidden">
+                    <span className="truncate font-headline text-lg">
+                      {salon?.name || 'SalonFlow'}
+                    </span>
+                    <span className="truncate text-xs text-muted-foreground">
+                      Your Dashboard
+                    </span>
+                  </div>
                 </div>
-              </div>
-            </SidebarHeader>
-            <SidebarContent className="p-2">
-              <MainNav salon={salon} />
-            </SidebarContent>
-            <SidebarFooter>
-              <Separator className="my-2" />
-              <div className="p-2 text-center text-xs text-muted-foreground">
-                <p>&copy; {new Date().getFullYear()} SalonFlow India</p>
-              </div>
-            </SidebarFooter>
-          </Sidebar>
+              </SidebarHeader>
+              <SidebarContent className="p-2">
+                <MainNav salon={salon} />
+              </SidebarContent>
+              <SidebarFooter>
+                <Separator className="my-2" />
+                <div className="p-2 text-center text-xs text-muted-foreground">
+                  <p>&copy; {new Date().getFullYear()} SalonFlow India</p>
+                </div>
+              </SidebarFooter>
+            </Sidebar>
+          )}
           <SidebarInset>
             <header className="sticky top-0 z-10 flex h-16 items-center gap-4 border-b bg-background px-4 sm:px-6">
-              <SidebarTrigger className="md:hidden" />
+              {!isHomePage && <SidebarTrigger className="md:hidden" />}
               <div className="flex items-center gap-4">
-                <PageHeader />
+                {!isHomePage && <PageHeader />}
               </div>
               <div className="ml-auto flex items-center gap-2">
-                <HeaderActions />
+                {!isHomePage && <HeaderActions />}
                 <UserNav />
               </div>
             </header>
