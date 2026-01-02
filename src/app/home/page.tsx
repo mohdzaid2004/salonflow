@@ -78,7 +78,7 @@ export default function HomePage() {
           <div className="lg:col-span-1">
             <Card>
               <CardHeader>
-                <CardTitle>Quick Actions</CardTitle>
+                <CardTitle>Check In</CardTitle>
               </CardHeader>
               <CardContent className="flex flex-col gap-4">
                 <Dialog open={isCheckinOpen} onOpenChange={setCheckinOpen}>
