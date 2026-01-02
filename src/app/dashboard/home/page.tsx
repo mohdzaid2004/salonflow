@@ -185,9 +185,8 @@ export default function HomePage() {
 
   return (
     <>
-      <div className="flex h-full flex-col items-center justify-center">
-        <div className="grid w-full max-w-6xl grid-cols-1 items-start gap-8 md:grid-cols-2">
-          <Card className="py-4 mb-8">
+      <div className={`grid w-full max-w-6xl items-start gap-8 ${checkedInCustomers.length > 0 ? 'grid-cols-1 md:grid-cols-2' : 'place-items-center'}`}>
+          <Card className="py-4 w-full">
             <CardHeader className="items-center text-center">
               <div className="mb-4 flex items-center gap-2">
                 <Logo className="h-8 w-8 text-primary" />
@@ -236,11 +235,14 @@ export default function HomePage() {
           </Card>
           
           {checkedInCustomers.length > 0 && (
-             <Card>
+             <Card className="flex flex-col">
                 <CardHeader>
                     <CardTitle>Checked-in Customers</CardTitle>
+                     <CardDescription>
+                      Customers who have been checked in today.
+                    </CardDescription>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="flex-grow">
                 <Table>
                     <TableHeader>
                     <TableRow>
@@ -276,7 +278,6 @@ export default function HomePage() {
             </Card>
           )}
 
-        </div>
       </div>
 
       {/* New Customer Registration Dialog */}
