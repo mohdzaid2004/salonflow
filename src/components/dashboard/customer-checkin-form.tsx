@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -24,7 +24,6 @@ import {
   getDocs,
   limit,
   addDoc,
-  DocumentData,
 } from 'firebase/firestore';
 import type { Customer } from '@/lib/data';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
@@ -46,12 +45,18 @@ const newCustomerSchema = z.object({
 type PhoneFormValues = z.infer<typeof phoneSchema>;
 type NewCustomerFormValues = z.infer<typeof newCustomerSchema>;
 
+type Step = 'search' | 'create' | 'found';
+
 export function CustomerCheckinForm({
   setOpen,
   onCustomerCheckedIn,
+  initialPhone,
+  startStep = 'search',
 }: {
   setOpen: (open: boolean) => void;
   onCustomerCheckedIn?: (customer: Customer) => void;
+  initialPhone?: string;
+  startStep?: Step;
 }) {
   const { toast } = useToast();
   const firestore = useFirestore();
@@ -61,7 +66,7 @@ export function CustomerCheckinForm({
   const [isSearching, setIsSearching] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
   const [foundCustomer, setFoundCustomer] = useState<Customer | null>(null);
-  const [step, setStep] = useState<'search' | 'create' | 'found'>('search');
+  const [step, setStep] = useState<Step>(startStep);
 
   const phoneForm = useForm<PhoneFormValues>({
     resolver: zodResolver(phoneSchema),
@@ -73,11 +78,18 @@ export function CustomerCheckinForm({
   const newCustomerForm = useForm<NewCustomerFormValues>({
     resolver: zodResolver(newCustomerSchema),
     defaultValues: {
-      phone: '',
+      phone: initialPhone || '',
       name: '',
       dob: '',
     },
   });
+
+  useEffect(() => {
+    if (startStep === 'create' && initialPhone) {
+      newCustomerForm.setValue('phone', initialPhone);
+    }
+  }, [startStep, initialPhone, newCustomerForm]);
+
 
   async function onPhoneSubmit(data: PhoneFormValues) {
     if (!salonId || !firestore) return;
@@ -131,9 +143,7 @@ export function CustomerCheckinForm({
         const docRef = await addDoc(collection(firestore, `salons/${salonId}/customers`), customerData);
         const newCustomer: Customer = {
           id: docRef.id,
-          name: data.name,
-          phone: data.phone,
-          dob: data.dob
+          ...customerData
         };
         if (onCustomerCheckedIn) {
           onCustomerCheckedIn(newCustomer);
@@ -202,7 +212,7 @@ export function CustomerCheckinForm({
 
   const renderCreateStep = () => (
     <div>
-        <p className="text-center text-sm text-muted-foreground py-2">Customer not found. Please add their details.</p>
+        <p className="py-2 text-center text-sm text-muted-foreground">Customer not found. Please add their details.</p>
         <Form {...newCustomerForm}>
         <form onSubmit={newCustomerForm.handleSubmit(onNewCustomerSubmit)} className="space-y-4">
             <FormField
