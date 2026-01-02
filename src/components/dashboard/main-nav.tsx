@@ -14,11 +14,13 @@ import {
   BookUser,
   Settings,
   IndianRupee,
-  CalendarClock
+  CalendarClock,
+  Home,
 } from 'lucide-react';
 import type { Salon } from '@/lib/data';
 
 export const MainNavItems = [
+  { href: '/home', label: 'Home', icon: Home, feature: 'core' },
   { href: '/dashboard/overview', label: 'Dashboard', icon: LayoutGrid, feature: 'core' },
   { href: '/dashboard', label: 'Appointments', icon: CalendarClock, feature: 'appointments' },
   { href: '/dashboard/services', label: 'Services', icon: Scissors, feature: 'core' },
