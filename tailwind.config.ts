@@ -5,16 +5,7 @@ export default {
   content: [
     './src/pages/**/*.{js,ts,jsx,tsx,mdx}',
     './src/components/**/*.{js,ts,jsx,tsx,mdx}',
-    './src/app/page.tsx',
-    './src/app/layout.tsx',
-    './src/app/home/page.tsx',
-    './src/app/dashboard/layout.tsx',
-    './src/app/dashboard/billing/page.tsx',
-    './src/app/dashboard/customers/page.tsx',
-    './src/app/dashboard/services/page.tsx',
-    './src/app/dashboard/settings/page.tsx',
-    './src/app/dashboard/staff/page.tsx',
-    './src/app/(auth)/**/*.tsx',
+    './src/app/**/*.tsx',
   ],
   theme: {
     extend: {

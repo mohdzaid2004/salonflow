@@ -42,6 +42,16 @@ export type Appointment = {
   totalAmount: number;
 };
 
+export type Payment = {
+    id: string;
+    salonId: string;
+    appointmentId: string;
+    method: string;
+    status: string;
+    amount: number;
+    createdAt: Date;
+}
+
 // Mock data is being kept for now to ensure the calendar view functions
 // while other parts of the app are migrated to Firestore.
 export const services: Service[] = [];
@@ -51,5 +61,3 @@ export const staff: Staff[] = [];
 export const customers: Customer[] = [];
 
 export const appointments: Appointment[] = [];
-
-    
