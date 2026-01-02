@@ -121,7 +121,7 @@ export function CheckoutForm({
       };
       
       const appointmentsRef = collection(firestore, `salons/${salonId}/appointments`);
-      const appointmentRef = await addDoc(appointmentsRef, appointmentData);
+      const appointmentRef = await addDocumentNonBlocking(appointmentsRef, appointmentData);
 
       // 2. Create Payment
        const paymentData = {
