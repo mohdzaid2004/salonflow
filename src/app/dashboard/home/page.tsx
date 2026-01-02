@@ -30,10 +30,16 @@ export default function HomePage() {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <Input
-              type="tel"
-              placeholder="Customer Phone Number"
-            />
+             <div className="flex items-center">
+              <span className="inline-flex h-10 items-center rounded-l-md border border-r-0 border-input bg-background px-3 text-sm text-muted-foreground">
+                +91
+              </span>
+              <Input
+                type="tel"
+                placeholder="Customer Phone Number"
+                className="rounded-l-none"
+              />
+            </div>
             <Button type="submit" className="w-full">
               <Search className="mr-2 h-4 w-4" /> Search / Check-in
             </Button>
