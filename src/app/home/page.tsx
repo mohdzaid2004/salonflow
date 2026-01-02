@@ -164,10 +164,12 @@ export default function HomePage() {
     );
   }
 
+  const dashboardLink = salon?.appointmentsEnabled ? '/dashboard' : '/dashboard/services';
+
   return (
     <div className="flex min-h-dvh flex-col bg-background">
       <header className="sticky top-0 z-10 flex h-16 items-center gap-4 border-b bg-background px-4 sm:px-6">
-        <Link href="/dashboard" className="flex items-center gap-2">
+        <Link href={dashboardLink} className="flex items-center gap-2">
           <Logo className="h-8 w-8 text-primary" />
           <span className="font-headline text-2xl font-bold">{salon?.name || 'SalonFlow'}</span>
         </Link>
@@ -273,8 +275,8 @@ export default function HomePage() {
             )}
 
             <div className="mt-4 text-center text-sm">
-                <Link href="/dashboard" className="text-muted-foreground underline-offset-4 hover:text-primary hover:underline">
-                    Go to Full Dashboard
+                <Link href={dashboardLink} className="text-muted-foreground underline-offset-4 hover:text-primary hover:underline">
+                    {salon?.appointmentsEnabled ? 'Go to Full Dashboard' : 'Manage Salon Features'}
                 </Link>
             </div>
           </div>
