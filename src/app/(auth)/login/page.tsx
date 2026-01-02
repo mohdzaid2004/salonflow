@@ -57,7 +57,7 @@ export default function LoginPage() {
   // Effect to redirect if user is logged in
   useEffect(() => {
     if (!isUserLoading && user) {
-      router.push('/home');
+      router.push('/dashboard/overview');
     }
   }, [user, isUserLoading, router]);
 
