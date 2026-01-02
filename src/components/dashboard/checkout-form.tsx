@@ -30,9 +30,10 @@ import {
   useMemoFirebase,
   addDocumentNonBlocking,
 } from '@/firebase';
-import { collection, query } from 'firebase/firestore';
+import { collection, query, addDoc } from 'firebase/firestore';
 import type { Customer, Service, Staff } from '@/lib/data';
 import { Card, CardContent } from '../ui/card';
+import { RadioGroup, RadioGroupItem } from '../ui/radio-group';
 
 const checkoutFormSchema = z.object({
   serviceIds: z
@@ -49,9 +50,11 @@ type CheckoutFormValues = z.infer<typeof checkoutFormSchema>;
 export function CheckoutForm({
   customer,
   onCheckoutComplete,
+  onCancel,
 }: {
   customer: Customer;
   onCheckoutComplete: () => void;
+  onCancel: () => void;
 }) {
   const [isPending, startTransition] = useTransition();
   const [total, setTotal] = useState(0);
@@ -121,7 +124,7 @@ export function CheckoutForm({
       };
       
       const appointmentsRef = collection(firestore, `salons/${salonId}/appointments`);
-      const appointmentRef = await addDocumentNonBlocking(appointmentsRef, appointmentData);
+      const appointmentRef = await addDoc(appointmentsRef, appointmentData);
 
       // 2. Create Payment
        const paymentData = {
@@ -246,23 +249,34 @@ export function CheckoutForm({
             control={form.control}
             name="paymentMethod"
             render={({ field }) => (
-              <FormItem>
+              <FormItem className="space-y-3">
                 <FormLabel>Payment Method</FormLabel>
-                <Select
-                  onValueChange={field.onChange}
-                  defaultValue={field.value}
-                >
-                  <FormControl>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select a payment method" />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    <SelectItem value="Cash">Cash</SelectItem>
-                    <SelectItem value="UPI">UPI</SelectItem>
-                    <SelectItem value="Card">Card</SelectItem>
-                  </SelectContent>
-                </Select>
+                <FormControl>
+                  <RadioGroup
+                    onValueChange={field.onChange}
+                    defaultValue={field.value}
+                    className="flex flex-col space-y-1"
+                  >
+                    <FormItem className="flex items-center space-x-3 space-y-0">
+                      <FormControl>
+                        <RadioGroupItem value="Cash" />
+                      </FormControl>
+                      <FormLabel className="font-normal">Cash</FormLabel>
+                    </FormItem>
+                    <FormItem className="flex items-center space-x-3 space-y-0">
+                      <FormControl>
+                        <RadioGroupItem value="UPI" />
+                      </FormControl>
+                      <FormLabel className="font-normal">UPI</FormLabel>
+                    </FormItem>
+                    <FormItem className="flex items-center space-x-3 space-y-0">
+                      <FormControl>
+                        <RadioGroupItem value="Card" />
+                      </FormControl>
+                      <FormLabel className="font-normal">Card</FormLabel>
+                    </FormItem>
+                  </RadioGroup>
+                </FormControl>
                 <FormMessage />
               </FormItem>
             )}
@@ -278,16 +292,26 @@ export function CheckoutForm({
           </Card>
         </div>
 
-        <Button
-          type="submit"
-          className="w-full"
-          disabled={isPending || isLoading}
-        >
-          {(isPending || isLoading) && (
-            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-          )}
-          Complete Checkout
-        </Button>
+        <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={onCancel}
+            disabled={isPending}
+          >
+            Cancel Check-in
+          </Button>
+          <Button
+            type="submit"
+            className="w-full sm:w-auto"
+            disabled={isPending || isLoading}
+          >
+            {(isPending || isLoading) && (
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            )}
+            Complete Checkout
+          </Button>
+        </div>
       </form>
     </Form>
   );

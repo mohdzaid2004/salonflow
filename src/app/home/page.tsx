@@ -104,6 +104,17 @@ export default function HomePage() {
     setCustomerForCheckout(null);
   };
 
+  const handleCheckoutCancel = (customerId: string) => {
+    setCheckedInCustomers(prev => prev.filter(c => c.id !== customerId));
+    setCheckoutOpen(false);
+    setCustomerForCheckout(null);
+     toast({
+      variant: 'destructive',
+      title: 'Check-in Cancelled',
+      description: `${customerForCheckout?.name} has been removed from active check-ins.`,
+    });
+  };
+
 
   async function onPhoneSubmit(data: PhoneFormValues) {
     if (!salonId || !firestore) return;
@@ -302,6 +313,7 @@ export default function HomePage() {
             <CheckoutForm
               customer={customerForCheckout}
               onCheckoutComplete={() => handleCheckoutComplete(customerForCheckout.id)}
+              onCancel={() => handleCheckoutCancel(customerForCheckout.id)}
             />
           )}
         </DialogContent>
