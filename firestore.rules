@@ -126,10 +126,7 @@ service cloud.firestore {
      * @principle All data within a salon is accessible for read/write to all authenticated members of that salon.
      */
     match /salons/{salonId}/services/{serviceId} {
-      allow get, list: if isSalonMember(salonId);
-      allow create: if isSalonMember(salonId) && hasValidSalonId(salonId);
-      allow update: if isSalonMember(salonId) && resource != null && isSalonIdImmutable();
-      allow delete: if isSalonMember(salonId) && resource != null;
+      allow read, write: if isSalonMember(salonId);
     }
 
     /**
@@ -140,10 +137,7 @@ service cloud.firestore {
      * @principle All data within a salon is accessible for read/write to all authenticated members of that salon.
      */
     match /salons/{salonId}/staff/{staffId} {
-      allow get, list: if isSalonMember(salonId);
-      allow create: if isSalonMember(salonId) && hasValidSalonId(salonId);
-      allow update: if isSalonMember(salonId) && resource != null && isSalonIdImmutable();
-      allow delete: if isSalonMember(salonId) && resource != null;
+      allow read, write: if isSalonMember(salonId);
     }
 
     /**
@@ -154,10 +148,7 @@ service cloud.firestore {
      * @principle All data within a salon is accessible for read/write to all authenticated members of that salon.
      */
     match /salons/{salonId}/customers/{customerId} {
-      allow get, list: if isSalonMember(salonId);
-      allow create: if isSalonMember(salonId) && hasValidSalonId(salonId);
-      allow update: if isSalonMember(salonId) && resource != null && isSalonIdImmutable();
-      allow delete: if isSalonMember(salonId) && resource != null;
+      allow read, write: if isSalonMember(salonId);
     }
 
     /**
@@ -168,10 +159,7 @@ service cloud.firestore {
      * @principle All data within a salon is accessible for read/write to all authenticated members of that salon.
      */
     match /salons/{salonId}/appointments/{appointmentId} {
-      allow get, list: if isSalonMember(salonId);
-      allow create: if isSalonMember(salonId) && hasValidSalonId(salonId);
-      allow update: if isSalonMember(salonId) && resource != null && isSalonIdImmutable();
-      allow delete: if isSalonMember(salonId) && resource != null;
+      allow read, write: if isSalonMember(salonId);
     }
 
     /**
@@ -182,12 +170,7 @@ service cloud.firestore {
      * @principle All data within a salon is accessible for read/write to all authenticated members of that salon.
      */
     match /salons/{salonId}/payments/{paymentId} {
-      allow get, list: if isSalonMember(salonId);
-      allow create: if isSalonMember(salonId) && hasValidSalonId(salonId);
-      allow update: if isSalonMember(salonId) && resource != null && isSalonIdImmutable();
-      allow delete: if isSalonMember(salonId) && resource != null;
+      allow read, write: if isSalonMember(salonId);
     }
   }
 }
-
-    
