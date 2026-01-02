@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useCollection, useFirestore, useUser, useMemoFirebase } from '@/firebase';
+import { useState, useEffect, useTransition } from 'react';
+import { useCollection, useFirestore, useUser, useMemoFirebase, deleteDocumentNonBlocking } from '@/firebase';
 import {
   Table,
   TableBody,
@@ -24,7 +24,17 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
-import { MoreHorizontal, PlusCircle } from 'lucide-react';
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
+import { MoreHorizontal, PlusCircle, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -33,22 +43,27 @@ import {
   DropdownMenuLabel,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { collection, query } from 'firebase/firestore';
+import { collection, query, doc } from 'firebase/firestore';
 import type { Staff } from '@/lib/data';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useHeaderActions } from '@/components/dashboard/header-actions-context';
 import { AddStaffForm } from '@/components/dashboard/staff/add-staff-form';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { useToast } from '@/hooks/use-toast';
 
 export default function StaffPage() {
   const firestore = useFirestore();
   const { user, isUserLoading } = useUser();
   const { setActions } = useHeaderActions();
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const { toast } = useToast();
+
+  const [isAddDialogOpen, setAddDialogOpen] = useState(false);
+  const [isDeleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [selectedStaff, setSelectedStaff] = useState<Staff | null>(null);
 
   useEffect(() => {
     setActions(
-      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+      <Dialog open={isAddDialogOpen} onOpenChange={setAddDialogOpen}>
         <DialogTrigger asChild>
           <Button>
             <PlusCircle className="mr-2 h-4 w-4" />
@@ -59,13 +74,13 @@ export default function StaffPage() {
           <DialogHeader>
             <DialogTitle>Add a New Staff Member</DialogTitle>
           </DialogHeader>
-          <AddStaffForm setOpen={setIsDialogOpen} />
+          <AddStaffForm setOpen={setAddDialogOpen} />
         </DialogContent>
       </Dialog>
     );
     // Cleanup on unmount
     return () => setActions(null);
-  }, [setActions, isDialogOpen]);
+  }, [setActions, isAddDialogOpen]);
 
   const salonId = user?.uid;
 
@@ -75,6 +90,27 @@ export default function StaffPage() {
   }, [firestore, salonId]);
 
   const { data: staff, isLoading } = useCollection<Staff>(staffQuery);
+
+  const handleDeleteClick = (staffMember: Staff) => {
+    setSelectedStaff(staffMember);
+    setDeleteDialogOpen(true);
+  }
+
+  const handleDeleteConfirm = () => {
+    if (!selectedStaff || !firestore || !salonId) return;
+    
+    const staffDocRef = doc(firestore, `salons/${salonId}/staff`, selectedStaff.id);
+    deleteDocumentNonBlocking(staffDocRef);
+
+    toast({
+      title: "Staff Deleted",
+      description: `${selectedStaff.name} has been removed.`,
+    });
+
+    setDeleteDialogOpen(false);
+    setSelectedStaff(null);
+  }
+
 
   const getInitials = (name: string) => {
     return name
@@ -102,6 +138,7 @@ export default function StaffPage() {
   };
 
   return (
+    <>
     <div className="grid flex-1 items-start gap-4 md:gap-8">
       <Card>
         <CardHeader>
@@ -151,8 +188,13 @@ export default function StaffPage() {
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
                             <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                            <DropdownMenuItem>Edit</DropdownMenuItem>
-                            <DropdownMenuItem>Delete</DropdownMenuItem>
+                            <DropdownMenuItem disabled>Edit</DropdownMenuItem>
+                            <DropdownMenuItem 
+                              className="text-destructive"
+                              onClick={() => handleDeleteClick(staffMember)}>
+                                <Trash2 className='mr-2 h-4 w-4' />
+                                Delete
+                            </DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>
                       </div>
@@ -174,7 +216,23 @@ export default function StaffPage() {
         </CardContent>
       </Card>
     </div>
+    <AlertDialog open={isDeleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+            <AlertDialogHeader>
+            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+                This action cannot be undone. This will permanently delete the staff
+                member <span className="font-semibold">{selectedStaff?.name}</span> and remove their data from our servers.
+            </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDeleteConfirm}>
+                Continue
+            </AlertDialogAction>
+            </AlertDialogFooter>
+        </AlertDialogContent>
+    </AlertDialog>
+    </>
   );
 }
-
-    
