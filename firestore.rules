@@ -107,7 +107,7 @@ service cloud.firestore {
      * @principle Users manage their own profile, but other salon members can view profiles for collaboration.
      */
     match /salons/{salonId}/users/{userId} {
-      allow get: if isOwner(userId) || isSalonMember(salonId);
+      allow get: if isOwner(userId); // A user can always read their own profile. This breaks the circular dependency.
       allow list: if isSalonMember(salonId);
       allow create: if isOwner(userId) && hasValidSalonId(salonId);
       allow update: if isExistingOwner(userId) && isSalonIdImmutable();
@@ -190,3 +190,5 @@ service cloud.firestore {
     }
   }
 }
+
+    
