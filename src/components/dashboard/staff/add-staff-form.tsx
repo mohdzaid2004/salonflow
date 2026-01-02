@@ -26,11 +26,12 @@ import { Textarea } from '@/components/ui/textarea';
 
 const addStaffFormSchema = z.object({
   name: z.string().min(1, 'Staff name is required.'),
-  aadharNumber: z.string().length(12, 'Aadhar number must be 12 digits.'),
-  phone: z.string().length(10, 'Phone number must be 10 digits.'),
-  address: z.string().min(5, 'Address is required.'),
-  dob: z.string().min(1, 'Date of birth is required.'),
+  aadharNumber: z.union([z.string().length(12, { message: "Aadhar number must be 12 digits." }), z.literal("")]).optional(),
+  phone: z.union([z.string().length(10, { message: "Phone number must be 10 digits." }), z.literal("")]).optional(),
+  address: z.string().optional(),
+  dob: z.string().optional(),
 });
+
 
 type AddStaffFormValues = z.infer<typeof addStaffFormSchema>;
 
