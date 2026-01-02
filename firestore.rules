@@ -103,11 +103,12 @@ service cloud.firestore {
      * @description Rules for user profiles within a salon.
      * @path /salons/{salonId}/users/{userId}
      * @allow User 'user_abc' can create their own profile under `/salons/salon_123/users/user_abc`. (create)
+     * @allow User 'user_abc' can read their own profile, which is necessary for the isSalonMember check to work.
      * @deny User 'user_abc' cannot read a user profile from a salon they are not a member of. (get)
      * @principle Users manage their own profile, but other salon members can view profiles for collaboration.
      */
     match /salons/{salonId}/users/{userId} {
-      allow get: if isSalonMember(salonId);
+      allow get: if isOwner(userId) || isSalonMember(salonId);
       allow list: if isSalonMember(salonId);
       allow create: if isOwner(userId) && hasValidSalonId(salonId);
       allow update: if isExistingOwner(userId) && isSalonIdImmutable();
