@@ -185,8 +185,8 @@ export default function HomePage() {
 
   return (
     <>
-      <div className={`grid w-full max-w-6xl items-start gap-8 ${checkedInCustomers.length > 0 ? 'grid-cols-1 md:grid-cols-2' : 'place-items-center'}`}>
-          <Card className="py-4 w-full">
+      <div className={`grid w-full max-w-6xl items-start gap-8 ${checkedInCustomers.length > 0 ? 'grid-cols-1 md:grid-cols-5' : 'flex justify-center'}`}>
+          <Card className={`py-4 ${checkedInCustomers.length > 0 ? 'md:col-span-2' : 'w-full max-w-md'}`}>
             <CardHeader className="items-center text-center">
               <div className="mb-4 flex items-center gap-2">
                 <Logo className="h-8 w-8 text-primary" />
@@ -235,7 +235,7 @@ export default function HomePage() {
           </Card>
           
           {checkedInCustomers.length > 0 && (
-             <Card className="flex flex-col">
+             <Card className="md:col-span-3 flex flex-col">
                 <CardHeader>
                     <CardTitle>Checked-in Customers</CardTitle>
                      <CardDescription>
