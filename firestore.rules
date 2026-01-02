@@ -110,7 +110,7 @@ service cloud.firestore {
     match /salons/{salonId}/users/{userId} {
       // CRITICAL FIX: A user must always be able to read their own profile.
       // This breaks the circular dependency where isSalonMember needs to read the profile,
-      // but reading the profile required isSalonMember.
+      // but reading the profile required isSalonMember. Other members of the same salon can also read profiles.
       allow get: if isOwner(userId) || isSalonMember(salonId);
       allow list: if isSalonMember(salonId);
       allow create: if isOwner(userId) && hasValidSalonId(salonId);
@@ -189,3 +189,5 @@ service cloud.firestore {
     }
   }
 }
+
+    
