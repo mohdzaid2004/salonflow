@@ -34,7 +34,7 @@ export type Appointment = {
   staffId: string;
   serviceIds: string[];
   dateTime: Date;
-  status: 'booked' | 'completed' | 'cancelled';
+  status: 'booked' | 'completed' | 'cancelled' | 'checked-in';
   totalAmount: number;
 };
 
@@ -47,5 +47,3 @@ export const staff: Staff[] = [];
 export const customers: Customer[] = [];
 
 export const appointments: Appointment[] = [];
-
-    

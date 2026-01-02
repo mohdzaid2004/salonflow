@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import {
   Card,
   CardContent,
+  CardDescription,
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
@@ -41,6 +42,7 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
+import { CheckoutForm } from '@/components/dashboard/checkout-form';
 
 const phoneSchema = z.object({
   phone: z
@@ -59,9 +61,11 @@ export default function HomePage() {
 
   const [isAppointmentOpen, setAppointmentOpen] = useState(false);
   const [isNewCustomerOpen, setNewCustomerOpen] = useState(false);
+  const [isCheckoutOpen, setCheckoutOpen] = useState(false);
   const [newCustomerPhone, setNewCustomerPhone] = useState('');
   const [isSearching, setIsSearching] = useState(false);
-  const [lastCheckedInCustomer, setLastCheckedInCustomer] = useState<Customer | null>(null);
+  const [checkedInCustomers, setCheckedInCustomers] = useState<Customer[]>([]);
+  const [customerForCheckout, setCustomerForCheckout] = useState<Customer | null>(null);
 
   const salonId = user?.uid;
   const salonDocRef = useMemoFirebase(() => {
@@ -82,14 +86,28 @@ export default function HomePage() {
   }, [user, isUserLoading, router]);
 
   const handleCustomerCheckedIn = (customer: Customer) => {
-    setLastCheckedInCustomer(customer);
+    // Avoid adding duplicate customers to the list
+    if (!checkedInCustomers.some(c => c.id === customer.id)) {
+      setCheckedInCustomers(prev => [customer, ...prev]);
+    }
     setNewCustomerOpen(false); // Close the 'new customer' dialog if it was open
   };
+
+  const handleCheckout = (customer: Customer) => {
+    setCustomerForCheckout(customer);
+    setCheckoutOpen(true);
+  };
+  
+  const handleCheckoutComplete = (customerId: string) => {
+    setCheckedInCustomers(prev => prev.filter(c => c.id !== customerId));
+    setCheckoutOpen(false);
+    setCustomerForCheckout(null);
+  };
+
 
   async function onPhoneSubmit(data: PhoneFormValues) {
     if (!salonId || !firestore) return;
     setIsSearching(true);
-    setLastCheckedInCustomer(null);
 
     try {
       const customersRef = collection(firestore, `salons/${salonId}/customers`);
@@ -148,7 +166,7 @@ export default function HomePage() {
       </header>
       <main className="flex-1 p-4 md:p-8">
         <div className={cn("grid grid-cols-1 gap-8", salon?.appointmentsEnabled && "lg:grid-cols-3")}>
-          <div className={cn("lg:col-span-1", !salon?.appointmentsEnabled && "mx-auto w-full max-w-md")}>
+          <div className={cn("flex flex-col gap-4 lg:col-span-1", !salon?.appointmentsEnabled && "mx-auto w-full max-w-md")}>
              <Card>
               <CardHeader>
                 <CardTitle>Check In</CardTitle>
@@ -217,21 +235,28 @@ export default function HomePage() {
               </CardContent>
             </Card>
 
-            {lastCheckedInCustomer && (
-              <Card className="mt-4">
+            {checkedInCustomers.length > 0 && (
+              <Card>
                 <CardHeader>
-                  <CardTitle className="text-lg">Last Checked-in Customer</CardTitle>
+                  <CardTitle className="text-lg">Active Check-ins</CardTitle>
                 </CardHeader>
-                <CardContent>
-                  <div className="flex items-center gap-4">
-                    <Avatar>
-                      <AvatarFallback>{lastCheckedInCustomer.name.charAt(0)}</AvatarFallback>
-                    </Avatar>
-                    <div>
-                      <div className="font-semibold">{lastCheckedInCustomer.name}</div>
-                      <div className="text-sm text-muted-foreground">{lastCheckedInCustomer.phone}</div>
+                <CardContent className="space-y-4">
+                  {checkedInCustomers.map((customer) => (
+                    <div key={customer.id} className="flex items-center justify-between">
+                      <div className="flex items-center gap-4">
+                        <Avatar>
+                          <AvatarFallback>{customer.name.charAt(0)}</AvatarFallback>
+                        </Avatar>
+                        <div>
+                          <div className="font-semibold">{customer.name}</div>
+                          <div className="text-sm text-muted-foreground">{customer.phone}</div>
+                        </div>
+                      </div>
+                      <Button variant="outline" size="sm" onClick={() => handleCheckout(customer)}>
+                        Checkout
+                      </Button>
                     </div>
-                  </div>
+                  ))}
                 </CardContent>
               </Card>
             )}
@@ -263,6 +288,22 @@ export default function HomePage() {
             initialPhone={newCustomerPhone}
             startStep="create"
           />
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialog for checkout */}
+       <Dialog open={isCheckoutOpen} onOpenChange={setCheckoutOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Checkout: {customerForCheckout?.name}</DialogTitle>
+            <CardDescription>Select the services provided and complete the checkout.</CardDescription>
+          </DialogHeader>
+          {customerForCheckout && (
+            <CheckoutForm
+              customer={customerForCheckout}
+              onCheckoutComplete={() => handleCheckoutComplete(customerForCheckout.id)}
+            />
+          )}
         </DialogContent>
       </Dialog>
     </div>
