@@ -12,6 +12,7 @@ import {
   getDocs,
   limit,
   addDoc,
+  DocumentData,
 } from 'firebase/firestore';
 import {
   Card,
@@ -42,6 +43,17 @@ import { Logo } from '@/components/logo';
 import { useFirestore, useUser } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
 import type { Customer } from '@/lib/data';
+import {
+    Table,
+    TableBody,
+    TableCell,
+    TableHead,
+    TableHeader,
+    TableRow,
+} from '@/components/ui/table';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import Link from 'next/link';
+
 
 const searchSchema = z.object({
   phone: z.string().length(10, 'Please enter a valid 10-digit phone number.'),
@@ -65,6 +77,7 @@ export default function HomePage() {
   const [isCreating, setIsCreating] = useState(false);
   const [showNewCustomerDialog, setShowNewCustomerDialog] = useState(false);
   const [newCustomerPhone, setNewCustomerPhone] = useState('');
+  const [checkedInCustomers, setCheckedInCustomers] = useState<Customer[]>([]);
 
   const searchForm = useForm<SearchFormValues>({
     resolver: zodResolver(searchSchema),
@@ -75,6 +88,13 @@ export default function HomePage() {
     resolver: zodResolver(newCustomerSchema),
     defaultValues: { name: '', dob: '' },
   });
+  
+  const getInitials = (name: string) => {
+    return name
+      .split(' ')
+      .map((n) => n[0])
+      .join('');
+  };
 
   const handleSearch = async ({ phone }: SearchFormValues) => {
     if (!firestore || !user) return;
@@ -92,9 +112,18 @@ export default function HomePage() {
         newCustomerForm.reset();
         setShowNewCustomerDialog(true);
       } else {
-        // Customer found, navigate to their page
-        const customerId = querySnapshot.docs[0].id;
-        router.push(`/dashboard/customers/${customerId}`);
+        // Customer found, add to check-in list
+        const customerDoc = querySnapshot.docs[0];
+        const customer = { id: customerDoc.id, ...customerDoc.data() } as Customer;
+        
+        if (!checkedInCustomers.some(c => c.id === customer.id)) {
+            setCheckedInCustomers(prev => [customer, ...prev]);
+        }
+        
+        toast({
+            title: 'Customer Checked In',
+            description: `${customer.name} has been checked in.`,
+        });
       }
     } catch (error) {
       console.error("Error searching for customer:", error);
@@ -105,6 +134,7 @@ export default function HomePage() {
       });
     } finally {
       setIsSearching(false);
+      searchForm.reset();
     }
   };
 
@@ -114,7 +144,7 @@ export default function HomePage() {
     const salonId = user.uid;
 
     try {
-        const customerData: Omit<Customer, 'id'> = {
+        const customerData: Omit<Customer, 'id' | 'visitHistory'> & { visitHistory?: string } = {
             salonId: salonId,
             name: data.name,
             phone: newCustomerPhone,
@@ -124,15 +154,22 @@ export default function HomePage() {
 
         const customersRef = collection(firestore, `salons/${salonId}/customers`);
         const docRef = await addDoc(customersRef, customerData);
+        
+        const newCustomer: Customer = {
+            id: docRef.id,
+            ...customerData,
+            visitHistory: ''
+        };
+
+        setCheckedInCustomers(prev => [newCustomer, ...prev]);
 
         toast({
-            title: 'Customer Registered!',
-            description: `${data.name} has been added.`,
+            title: 'Customer Registered & Checked In!',
+            description: `${data.name} has been added and checked in.`,
         });
         
-        // Close dialog and navigate to the new customer's page
+        // Close dialog
         setShowNewCustomerDialog(false);
-        router.push(`/dashboard/customers/${docRef.id}`);
 
     } catch (error) {
         console.error("Error creating customer:", error);
@@ -197,6 +234,48 @@ export default function HomePage() {
               </form>
             </Form>
           </Card>
+          
+          {checkedInCustomers.length > 0 && (
+             <Card>
+                <CardHeader>
+                    <CardTitle>Checked-in Customers</CardTitle>
+                </CardHeader>
+                <CardContent>
+                <Table>
+                    <TableHeader>
+                    <TableRow>
+                        <TableHead>Name</TableHead>
+                        <TableHead>Phone</TableHead>
+                        <TableHead><span className="sr-only">Actions</span></TableHead>
+                    </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                    {checkedInCustomers.map((customer) => (
+                        <TableRow key={customer.id}>
+                        <TableCell>
+                            <div className="flex items-center gap-4">
+                                <Avatar className="h-9 w-9">
+                                    <AvatarFallback>
+                                        {getInitials(customer.name)}
+                                    </AvatarFallback>
+                                </Avatar>
+                                <span className="font-medium">{customer.name}</span>
+                            </div>
+                        </TableCell>
+                        <TableCell>{customer.phone}</TableCell>
+                        <TableCell className="text-right">
+                           <Button variant="outline" size="sm" asChild>
+                             <Link href={`/dashboard/customers/${customer.id}`}>View</Link>
+                           </Button>
+                        </TableCell>
+                        </TableRow>
+                    ))}
+                    </TableBody>
+                </Table>
+                </CardContent>
+            </Card>
+          )}
+
         </div>
       </div>
 
