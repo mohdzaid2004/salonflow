@@ -122,7 +122,13 @@ export function CalendarView() {
     <Card>
       <CardHeader>
         <CardTitle>Today&apos;s Appointments</CardTitle>
-        <CardDescription>{currentDate ? format(currentDate, 'eeee, MMMM do') : <Skeleton className="h-4 w-32" />}</CardDescription>
+        {currentDate ? (
+          <CardDescription>{format(currentDate, 'eeee, MMMM do')}</CardDescription>
+        ) : (
+          <div className="text-sm text-muted-foreground">
+            <Skeleton className="h-4 w-32" />
+          </div>
+        )}
       </CardHeader>
       <CardContent>
         {isLoading ? renderSkeleton() : 
@@ -177,5 +183,3 @@ export function CalendarView() {
     </Card>
   );
 }
-
-    
