@@ -115,7 +115,7 @@ export default function SignupPage() {
       });
 
       // 5. Redirect to the dashboard
-      router.push('/dashboard/overview');
+      router.push('/dashboard/home');
 
     } catch (error) {
       console.error(error);

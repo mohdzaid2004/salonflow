@@ -14,10 +14,12 @@ import {
   Settings,
   IndianRupee,
   LayoutGrid,
+  Home,
 } from 'lucide-react';
 import type { Salon } from '@/lib/data';
 
 export const MainNavItems = [
+  { href: '/dashboard/home', label: 'Home', icon: Home, feature: 'core' },
   { href: '/dashboard/overview', label: 'Overview', icon: LayoutGrid, feature: 'core' },
   { href: '/dashboard/services', label: 'Services', icon: Scissors, feature: 'core' },
   { href: '/dashboard/staff', label: 'Staff', icon: Users, feature: 'core' },
