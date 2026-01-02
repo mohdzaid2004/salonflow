@@ -5,13 +5,25 @@ import { MainNavItems } from './dashboard/main-nav';
 
 export function PageHeader() {
   const pathname = usePathname();
-  // Default to 'Dashboard' or a relevant title if no match is found
-  const currentNavItem = MainNavItems.find(item => item.href === pathname);
-  const title = currentNavItem ? currentNavItem.label : 'Dashboard';
+  
+  const getTitle = () => {
+    // Exact match for home/overview
+    const exactMatch = MainNavItems.find(item => item.href === pathname);
+    if (exactMatch) return exactMatch.label;
+
+    // Handle dynamic routes like /customers/[id]
+    if (pathname.startsWith('/dashboard/customers/')) {
+        return 'Customers';
+    }
+
+    // Default title
+    return 'Dashboard';
+  }
+  
 
   return (
     <div className="flex items-center">
-      <h1 className="font-headline text-3xl md:text-4xl">{title}</h1>
+      <h1 className="font-headline text-3xl md:text-4xl">{getTitle()}</h1>
     </div>
   );
 }

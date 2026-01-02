@@ -42,7 +42,7 @@ export function MainNav({ salon }: { salon: Salon | null }) {
         <SidebarMenuItem key={link.href}>
           <Link href={link.href}>
             <SidebarMenuButton
-              isActive={pathname === link.href}
+              isActive={pathname.startsWith(link.href) && (link.href !== '/dashboard/home' || pathname === '/dashboard/home')}
               tooltip={link.label}
             >
               <link.icon />

@@ -27,9 +27,11 @@ export type Staff = {
 
 export type Customer = {
   id: string;
+  salonId: string;
   name: string;
   phone: string;
   dob?: string;
+  visitHistory: string;
 };
 
 export type Appointment = {
