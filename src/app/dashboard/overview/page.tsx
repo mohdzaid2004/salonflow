@@ -11,7 +11,7 @@ import type { Appointment, Service } from '@/lib/data';
 import { collection, query, where, Timestamp } from 'firebase/firestore';
 import { useMemo } from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
-import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
+import { PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip } from 'recharts';
 import {
   ChartContainer,
   ChartTooltip,
@@ -33,7 +33,7 @@ export default function OverviewPage() {
   const salonId = user?.uid;
 
   // Timestamps are now memoized to prevent re-renders
-  const { todayTimestamp, tomorrowTimestamp, monthStartTimestamp } = useMemo(() => {
+  const { todayTimestamp, tomorrowTimestamp, monthStartTimestamp, sevenDaysAgoTimestamp } = useMemo(() => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
@@ -42,10 +42,14 @@ export default function OverviewPage() {
     
     const monthStart = new Date(today.getFullYear(), today.getMonth(), 1);
 
+    const sevenDaysAgo = new Date(today);
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 6); // Include today, so 6 days back
+
     return {
       todayTimestamp: Timestamp.fromDate(today),
       tomorrowTimestamp: Timestamp.fromDate(tomorrow),
       monthStartTimestamp: Timestamp.fromDate(monthStart),
+      sevenDaysAgoTimestamp: Timestamp.fromDate(sevenDaysAgo),
     };
   }, []);
 
@@ -108,7 +112,6 @@ export default function OverviewPage() {
 
     todaysAppointments.forEach(appt => {
       if (appt.serviceIds && appt.serviceIds.length > 0) {
-        // Distribute the amountPaid across the services in the appointment
         const revenuePerService = appt.amountPaid / appt.serviceIds.length;
         appt.serviceIds.forEach(serviceId => {
             const service = serviceMap.get(serviceId);
@@ -123,6 +126,32 @@ export default function OverviewPage() {
     return Array.from(revenueMap.entries()).map(([name, value]) => ({ name, value }));
 
   }, [todaysAppointments, services]);
+  
+  const last7DaysRevenue = useMemo(() => {
+    if (!appointments) return [];
+    const last7DaysAppointments = appointments.filter(appt => {
+      if (!appt.date) return false;
+      const apptDate = (appt.date as Timestamp).toDate();
+      return apptDate >= sevenDaysAgoTimestamp.toDate();
+    });
+    
+    const revenueByDay = new Map<string, number>();
+    for (let i = 0; i < 7; i++) {
+        const date = new Date(sevenDaysAgoTimestamp.toDate());
+        date.setDate(date.getDate() + i);
+        const dateString = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric'});
+        revenueByDay.set(dateString, 0);
+    }
+    
+    last7DaysAppointments.forEach(appt => {
+        const dateString = (appt.date as Timestamp).toDate().toLocaleDateString('en-US', { month: 'short', day: 'numeric'});
+        const currentRevenue = revenueByDay.get(dateString) || 0;
+        revenueByDay.set(dateString, currentRevenue + appt.amountPaid);
+    });
+    
+    return Array.from(revenueByDay.entries()).map(([name, revenue]) => ({ name, revenue }));
+
+  }, [appointments, sevenDaysAgoTimestamp]);
 
 
   const isLoading = isUserLoading || isLoadingAppointments || isLoadingServices;
@@ -134,13 +163,20 @@ export default function OverviewPage() {
       maximumFractionDigits: 0,
     }).format(amount);
   };
+  
+  const formatYAxis = (tick: number) => {
+    if (tick >= 1000) {
+      return `₹${tick / 1000}k`;
+    }
+    return `₹${tick}`;
+  };
 
   const renderSkeleton = () => (
     <>
       <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
           <CardTitle className="text-sm font-medium">
-              Today&apos;s Revenue
+              Today's Revenue
           </CardTitle>
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" className="h-4 w-4 text-muted-foreground"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" /></svg>
           </CardHeader>
@@ -152,7 +188,7 @@ export default function OverviewPage() {
       <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
           <CardTitle className="text-sm font-medium">
-              This Month&apos;s Revenue
+              This Month's Revenue
           </CardTitle>
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" className="h-4 w-4 text-muted-foreground"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" /></svg>
           </CardHeader>
@@ -173,10 +209,18 @@ export default function OverviewPage() {
       </Card>
       <Card className="lg:col-span-3">
         <CardHeader>
-          <CardTitle>Revenue by Service</CardTitle>
+          <CardTitle>Revenue by Service (Today)</CardTitle>
         </CardHeader>
         <CardContent>
            <Skeleton className="h-48 w-full" />
+        </CardContent>
+      </Card>
+      <Card className="lg:col-span-3">
+        <CardHeader>
+          <CardTitle>Last 7 Days Revenue</CardTitle>
+        </CardHeader>
+        <CardContent>
+           <Skeleton className="h-72 w-full" />
         </CardContent>
       </Card>
     </>
@@ -189,7 +233,7 @@ export default function OverviewPage() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">
-              Today&apos;s Revenue
+              Today's Revenue
             </CardTitle>
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -214,7 +258,7 @@ export default function OverviewPage() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">
-              This Month&apos;s Revenue
+              This Month's Revenue
             </CardTitle>
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -267,13 +311,15 @@ export default function OverviewPage() {
         <Card className="lg:col-span-3">
             <CardHeader>
                 <CardTitle>Revenue by Service (Today)</CardTitle>
+                 <CardDescription>
+                 </CardDescription>
             </CardHeader>
             <CardContent>
                 {revenueByService.length > 0 ? (
                 <ChartContainer config={{}} className="h-48 w-full">
                     <ResponsiveContainer width="100%" height="100%">
                         <PieChart>
-                        <Tooltip
+                        <ChartTooltip
                             cursor={false}
                             content={<ChartTooltipContent 
                                 formatter={(value, name) => (
@@ -305,6 +351,49 @@ export default function OverviewPage() {
                  ) : (
                 <div className="flex h-48 w-full items-center justify-center">
                   <p className="text-sm text-muted-foreground">No revenue data for today yet.</p>
+                </div>
+              )}
+            </CardContent>
+        </Card>
+         <Card className="lg:col-span-3">
+            <CardHeader>
+                <CardTitle>Last 7 Days Revenue</CardTitle>
+                <CardDescription>
+                    A bar graph showing total revenue per day for the last week.
+                </CardDescription>
+            </CardHeader>
+            <CardContent>
+                {last7DaysRevenue.length > 0 ? (
+                <ChartContainer config={{}} className="h-72 w-full">
+                    <ResponsiveContainer width="100%" height="100%">
+                        <BarChart data={last7DaysRevenue}>
+                         <ChartTooltip
+                            cursor={false}
+                            content={<ChartTooltipContent 
+                                formatter={(value) => formatCurrency(value as number)}
+                            />}
+                        />
+                         <XAxis 
+                            dataKey="name"
+                            stroke="#888888"
+                            fontSize={12}
+                            tickLine={false}
+                            axisLine={false}
+                         />
+                         <YAxis 
+                             stroke="#888888"
+                             fontSize={12}
+                             tickLine={false}
+                             axisLine={false}
+                             tickFormatter={formatYAxis}
+                         />
+                        <Bar dataKey="revenue" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
+                        </BarChart>
+                    </ResponsiveContainer>
+                </ChartContainer>
+                 ) : (
+                <div className="flex h-72 w-full items-center justify-center">
+                  <p className="text-sm text-muted-foreground">Not enough data for the last 7 days.</p>
                 </div>
               )}
             </CardContent>
