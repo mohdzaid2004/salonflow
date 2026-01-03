@@ -174,9 +174,6 @@ export default function OverviewPage() {
       <Card className="lg:col-span-3">
         <CardHeader>
           <CardTitle>Revenue by Service</CardTitle>
-          <CardDescription>
-            A breakdown of your salon's revenue streams.
-          </CardDescription>
         </CardHeader>
         <CardContent>
            <Skeleton className="h-48 w-full" />
@@ -270,7 +267,6 @@ export default function OverviewPage() {
         <Card className="lg:col-span-3">
             <CardHeader>
                 <CardTitle>Revenue by Service (Today)</CardTitle>
-                <CardDescription>Today's revenue from completed appointments.</CardDescription>
             </CardHeader>
             <CardContent>
                 {revenueByService.length > 0 ? (
