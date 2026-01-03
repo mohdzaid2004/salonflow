@@ -217,7 +217,7 @@ export default function OverviewPage() {
           <CardTitle>Revenue by Service ({currentMonthLabel})</CardTitle>
           <CardDescription>A breakdown of revenue from services this month.</CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="pt-0">
            <Skeleton className="h-72 w-full" />
         </CardContent>
       </Card>
@@ -321,7 +321,7 @@ export default function OverviewPage() {
                   A breakdown of revenue from services this month.
                  </CardDescription>
             </CardHeader>
-            <CardContent>
+            <CardContent className="pt-0">
                 {revenueByService.length > 0 ? (
                 <ChartContainer config={{}} className="min-h-[200px] w-full">
                     <ResponsiveContainer width="100%" height={240}>
