@@ -11,7 +11,7 @@ import type { Appointment, Service } from '@/lib/data';
 import { collection, query, where, Timestamp } from 'firebase/firestore';
 import { useMemo } from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
-import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
 import {
   ChartContainer,
   ChartTooltip,
@@ -33,14 +33,19 @@ export default function OverviewPage() {
   const salonId = user?.uid;
 
   // Timestamps are now memoized to prevent re-renders
-  const { todayTimestamp, tomorrowTimestamp } = useMemo(() => {
+  const { todayTimestamp, tomorrowTimestamp, monthStartTimestamp } = useMemo(() => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
+
     const tomorrow = new Date(today);
     tomorrow.setDate(tomorrow.getDate() + 1);
+    
+    const monthStart = new Date(today.getFullYear(), today.getMonth(), 1);
+
     return {
       todayTimestamp: Timestamp.fromDate(today),
       tomorrowTimestamp: Timestamp.fromDate(tomorrow),
+      monthStartTimestamp: Timestamp.fromDate(monthStart),
     };
   }, []);
 
@@ -69,6 +74,15 @@ export default function OverviewPage() {
     });
   }, [appointments, todayTimestamp, tomorrowTimestamp]);
 
+  const monthlyAppointments = useMemo(() => {
+    if (!appointments) return [];
+    return appointments.filter(appt => {
+        if (!appt.date) return false;
+        const apptDate = (appt.date as Timestamp).toDate();
+        return apptDate >= monthStartTimestamp.toDate();
+    });
+  }, [appointments, monthStartTimestamp]);
+
   const todaysStats = useMemo(() => {
     if (!todaysAppointments) {
       return { totalRevenue: 0, completedAppointments: 0 };
@@ -77,9 +91,17 @@ export default function OverviewPage() {
     const totalRevenue = todaysAppointments.reduce((acc, appt) => acc + appt.amountPaid, 0);
     return { totalRevenue, completedAppointments };
   }, [todaysAppointments]);
+
+  const monthlyStats = useMemo(() => {
+    if (!monthlyAppointments) {
+        return { totalRevenue: 0 };
+    }
+    const totalRevenue = monthlyAppointments.reduce((acc, appt) => acc + appt.amountPaid, 0);
+    return { totalRevenue };
+  }, [monthlyAppointments]);
   
   const revenueByService = useMemo(() => {
-    if (!todaysAppointments || !services) return [];
+    if (!todaysAppointments || !services || todaysAppointments.length === 0) return [];
     
     const serviceMap = new Map(services.map(s => [s.id, { name: s.name, price: s.price }]));
     const revenueMap = new Map<string, number>();
@@ -129,6 +151,18 @@ export default function OverviewPage() {
       </Card>
       <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardTitle className="text-sm font-medium">
+              This Month&apos;s Revenue
+          </CardTitle>
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" className="h-4 w-4 text-muted-foreground"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" /></svg>
+          </CardHeader>
+          <CardContent>
+              <Skeleton className="h-8 w-3/4" />
+              <Skeleton className="mt-2 h-4 w-1/2" />
+          </CardContent>
+      </Card>
+      <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
           <CardTitle className="text-sm font-medium">Appointments</CardTitle>
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" className="h-4 w-4 text-muted-foreground"><rect width="18" height="18" x="3" y="4" rx="2" ry="2" /><line x1="16" x2="16" y1="2" y2="6" /><line x1="8" x2="8" y1="2" y2="6" /><line x1="3" x2="21" y1="10" y2="10" /></svg>
           </CardHeader>
@@ -137,7 +171,7 @@ export default function OverviewPage() {
               <Skeleton className="mt-2 h-4 w-1/2" />
           </CardContent>
       </Card>
-      <Card className="lg:col-span-2">
+      <Card className="lg:col-span-3">
         <CardHeader>
           <CardTitle>Revenue by Service</CardTitle>
           <CardDescription>
@@ -152,7 +186,7 @@ export default function OverviewPage() {
   )
 
   return (
-    <div className="grid gap-4 md:grid-cols-2 md:gap-8 lg:grid-cols-4">
+    <div className="grid gap-4 md:grid-cols-2 md:gap-8 lg:grid-cols-3">
       {isLoading ? renderSkeleton() : (
       <>
         <Card>
@@ -177,6 +211,31 @@ export default function OverviewPage() {
               <div className="text-2xl font-bold">{formatCurrency(todaysStats.totalRevenue)}</div>
               <p className="text-xs text-muted-foreground">
                   Based on completed appointments
+              </p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">
+              This Month&apos;s Revenue
+            </CardTitle>
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth="2"
+              className="h-4 w-4 text-muted-foreground"
+            >
+              <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
+            </svg>
+          </CardHeader>
+          <CardContent>
+              <div className="text-2xl font-bold">{formatCurrency(monthlyStats.totalRevenue)}</div>
+              <p className="text-xs text-muted-foreground">
+                  Revenue since the start of the month
               </p>
           </CardContent>
         </Card>
@@ -208,9 +267,9 @@ export default function OverviewPage() {
             </p>
           </CardContent>
         </Card>
-        <Card className="lg:col-span-2">
+        <Card className="lg:col-span-3">
             <CardHeader>
-                <CardTitle>Revenue by Service</CardTitle>
+                <CardTitle>Revenue by Service (Today)</CardTitle>
                 <CardDescription>Today's revenue from completed appointments.</CardDescription>
             </CardHeader>
             <CardContent>
@@ -218,7 +277,7 @@ export default function OverviewPage() {
                 <ChartContainer config={{}} className="h-48 w-full">
                     <ResponsiveContainer width="100%" height="100%">
                         <PieChart>
-                        <ChartTooltip
+                        <Tooltip
                             cursor={false}
                             content={<ChartTooltipContent 
                                 formatter={(value, name) => (
@@ -249,7 +308,7 @@ export default function OverviewPage() {
                 </ChartContainer>
                  ) : (
                 <div className="flex h-48 w-full items-center justify-center">
-                  <p className="text-sm text-muted-foreground">No revenue data available yet.</p>
+                  <p className="text-sm text-muted-foreground">No revenue data for today yet.</p>
                 </div>
               )}
             </CardContent>
