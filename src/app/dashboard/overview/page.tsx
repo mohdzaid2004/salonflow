@@ -221,8 +221,12 @@ export default function OverviewPage() {
                         <ChartTooltip
                             cursor={false}
                             content={<ChartTooltipContent 
-                                hideLabel
-                                formatter={(value) => formatCurrency(value as number)}
+                                formatter={(value, name) => (
+                                    <div className="flex flex-col gap-0.5">
+                                        <span className="font-medium">{name}</span>
+                                        <span className="text-muted-foreground">{formatCurrency(value as number)}</span>
+                                    </div>
+                                )}
                             />}
                         />
                         <Pie
