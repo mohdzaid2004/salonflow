@@ -63,6 +63,7 @@ export default function OverviewPage() {
   const todaysAppointments = useMemo(() => {
     if (!appointments) return [];
     return appointments.filter(appt => {
+      if (!appt.date) return false; // FIX: Ensure date exists
       const apptDate = (appt.date as Timestamp).toDate();
       return apptDate >= todayTimestamp.toDate() && apptDate < tomorrowTimestamp.toDate();
     });
@@ -84,17 +85,19 @@ export default function OverviewPage() {
     const revenueMap = new Map<string, number>();
 
     appointments.forEach(appt => {
-      appt.serviceIds.forEach(serviceId => {
-        const service = serviceMap.get(serviceId);
-        if (service) {
-          const currentRevenue = revenueMap.get(service.name) || 0;
-          // We use the actual amountPaid for the appointment divided by number of services
-          // as a proxy if price isn't stored per service in appointment.
-          // A more accurate way would be to store price per service at time of booking.
-          const serviceRevenue = appt.amountPaid / appt.serviceIds.length;
-          revenueMap.set(service.name, currentRevenue + serviceRevenue);
-        }
-      });
+      if (appt.serviceIds) { // FIX: Ensure serviceIds exists
+        appt.serviceIds.forEach(serviceId => {
+            const service = serviceMap.get(serviceId);
+            if (service) {
+            const currentRevenue = revenueMap.get(service.name) || 0;
+            // We use the actual amountPaid for the appointment divided by number of services
+            // as a proxy if price isn't stored per service in appointment.
+            // A more accurate way would be to store price per service at time of booking.
+            const serviceRevenue = appt.amountPaid / appt.serviceIds.length;
+            revenueMap.set(service.name, currentRevenue + serviceRevenue);
+            }
+        });
+      }
     });
 
     return Array.from(revenueMap.entries()).map(([name, value]) => ({ name, value }));
