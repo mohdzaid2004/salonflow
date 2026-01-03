@@ -207,7 +207,7 @@ export default function OverviewPage() {
               <Skeleton className="mt-2 h-4 w-1/2" />
           </CardContent>
       </Card>
-      <Card className="lg:col-span-3">
+      <Card className="md:col-span-2 lg:col-span-3">
         <CardHeader>
           <CardTitle>Revenue by Service (Today)</CardTitle>
         </CardHeader>
@@ -215,7 +215,7 @@ export default function OverviewPage() {
            <Skeleton className="h-48 w-full" />
         </CardContent>
       </Card>
-      <Card className="lg:col-span-3">
+      <Card className="md:col-span-2 lg:col-span-3">
         <CardHeader>
           <CardTitle>Last 7 Days Revenue</CardTitle>
         </CardHeader>
@@ -308,7 +308,7 @@ export default function OverviewPage() {
             </p>
           </CardContent>
         </Card>
-        <Card className="lg:col-span-3">
+        <Card className="md:col-span-2 lg:col-span-3">
             <CardHeader>
                 <CardTitle>Revenue by Service (Today)</CardTitle>
                  <CardDescription>
@@ -355,7 +355,7 @@ export default function OverviewPage() {
               )}
             </CardContent>
         </Card>
-         <Card className="lg:col-span-3">
+         <Card className="md:col-span-2 lg:col-span-3">
             <CardHeader>
                 <CardTitle>Last 7 Days Revenue</CardTitle>
                 <CardDescription>
