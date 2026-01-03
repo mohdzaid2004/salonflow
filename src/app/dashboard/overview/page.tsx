@@ -11,7 +11,7 @@ import type { Appointment, Service } from '@/lib/data';
 import { collection, query, where, Timestamp } from 'firebase/firestore';
 import { useMemo } from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
-import { PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip } from 'recharts';
+import { PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, Legend } from 'recharts';
 import {
   ChartContainer,
   ChartTooltip,
@@ -144,6 +144,7 @@ export default function OverviewPage() {
     }
     
     last7DaysAppointments.forEach(appt => {
+        if (!appt.date) return;
         const dateString = (appt.date as Timestamp).toDate().toLocaleDateString('en-US', { month: 'short', day: 'numeric'});
         const currentRevenue = revenueByDay.get(dateString) || 0;
         revenueByDay.set(dateString, currentRevenue + appt.amountPaid);
@@ -173,6 +174,19 @@ export default function OverviewPage() {
       return `₹${tick / 1000}k`;
     }
     return `₹${tick}`;
+  };
+
+  const renderCustomizedLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, percent }: any) => {
+    const RADIAN = Math.PI / 180;
+    const radius = innerRadius + (outerRadius - innerRadius) * 0.5;
+    const x = cx + (radius + 15) * Math.cos(-midAngle * RADIAN);
+    const y = cy + (radius + 15) * Math.sin(-midAngle * RADIAN);
+
+    return (
+      <text x={x} y={y} fill="currentColor" textAnchor={x > cx ? 'start' : 'end'} dominantBaseline="central" className="text-xs">
+        {`${(percent * 100).toFixed(0)}%`}
+      </text>
+    );
   };
 
   const renderSkeleton = () => (
@@ -211,15 +225,16 @@ export default function OverviewPage() {
               <Skeleton className="mt-2 h-4 w-1/2" />
           </CardContent>
       </Card>
-      <Card className="md:col-span-2 lg:col-span-3">
+      <Card className="md:col-span-3 lg:col-span-3">
         <CardHeader>
-          <CardTitle>Revenue by Service (Today)</CardTitle>
+          <CardTitle>Revenue by Service ({currentMonthLabel})</CardTitle>
+          <CardDescription>A breakdown of revenue from services this month.</CardDescription>
         </CardHeader>
         <CardContent>
-           <Skeleton className="h-48 w-full" />
+           <Skeleton className="h-72 w-full" />
         </CardContent>
       </Card>
-      <Card className="md:col-span-2 lg:col-span-3">
+      <Card className="md:col-span-3 lg:col-span-3">
         <CardHeader>
           <CardTitle>Last 7 Days Revenue</CardTitle>
         </CardHeader>
@@ -312,7 +327,7 @@ export default function OverviewPage() {
             </p>
           </CardContent>
         </Card>
-        <Card className="md:col-span-2 lg:col-span-3">
+        <Card className="md:col-span-3 lg:col-span-3">
             <CardHeader>
                 <CardTitle>Revenue by Service ({currentMonthLabel})</CardTitle>
                  <CardDescription>
@@ -321,7 +336,7 @@ export default function OverviewPage() {
             </CardHeader>
             <CardContent>
                 {revenueByService.length > 0 ? (
-                <ChartContainer config={{}} className="h-48 w-full">
+                <ChartContainer config={{}} className="h-72 w-full">
                     <ResponsiveContainer width="100%" height="100%">
                         <PieChart>
                         <ChartTooltip
@@ -341,26 +356,38 @@ export default function OverviewPage() {
                             nameKey="name"
                             cx="50%"
                             cy="50%"
-                            outerRadius={80}
-                            innerRadius={50}
+                            outerRadius={100}
+                            innerRadius={60}
                             paddingAngle={5}
                             labelLine={false}
+                            label={renderCustomizedLabel}
                         >
                             {revenueByService.map((entry, index) => (
                             <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                             ))}
                         </Pie>
+                        <text
+                          x="50%"
+                          y="50%"
+                          textAnchor="middle"
+                          dominantBaseline="middle"
+                          className="text-lg font-bold"
+                          fill="currentColor"
+                        >
+                          {formatCurrency(monthlyStats.totalRevenue)}
+                        </text>
+                        <Legend />
                         </PieChart>
                     </ResponsiveContainer>
                 </ChartContainer>
                  ) : (
-                <div className="flex h-48 w-full items-center justify-center">
+                <div className="flex h-72 w-full items-center justify-center">
                   <p className="text-sm text-muted-foreground">No revenue data for this month yet.</p>
                 </div>
               )}
             </CardContent>
         </Card>
-         <Card className="md:col-span-2 lg:col-span-3">
+         <Card className="md:col-span-3 lg:col-span-3">
             <CardHeader>
                 <CardTitle>Last 7 Days Revenue</CardTitle>
                 <CardDescription>
