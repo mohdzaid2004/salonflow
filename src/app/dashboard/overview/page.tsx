@@ -11,7 +11,7 @@ import type { Appointment, Service } from '@/lib/data';
 import { collection, query, where, Timestamp } from 'firebase/firestore';
 import { useMemo } from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
-import { PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, Legend } from 'recharts';
+import { PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Legend } from 'recharts';
 import {
   ChartContainer,
   ChartTooltip,
@@ -33,12 +33,9 @@ export default function OverviewPage() {
   const salonId = user?.uid;
 
   // Timestamps are now memoized to prevent re-renders
-  const { todayTimestamp, tomorrowTimestamp, monthStartTimestamp, sevenDaysAgoTimestamp } = useMemo(() => {
+  const { monthStartTimestamp, sevenDaysAgoTimestamp } = useMemo(() => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-
-    const tomorrow = new Date(today);
-    tomorrow.setDate(tomorrow.getDate() + 1);
     
     const monthStart = new Date(today.getFullYear(), today.getMonth(), 1);
 
@@ -46,8 +43,6 @@ export default function OverviewPage() {
     sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 6); // Include today, so 6 days back
 
     return {
-      todayTimestamp: Timestamp.fromDate(today),
-      tomorrowTimestamp: Timestamp.fromDate(tomorrow),
       monthStartTimestamp: Timestamp.fromDate(monthStart),
       sevenDaysAgoTimestamp: Timestamp.fromDate(sevenDaysAgo),
     };
@@ -71,12 +66,17 @@ export default function OverviewPage() {
 
   const todaysAppointments = useMemo(() => {
     if (!appointments) return [];
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+
     return appointments.filter(appt => {
       if (!appt.date) return false;
       const apptDate = (appt.date as Timestamp).toDate();
-      return apptDate >= todayTimestamp.toDate() && apptDate < tomorrowTimestamp.toDate();
+      return apptDate >= today && apptDate < tomorrow;
     });
-  }, [appointments, todayTimestamp, tomorrowTimestamp]);
+  }, [appointments]);
 
   const monthlyAppointments = useMemo(() => {
     if (!appointments) return [];
@@ -174,19 +174,6 @@ export default function OverviewPage() {
       return `₹${tick / 1000}k`;
     }
     return `₹${tick}`;
-  };
-
-  const renderCustomizedLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, percent }: any) => {
-    const RADIAN = Math.PI / 180;
-    const radius = innerRadius + (outerRadius - innerRadius) * 0.5;
-    const x = cx + (radius + 15) * Math.cos(-midAngle * RADIAN);
-    const y = cy + (radius + 15) * Math.sin(-midAngle * RADIAN);
-
-    return (
-      <text x={x} y={y} fill="currentColor" textAnchor={x > cx ? 'start' : 'end'} dominantBaseline="central" className="text-xs">
-        {`${(percent * 100).toFixed(0)}%`}
-      </text>
-    );
   };
 
   const renderSkeleton = () => (
@@ -336,8 +323,8 @@ export default function OverviewPage() {
             </CardHeader>
             <CardContent>
                 {revenueByService.length > 0 ? (
-                <ChartContainer config={{}} className="h-72 w-full">
-                    <ResponsiveContainer width="100%" height="100%">
+                <ChartContainer config={{}} className="min-h-[200px] w-full">
+                    <ResponsiveContainer width="100%" height={240}>
                         <PieChart>
                         <ChartTooltip
                             cursor={false}
@@ -356,11 +343,10 @@ export default function OverviewPage() {
                             nameKey="name"
                             cx="50%"
                             cy="50%"
-                            outerRadius={100}
-                            innerRadius={60}
-                            paddingAngle={5}
+                            outerRadius={80}
+                            innerRadius={50}
+                            paddingAngle={2}
                             labelLine={false}
-                            label={renderCustomizedLabel}
                         >
                             {revenueByService.map((entry, index) => (
                             <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
@@ -376,7 +362,7 @@ export default function OverviewPage() {
                         >
                           {formatCurrency(monthlyStats.totalRevenue)}
                         </text>
-                        <Legend />
+                        <Legend layout="vertical" verticalAlign="middle" align="right" />
                         </PieChart>
                     </ResponsiveContainer>
                 </ChartContainer>
