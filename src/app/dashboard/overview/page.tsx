@@ -63,38 +63,36 @@ export default function OverviewPage() {
   const todaysAppointments = useMemo(() => {
     if (!appointments) return [];
     return appointments.filter(appt => {
-      if (!appt.date) return false; // FIX: Ensure date exists
+      if (!appt.date) return false;
       const apptDate = (appt.date as Timestamp).toDate();
       return apptDate >= todayTimestamp.toDate() && apptDate < tomorrowTimestamp.toDate();
     });
   }, [appointments, todayTimestamp, tomorrowTimestamp]);
 
   const todaysStats = useMemo(() => {
-    if (!todaysAppointments || !services) {
+    if (!todaysAppointments) {
       return { totalRevenue: 0, completedAppointments: 0 };
     }
     const completedAppointments = todaysAppointments.length;
     const totalRevenue = todaysAppointments.reduce((acc, appt) => acc + appt.amountPaid, 0);
     return { totalRevenue, completedAppointments };
-  }, [todaysAppointments, services]);
+  }, [todaysAppointments]);
   
   const revenueByService = useMemo(() => {
-    if (!appointments || !services) return [];
+    if (!todaysAppointments || !services) return [];
     
     const serviceMap = new Map(services.map(s => [s.id, { name: s.name, price: s.price }]));
     const revenueMap = new Map<string, number>();
 
-    appointments.forEach(appt => {
-      if (appt.serviceIds) { // FIX: Ensure serviceIds exists
+    todaysAppointments.forEach(appt => {
+      if (appt.serviceIds && appt.serviceIds.length > 0) {
+        // Distribute the amountPaid across the services in the appointment
+        const revenuePerService = appt.amountPaid / appt.serviceIds.length;
         appt.serviceIds.forEach(serviceId => {
             const service = serviceMap.get(serviceId);
             if (service) {
-            const currentRevenue = revenueMap.get(service.name) || 0;
-            // We use the actual amountPaid for the appointment divided by number of services
-            // as a proxy if price isn't stored per service in appointment.
-            // A more accurate way would be to store price per service at time of booking.
-            const serviceRevenue = appt.amountPaid / appt.serviceIds.length;
-            revenueMap.set(service.name, currentRevenue + serviceRevenue);
+              const currentRevenue = revenueMap.get(service.name) || 0;
+              revenueMap.set(service.name, currentRevenue + revenuePerService);
             }
         });
       }
@@ -102,7 +100,7 @@ export default function OverviewPage() {
 
     return Array.from(revenueMap.entries()).map(([name, value]) => ({ name, value }));
 
-  }, [appointments, services]);
+  }, [todaysAppointments, services]);
 
 
   const isLoading = isUserLoading || isLoadingAppointments || isLoadingServices;
@@ -213,7 +211,7 @@ export default function OverviewPage() {
         <Card className="lg:col-span-2">
             <CardHeader>
                 <CardTitle>Revenue by Service</CardTitle>
-                <CardDescription>All-time revenue from completed appointments.</CardDescription>
+                <CardDescription>Today's revenue from completed appointments.</CardDescription>
             </CardHeader>
             <CardContent>
                 {revenueByService.length > 0 ? (
