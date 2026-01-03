@@ -105,12 +105,12 @@ export default function OverviewPage() {
   }, [monthlyAppointments]);
   
   const revenueByService = useMemo(() => {
-    if (!todaysAppointments || !services || todaysAppointments.length === 0) return [];
+    if (!monthlyAppointments || !services || monthlyAppointments.length === 0) return [];
     
     const serviceMap = new Map(services.map(s => [s.id, { name: s.name, price: s.price }]));
     const revenueMap = new Map<string, number>();
 
-    todaysAppointments.forEach(appt => {
+    monthlyAppointments.forEach(appt => {
       if (appt.serviceIds && appt.serviceIds.length > 0) {
         const revenuePerService = appt.amountPaid / appt.serviceIds.length;
         appt.serviceIds.forEach(serviceId => {
@@ -125,7 +125,7 @@ export default function OverviewPage() {
 
     return Array.from(revenueMap.entries()).map(([name, value]) => ({ name, value }));
 
-  }, [todaysAppointments, services]);
+  }, [monthlyAppointments, services]);
   
   const last7DaysRevenue = useMemo(() => {
     if (!appointments) return [];
@@ -152,6 +152,10 @@ export default function OverviewPage() {
     return Array.from(revenueByDay.entries()).map(([name, revenue]) => ({ name, revenue }));
 
   }, [appointments, sevenDaysAgoTimestamp]);
+
+  const currentMonthLabel = useMemo(() => {
+    return new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+  }, []);
 
 
   const isLoading = isUserLoading || isLoadingAppointments || isLoadingServices;
@@ -310,8 +314,9 @@ export default function OverviewPage() {
         </Card>
         <Card className="md:col-span-2 lg:col-span-3">
             <CardHeader>
-                <CardTitle>Revenue by Service (Today)</CardTitle>
+                <CardTitle>Revenue by Service ({currentMonthLabel})</CardTitle>
                  <CardDescription>
+                  A breakdown of revenue from services this month.
                  </CardDescription>
             </CardHeader>
             <CardContent>
@@ -350,7 +355,7 @@ export default function OverviewPage() {
                 </ChartContainer>
                  ) : (
                 <div className="flex h-48 w-full items-center justify-center">
-                  <p className="text-sm text-muted-foreground">No revenue data for today yet.</p>
+                  <p className="text-sm text-muted-foreground">No revenue data for this month yet.</p>
                 </div>
               )}
             </CardContent>
