@@ -11,7 +11,7 @@ import type { Appointment, Service } from '@/lib/data';
 import { collection, query, where, Timestamp } from 'firebase/firestore';
 import { useMemo } from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
-import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts';
+import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
 import {
   ChartContainer,
   ChartTooltip,
@@ -218,7 +218,7 @@ export default function OverviewPage() {
                 <ChartContainer config={{}} className="h-48 w-full">
                     <ResponsiveContainer width="100%" height="100%">
                         <PieChart>
-                        <Tooltip
+                        <ChartTooltip
                             cursor={false}
                             content={<ChartTooltipContent 
                                 hideLabel
