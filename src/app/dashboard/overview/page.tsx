@@ -162,9 +162,10 @@ export default function OverviewPage() {
   const isLoading = isUserLoading || isLoadingAppointments || isLoadingServices;
   
   const formatCurrency = (amount: number) => {
-    return `₹${new Intl.NumberFormat('en-IN', {
+    const formattedAmount = new Intl.NumberFormat('en-IN', {
       maximumFractionDigits: 0,
-    }).format(amount)}`;
+    }).format(amount);
+    return <><span className="font-arial">₹</span>{formattedAmount}</>;
   };
   
   const formatYAxis = (tick: number) => {
@@ -354,8 +355,7 @@ export default function OverviewPage() {
                           y="50%"
                           textAnchor="middle"
                           dominantBaseline="middle"
-                          className="text-lg font-bold"
-                          fill="currentColor"
+                          className="fill-current text-lg font-bold"
                         >
                           {formatCurrency(monthlyStats.totalRevenue)}
                         </text>

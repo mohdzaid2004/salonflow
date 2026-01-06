@@ -17,6 +17,7 @@ export default {
         body: ['PT Sans', 'sans-serif'],
         headline: ['Playfair Display', 'serif'],
         code: ['monospace'],
+        arial: ['Arial', 'sans-serif'],
       },
       colors: {
         background: 'hsl(var(--background))',
