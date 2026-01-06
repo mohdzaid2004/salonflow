@@ -13,7 +13,7 @@ import { Check } from 'lucide-react';
 const plans = [
   {
     name: 'Starter',
-    price: '₹499',
+    price: '499',
     period: '/ month',
     description: 'For individual stylists or very small salons getting started.',
     features: ['1 Staff Member', 'Unlimited Appointments', 'Basic Billing'],
@@ -21,7 +21,7 @@ const plans = [
   },
   {
     name: 'Professional',
-    price: '₹999',
+    price: '999',
     period: '/ month',
     description: 'For growing salons that need more power and automation.',
     features: [
@@ -33,7 +33,7 @@ const plans = [
   },
   {
     name: 'Business',
-    price: '₹1,499',
+    price: '1,499',
     period: '/ month',
     description: 'For large salons that want to unlock their full potential.',
     features: [
@@ -79,7 +79,10 @@ export function PricingSection() {
                 )}
                 <CardTitle className="font-headline">{plan.name}</CardTitle>
                 <div className="flex items-baseline gap-1">
-                  <span className="text-4xl font-bold">{plan.price}</span>
+                  <span className="text-4xl font-bold">
+                    <span className="font-arial">₹</span>
+                    {plan.price}
+                  </span>
                   <span className="text-foreground/60">{plan.period}</span>
                 </div>
                 <CardDescription>{plan.description}</CardDescription>
