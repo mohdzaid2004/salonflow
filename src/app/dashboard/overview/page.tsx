@@ -254,9 +254,6 @@ export default function OverviewPage() {
           </CardHeader>
           <CardContent>
               <div className="text-2xl font-bold">{formatCurrency(todaysStats.totalRevenue)}</div>
-              <p className="text-xs text-muted-foreground">
-                  Based on completed appointments
-              </p>
           </CardContent>
         </Card>
         <Card>
@@ -279,9 +276,6 @@ export default function OverviewPage() {
           </CardHeader>
           <CardContent>
               <div className="text-2xl font-bold">{formatCurrency(monthlyStats.totalRevenue)}</div>
-              <p className="text-xs text-muted-foreground">
-                  Revenue since the start of the month
-              </p>
           </CardContent>
         </Card>
         <Card>
