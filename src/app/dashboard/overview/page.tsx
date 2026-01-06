@@ -162,11 +162,9 @@ export default function OverviewPage() {
   const isLoading = isUserLoading || isLoadingAppointments || isLoadingServices;
   
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-IN', {
-      style: 'currency',
-      currency: 'INR',
+    return `₹${new Intl.NumberFormat('en-IN', {
       maximumFractionDigits: 0,
-    }).format(amount);
+    }).format(amount)}`;
   };
   
   const formatYAxis = (tick: number) => {
@@ -215,7 +213,6 @@ export default function OverviewPage() {
       <Card className="md:col-span-3 lg:col-span-3">
         <CardHeader>
           <CardTitle>Revenue by Service ({currentMonthLabel})</CardTitle>
-          <CardDescription>A breakdown of revenue from services this month.</CardDescription>
         </CardHeader>
         <CardContent className="pt-0">
            <Skeleton className="h-72 w-full" />
@@ -421,3 +418,5 @@ export default function OverviewPage() {
     </div>
   );
 }
+
+    
