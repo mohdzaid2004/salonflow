@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemoFirebase, useCollection, useFirestore, useUser } from '@/firebase';
+import { useMemoFirebase, useCollection, useFirestore, useUser, useDoc } from '@/firebase';
 import {
   Table,
   TableBody,
@@ -26,9 +26,10 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { collection, query } from 'firebase/firestore';
-import type { Customer } from '@/lib/data';
+import { collection, query, doc } from 'firebase/firestore';
+import type { Customer, Salon } from '@/lib/data';
 import { Skeleton } from '@/components/ui/skeleton';
+import Link from 'next/link';
 
 export default function CustomersPage() {
   const firestore = useFirestore();
@@ -40,8 +41,17 @@ export default function CustomersPage() {
     if (!firestore || !salonId) return null;
     return query(collection(firestore, `salons/${salonId}/customers`));
   }, [firestore, salonId]);
+  
+  const salonDocRef = useMemoFirebase(() => {
+    if (!firestore || !salonId) return null;
+    return doc(firestore, 'salons', salonId);
+  }, [firestore, salonId]);
 
-  const { data: customers, isLoading } = useCollection<Customer>(customersQuery);
+  const { data: customers, isLoading: isLoadingCustomers } = useCollection<Customer>(customersQuery);
+  const { data: salon, isLoading: isLoadingSalon } = useDoc<Salon>(salonDocRef);
+  
+  const isLoading = isLoadingCustomers || isLoadingSalon || isUserLoading;
+  const showLoyalty = salon?.loyaltyProgramEnabled;
 
   const getInitials = (name: string) => {
     return name
@@ -65,9 +75,11 @@ export default function CustomersPage() {
         <TableCell>
           <Skeleton className="h-4 w-16" />
         </TableCell>
-        <TableCell>
-          <Skeleton className="h-4 w-12" />
-        </TableCell>
+        {showLoyalty && (
+          <TableCell>
+            <Skeleton className="h-4 w-12" />
+          </TableCell>
+        )}
         <TableCell>
           <div className="flex justify-end">
             <Skeleton className="h-8 w-8" />
@@ -92,14 +104,14 @@ export default function CustomersPage() {
               <TableRow>
                 <TableHead>Name</TableHead>
                 <TableHead>Phone</TableHead>
-                <TableHead>Loyalty Points</TableHead>
+                {showLoyalty && <TableHead>Loyalty Points</TableHead>}
                 <TableHead>
                   <span className="sr-only">Actions</span>
                 </TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {isLoading || isUserLoading ? (
+              {isLoading ? (
                 renderSkeleton()
               ) : customers && customers.length > 0 ? (
                 customers.map((customer) => (
@@ -120,12 +132,14 @@ export default function CustomersPage() {
                     <TableCell>
                       {customer.phone}
                     </TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        <Star className="h-4 w-4 text-amber-400" />
-                        <span>{customer.loyaltyPoints || 0}</span>
-                      </div>
-                    </TableCell>
+                    {showLoyalty && (
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          <Star className="h-4 w-4 text-amber-400" />
+                          <span>{customer.loyaltyPoints || 0}</span>
+                        </div>
+                      </TableCell>
+                    )}
                     <TableCell>
                       <div className='flex justify-end'>
                         <DropdownMenu>
@@ -141,7 +155,9 @@ export default function CustomersPage() {
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
                             <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                            <DropdownMenuItem>View Details</DropdownMenuItem>
+                            <DropdownMenuItem asChild>
+                                <Link href={`/dashboard/customers/${customer.id}`}>View Details</Link>
+                            </DropdownMenuItem>
                             <DropdownMenuItem>Delete</DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>
@@ -152,7 +168,7 @@ export default function CustomersPage() {
               ) : (
                 <TableRow>
                   <TableCell
-                    colSpan={4}
+                    colSpan={showLoyalty ? 4 : 3}
                     className="h-24 text-center text-muted-foreground"
                   >
                     No customers found. Use the "Customer Check-in" button to add one.
@@ -166,3 +182,5 @@ export default function CustomersPage() {
     </div>
   );
 }
+
+    

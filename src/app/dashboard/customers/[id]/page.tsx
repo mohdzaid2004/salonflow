@@ -4,7 +4,7 @@ import { useMemo } from 'react';
 import { useParams } from 'next/navigation';
 import { useDoc, useFirestore, useUser, useMemoFirebase } from '@/firebase';
 import { doc } from 'firebase/firestore';
-import type { Customer } from '@/lib/data';
+import type { Customer, Salon } from '@/lib/data';
 import { PageHeader } from '@/components/page-header';
 import {
   Card,
@@ -24,6 +24,11 @@ export default function CustomerDetailPage() {
 
   const salonId = user?.uid;
 
+  const salonDocRef = useMemoFirebase(() => {
+    if (!firestore || !salonId) return null;
+    return doc(firestore, 'salons', salonId);
+  }, [firestore, salonId]);
+
   const customerDocRef = useMemoFirebase(() => {
     if (!firestore || !salonId || !customerId) return null;
     return doc(
@@ -33,7 +38,10 @@ export default function CustomerDetailPage() {
     );
   }, [firestore, salonId, customerId]);
 
-  const { data: customer, isLoading } = useDoc<Customer>(customerDocRef);
+  const { data: salon, isLoading: isSalonLoading } = useDoc<Salon>(salonDocRef);
+  const { data: customer, isLoading: isCustomerLoading } = useDoc<Customer>(customerDocRef);
+  
+  const isLoading = isSalonLoading || isCustomerLoading;
 
   const getInitials = (name: string) => {
     return name
@@ -90,7 +98,7 @@ export default function CustomerDetailPage() {
   }
 
   return (
-    <div className="grid flex-1 items-start gap-4 md:gap-8">
+    <div className="grid flex-1 items-start gap-4">
       <PageHeader />
       <Card>
         <CardHeader className="flex-row items-center gap-4 space-y-0 border-b pb-6">
@@ -118,11 +126,13 @@ export default function CustomerDetailPage() {
                     <span className="text-muted-foreground">Birthday:</span>
                     <span className="font-medium">{formatDate(customer.dob)}</span>
                 </div>
-                 <div className="flex items-center gap-4">
-                    <Star className="h-5 w-5 text-muted-foreground" />
-                    <span className="text-muted-foreground">Loyalty Points:</span>
-                    <span className="font-medium">{customer.loyaltyPoints || 0}</span>
-                </div>
+                {salon?.loyaltyProgramEnabled && (
+                  <div className="flex items-center gap-4">
+                      <Star className="h-5 w-5 text-muted-foreground" />
+                      <span className="text-muted-foreground">Loyalty Points:</span>
+                      <span className="font-medium">{customer.loyaltyPoints || 0}</span>
+                  </div>
+                )}
            </div>
             <div>
                 <h3 className="mb-4 font-semibold">Visit History</h3>

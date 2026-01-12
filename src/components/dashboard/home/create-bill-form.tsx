@@ -86,6 +86,7 @@ export function CreateBillForm({
   const watchServiceIds = useWatch({ control: form.control, name: 'serviceIds' });
   const watchRedeemPoints = useWatch({ control: form.control, name: 'redeemPoints' });
   const customerPoints = customer.loyaltyPoints || 0;
+  const loyaltyEnabled = salon?.loyaltyProgramEnabled;
 
   useEffect(() => {
     const total = (watchServiceIds || []).reduce((acc, serviceId) => {
@@ -96,18 +97,18 @@ export function CreateBillForm({
   }, [watchServiceIds, services]);
 
   useEffect(() => {
-    const pointsToRedeem = Math.min(watchRedeemPoints, customerPoints, serviceTotal);
+    const pointsToRedeem = loyaltyEnabled ? Math.min(watchRedeemPoints, customerPoints, serviceTotal) : 0;
     const finalAmount = serviceTotal - pointsToRedeem;
     form.setValue('finalAmount', finalAmount);
-  }, [serviceTotal, watchRedeemPoints, form, customerPoints]);
+  }, [serviceTotal, watchRedeemPoints, form, customerPoints, loyaltyEnabled]);
   
   useEffect(() => {
     // Validate redeemed points against new service total
-    const pointsToRedeem = Math.min(form.getValues('redeemPoints'), customerPoints, serviceTotal);
+    const pointsToRedeem = loyaltyEnabled ? Math.min(form.getValues('redeemPoints'), customerPoints, serviceTotal) : 0;
     if(form.getValues('redeemPoints') !== pointsToRedeem) {
         form.setValue('redeemPoints', pointsToRedeem);
     }
-  }, [serviceTotal, customerPoints, form]);
+  }, [serviceTotal, customerPoints, form, loyaltyEnabled]);
 
 
   async function onSubmit(data: BillFormValues) {
@@ -118,7 +119,7 @@ export function CreateBillForm({
       }
       
       const loyaltyRatio = salon?.loyaltyPointsRatio || 10;
-      const pointsToRedeem = Math.min(data.redeemPoints, customerPoints, serviceTotal);
+      const pointsToRedeem = loyaltyEnabled ? Math.min(data.redeemPoints, customerPoints, serviceTotal) : 0;
       
       const appointmentData = {
         serviceIds: data.serviceIds,
@@ -136,16 +137,19 @@ export function CreateBillForm({
       const appointmentsRef = collection(firestore, `salons/${salonId}/appointments`);
       const docRef = await addDocumentNonBlocking(appointmentsRef, appointmentData);
 
-      // Award and Redeem loyalty points
-      const pointsEarned = Math.floor(data.finalAmount / loyaltyRatio);
-      const pointsChange = pointsEarned - pointsToRedeem;
-      
-      if (pointsChange !== 0) {
-        const customerRef = doc(firestore, `salons/${salonId}/customers`, customer.id);
-        updateDocumentNonBlocking(customerRef, {
-          loyaltyPoints: increment(pointsChange)
-        });
+      // Award and Redeem loyalty points if enabled
+      if (loyaltyEnabled) {
+        const pointsEarned = Math.floor(data.finalAmount / loyaltyRatio);
+        const pointsChange = pointsEarned - pointsToRedeem;
+        
+        if (pointsChange !== 0) {
+          const customerRef = doc(firestore, `salons/${salonId}/customers`, customer.id);
+          updateDocumentNonBlocking(customerRef, {
+            loyaltyPoints: increment(pointsChange)
+          });
+        }
       }
+
 
       const newAppointment: Appointment = {
           id: docRef.id,
@@ -238,33 +242,35 @@ export function CreateBillForm({
                 <span className="font-medium">₹{serviceTotal}</span>
              </div>
 
-            <FormField
-                control={form.control}
-                name="redeemPoints"
-                render={({ field }) => (
-                    <FormItem>
-                        <div className='flex justify-between items-center text-sm'>
-                            <FormLabel className="flex items-center gap-2">
-                                <Star className='h-4 w-4 text-amber-400' />
-                                <span>Redeem Points</span>
-                                <span className='text-xs text-muted-foreground'>(Avail: {customerPoints})</span>
-                            </FormLabel>
-                            <div className="flex items-center gap-2">
-                                <span className='text-muted-foreground'>- ₹</span>
-                                <FormControl>
-                                    <Input 
-                                        type="number" 
-                                        className="h-8 w-20 text-right" 
-                                        {...field}
-                                        max={Math.min(customerPoints, serviceTotal)}
-                                    />
-                                </FormControl>
+            {loyaltyEnabled && (
+                 <FormField
+                    control={form.control}
+                    name="redeemPoints"
+                    render={({ field }) => (
+                        <FormItem>
+                            <div className='flex justify-between items-center text-sm'>
+                                <FormLabel className="flex items-center gap-2">
+                                    <Star className='h-4 w-4 text-amber-400' />
+                                    <span>Redeem Points</span>
+                                    <span className='text-xs text-muted-foreground'>(Avail: {customerPoints})</span>
+                                </FormLabel>
+                                <div className="flex items-center gap-2">
+                                    <span className='text-muted-foreground'>- ₹</span>
+                                    <FormControl>
+                                        <Input 
+                                            type="number" 
+                                            className="h-8 w-20 text-right" 
+                                            {...field}
+                                            max={Math.min(customerPoints, serviceTotal)}
+                                        />
+                                    </FormControl>
+                                </div>
                             </div>
-                        </div>
-                         <FormMessage className="text-right" />
-                    </FormItem>
-                )}
-            />
+                            <FormMessage className="text-right" />
+                        </FormItem>
+                    )}
+                />
+            )}
             <div className="flex justify-between items-center text-lg font-bold pt-2 border-t border-dashed">
                 <span>To Pay</span>
                 <span>₹{form.getValues('finalAmount')}</span>
@@ -311,3 +317,5 @@ export function CreateBillForm({
     </Form>
   );
 }
+
+    

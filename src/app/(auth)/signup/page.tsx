@@ -100,6 +100,8 @@ export default function SignupPage() {
         name: data.salonName,
         ownerId: user.uid,
         appointmentsEnabled: true, // Default to true on creation
+        loyaltyProgramEnabled: true, // Default to true on creation
+        loyaltyPointsRatio: 10, // Default ratio
         address: '',
         city: '',
         state: '',
