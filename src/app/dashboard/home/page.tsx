@@ -11,6 +11,7 @@ import {
   getDocs,
   limit,
   addDoc,
+  doc
 } from 'firebase/firestore';
 import {
   Card,
@@ -38,9 +39,9 @@ import {
 } from '@/components/ui/dialog';
 import { Loader2, Search, ArrowRight } from 'lucide-react';
 import { Logo } from '@/components/logo';
-import { useFirestore, useUser, useCollection, useMemoFirebase } from '@/firebase';
+import { useFirestore, useUser, useCollection, useDoc, useMemoFirebase } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
-import type { Customer, Service, Staff, Appointment } from '@/lib/data';
+import type { Customer, Service, Staff, Appointment, Salon } from '@/lib/data';
 import {
     Table,
     TableBody,
@@ -82,6 +83,12 @@ export default function HomePage() {
   const [checkedInAppointments, setCheckedInAppointments] = useState<Appointment[]>([]);
 
   const salonId = user?.uid;
+
+  const salonDocRef = useMemoFirebase(() => {
+    if (!firestore || !salonId) return null;
+    return doc(firestore, 'salons', salonId);
+  }, [firestore, salonId]);
+  const { data: salon } = useDoc<Salon>(salonDocRef);
 
   // Fetch services and staff for the new bill form
   const servicesQuery = useMemoFirebase(() => {
@@ -159,11 +166,12 @@ export default function HomePage() {
     const salonId = user.uid;
 
     try {
-        const customerData: Omit<Customer, 'id' | 'visitHistory'> & { visitHistory?: string } = {
+        const customerData: Omit<Customer, 'id' | 'visitHistory' | 'loyaltyPoints'> & { visitHistory: string, loyaltyPoints: number } = {
             salonId: salonId,
             name: data.name,
             phone: newCustomerPhone,
             visitHistory: '', // Initialize empty history
+            loyaltyPoints: 0,
             ...(data.dob && { dob: data.dob }),
         };
 
@@ -173,7 +181,6 @@ export default function HomePage() {
         const newCustomer: Customer = {
             id: docRef.id,
             ...customerData,
-            visitHistory: ''
         };
 
         toast({
@@ -213,7 +220,7 @@ export default function HomePage() {
             <CardHeader className="items-center text-center">
               <div className="mb-4 flex items-center gap-2">
                 <Logo className="h-8 w-8 text-primary" />
-                <span className="font-headline text-2xl font-bold">Your Salon</span>
+                <span className="font-headline text-2xl font-bold">{salon?.name || 'Your Salon'}</span>
               </div>
               <CardTitle className="font-headline text-3xl">
                 Customer Check-in
@@ -370,6 +377,7 @@ export default function HomePage() {
               customer={selectedCustomer}
               services={services}
               staff={staff}
+              salon={salon}
               setOpen={setShowCreateBillDialog}
               onBillCreated={handleBillCreated}
             />

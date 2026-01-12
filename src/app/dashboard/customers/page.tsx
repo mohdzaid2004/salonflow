@@ -16,7 +16,7 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-import { MoreHorizontal } from 'lucide-react';
+import { MoreHorizontal, Star } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -66,6 +66,9 @@ export default function CustomersPage() {
           <Skeleton className="h-4 w-16" />
         </TableCell>
         <TableCell>
+          <Skeleton className="h-4 w-12" />
+        </TableCell>
+        <TableCell>
           <div className="flex justify-end">
             <Skeleton className="h-8 w-8" />
           </div>
@@ -75,7 +78,7 @@ export default function CustomersPage() {
   };
 
   return (
-    <div className="grid flex-1 items-start gap-4 md:gap-8">
+    <div className="grid flex-1 items-start gap-4">
       <Card>
         <CardHeader>
           <CardTitle>Customer List</CardTitle>
@@ -89,6 +92,7 @@ export default function CustomersPage() {
               <TableRow>
                 <TableHead>Name</TableHead>
                 <TableHead>Phone</TableHead>
+                <TableHead>Loyalty Points</TableHead>
                 <TableHead>
                   <span className="sr-only">Actions</span>
                 </TableHead>
@@ -117,6 +121,12 @@ export default function CustomersPage() {
                       {customer.phone}
                     </TableCell>
                     <TableCell>
+                      <div className="flex items-center gap-2">
+                        <Star className="h-4 w-4 text-amber-400" />
+                        <span>{customer.loyaltyPoints || 0}</span>
+                      </div>
+                    </TableCell>
+                    <TableCell>
                       <div className='flex justify-end'>
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
@@ -142,7 +152,7 @@ export default function CustomersPage() {
               ) : (
                 <TableRow>
                   <TableCell
-                    colSpan={3}
+                    colSpan={4}
                     className="h-24 text-center text-muted-foreground"
                   >
                     No customers found. Use the "Customer Check-in" button to add one.

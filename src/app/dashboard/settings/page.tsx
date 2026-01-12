@@ -14,10 +14,15 @@ import type { Salon } from '@/lib/data';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { useTransition } from 'react';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { cn } from '@/lib/utils';
+import { useForm, Controller } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import * as z from 'zod';
 
 const themeColors = [
   { name: 'Default', value: '275 100% 25.3%', className: 'bg-[hsl(275,100%,25.3%)]' },
@@ -26,6 +31,12 @@ const themeColors = [
   { name: 'Teal', value: '162 72% 46%', className: 'bg-teal-500' },
   { name: 'Indigo', value: '221.2 83.2% 53.3%', className: 'bg-indigo-600' },
 ];
+
+const loyaltySchema = z.object({
+  loyaltyPointsRatio: z.coerce.number().min(1, 'Ratio must be at least 1.'),
+});
+
+type LoyaltyFormValues = z.infer<typeof loyaltySchema>;
 
 export default function SettingsPage() {
   const { user } = useUser();
@@ -40,6 +51,13 @@ export default function SettingsPage() {
   }, [firestore, salonId]);
 
   const { data: salon, isLoading } = useDoc<Salon>(salonDocRef);
+
+  const loyaltyForm = useForm<LoyaltyFormValues>({
+    resolver: zodResolver(loyaltySchema),
+    values: {
+      loyaltyPointsRatio: salon?.loyaltyPointsRatio || 10,
+    }
+  });
 
   const handleToggleAppointments = (enabled: boolean) => {
     if (!salonDocRef) return;
@@ -78,10 +96,28 @@ export default function SettingsPage() {
       }
     });
   }
+  
+  const handleLoyaltySubmit = (data: LoyaltyFormValues) => {
+     if (!salonDocRef) return;
+    startTransition(async () => {
+      try {
+        await updateDoc(salonDocRef, { loyaltyPointsRatio: data.loyaltyPointsRatio });
+        toast({
+          title: 'Loyalty settings updated',
+          description: 'Your loyalty points ratio has been saved.',
+        });
+      } catch (error) {
+        toast({
+          variant: 'destructive',
+          title: 'Error',
+          description: 'Failed to update loyalty settings.',
+        });
+      }
+    });
+  }
 
   return (
-    <div className="grid flex-1 items-start gap-4 md:gap-8">
-      <PageHeader title="Settings" />
+    <div className="grid flex-1 items-start gap-4">
       <Card>
         <CardHeader>
           <CardTitle>Feature Management</CardTitle>
@@ -145,15 +181,46 @@ export default function SettingsPage() {
           )}
         </CardContent>
       </Card>
-       <Card>
+      <Card>
         <CardHeader>
-          <CardTitle>Application Settings</CardTitle>
+          <CardTitle>Loyalty Program</CardTitle>
           <CardDescription>
-            This section is under construction.
+            Configure how customers earn loyalty points.
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <p>Salon details, subscription management, and other settings will be available here soon.</p>
+          {isLoading ? (
+            <Skeleton className="h-24 w-full" />
+          ) : (
+             <form onSubmit={loyaltyForm.handleSubmit(handleLoyaltySubmit)}>
+              <div className="grid gap-4 sm:grid-cols-3">
+                <div className="sm:col-span-2">
+                  <Label htmlFor="loyalty-ratio">Rupees per Point</Label>
+                  <Controller
+                    name="loyaltyPointsRatio"
+                    control={loyaltyForm.control}
+                    render={({ field }) => (
+                      <Input
+                        id="loyalty-ratio"
+                        type="number"
+                        {...field}
+                        className="mt-2"
+                      />
+                    )}
+                  />
+                   {loyaltyForm.formState.errors.loyaltyPointsRatio && (
+                    <p className="mt-1 text-sm text-destructive">{loyaltyForm.formState.errors.loyaltyPointsRatio.message}</p>
+                  )}
+                  <p className="mt-2 text-xs text-muted-foreground">
+                    e.g., a value of 10 means the customer earns 1 point for every ₹10 spent.
+                  </p>
+                </div>
+                <div className="flex items-end">
+                   <Button type="submit" disabled={isPending} className='w-full sm:w-auto'>Save</Button>
+                </div>
+              </div>
+            </form>
+          )}
         </CardContent>
       </Card>
     </div>

@@ -8,6 +8,7 @@ export type Salon = {
   phone: string;
   appointmentsEnabled?: boolean;
   themeColor?: string;
+  loyaltyPointsRatio?: number;
 }
 
 export type Service = {
@@ -48,5 +49,3 @@ export type Appointment = {
   paymentMethod: 'Cash' | 'Card' | 'UPI';
   amountPaid: number;
 };
-
-    

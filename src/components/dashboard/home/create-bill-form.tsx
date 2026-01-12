@@ -1,7 +1,7 @@
 'use client';
 
-import { useTransition } from 'react';
-import { useForm } from 'react-hook-form';
+import { useState, useTransition, useEffect } from 'react';
+import { useForm, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { Button } from '@/components/ui/button';
@@ -21,7 +21,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Star } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import {
   useFirestore,
@@ -35,15 +35,18 @@ import {
   doc,
   increment,
 } from 'firebase/firestore';
-import type { Service, Staff, Customer, Appointment } from '@/lib/data';
+import type { Service, Staff, Customer, Appointment, Salon } from '@/lib/data';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Checkbox } from '@/components/ui/checkbox';
+import { cn } from '@/lib/utils';
+
 
 const billFormSchema = z.object({
   serviceIds: z.array(z.string()).min(1, 'At least one service is required.'),
   staffId: z.string().min(1, 'Please select a staff member.'),
   paymentMethod: z.enum(['Cash', 'Card', 'UPI'], { required_error: 'Please select a payment method.'}),
-  amountPaid: z.coerce.number().min(0, 'Amount must be a positive number.'),
+  redeemPoints: z.coerce.number().min(0, 'Cannot redeem negative points.'),
+  finalAmount: z.coerce.number(),
 });
 
 type BillFormValues = z.infer<typeof billFormSchema>;
@@ -52,12 +55,14 @@ export function CreateBillForm({
   customer,
   staff,
   services,
+  salon,
   setOpen,
   onBillCreated,
 }: {
   customer: Customer;
   staff: Staff[];
   services: Service[];
+  salon: Salon | null;
   setOpen: (open: boolean) => void;
   onBillCreated: (appointment: Appointment) => void;
 }) {
@@ -66,15 +71,44 @@ export function CreateBillForm({
   const firestore = useFirestore();
   const { user } = useUser();
   const salonId = user?.uid;
+  const [serviceTotal, setServiceTotal] = useState(0);
 
   const form = useForm<BillFormValues>({
     resolver: zodResolver(billFormSchema),
     defaultValues: {
       serviceIds: [],
       staffId: '',
-      amountPaid: 0,
+      redeemPoints: 0,
+      finalAmount: 0,
     },
   });
+
+  const watchServiceIds = useWatch({ control: form.control, name: 'serviceIds' });
+  const watchRedeemPoints = useWatch({ control: form.control, name: 'redeemPoints' });
+  const customerPoints = customer.loyaltyPoints || 0;
+
+  useEffect(() => {
+    const total = (watchServiceIds || []).reduce((acc, serviceId) => {
+        const s = services.find(s => s.id === serviceId);
+        return acc + (s?.price || 0);
+    }, 0);
+    setServiceTotal(total);
+  }, [watchServiceIds, services]);
+
+  useEffect(() => {
+    const pointsToRedeem = Math.min(watchRedeemPoints, customerPoints, serviceTotal);
+    const finalAmount = serviceTotal - pointsToRedeem;
+    form.setValue('finalAmount', finalAmount);
+  }, [serviceTotal, watchRedeemPoints, form, customerPoints]);
+  
+  useEffect(() => {
+    // Validate redeemed points against new service total
+    const pointsToRedeem = Math.min(form.getValues('redeemPoints'), customerPoints, serviceTotal);
+    if(form.getValues('redeemPoints') !== pointsToRedeem) {
+        form.setValue('redeemPoints', pointsToRedeem);
+    }
+  }, [serviceTotal, customerPoints, form]);
+
 
   async function onSubmit(data: BillFormValues) {
     startTransition(async () => {
@@ -83,8 +117,14 @@ export function CreateBillForm({
         return;
       }
       
+      const loyaltyRatio = salon?.loyaltyPointsRatio || 10;
+      const pointsToRedeem = Math.min(data.redeemPoints, customerPoints, serviceTotal);
+      
       const appointmentData = {
-        ...data,
+        serviceIds: data.serviceIds,
+        staffId: data.staffId,
+        paymentMethod: data.paymentMethod,
+        amountPaid: data.finalAmount,
         salonId,
         customerId: customer.id,
         customerName: customer.name,
@@ -96,12 +136,14 @@ export function CreateBillForm({
       const appointmentsRef = collection(firestore, `salons/${salonId}/appointments`);
       const docRef = await addDocumentNonBlocking(appointmentsRef, appointmentData);
 
-      // Award loyalty points
-      const pointsEarned = Math.floor(data.amountPaid / 10);
-      if (pointsEarned > 0) {
+      // Award and Redeem loyalty points
+      const pointsEarned = Math.floor(data.finalAmount / loyaltyRatio);
+      const pointsChange = pointsEarned - pointsToRedeem;
+      
+      if (pointsChange !== 0) {
         const customerRef = doc(firestore, `salons/${salonId}/customers`, customer.id);
         updateDocumentNonBlocking(customerRef, {
-          loyaltyPoints: increment(pointsEarned)
+          loyaltyPoints: increment(pointsChange)
         });
       }
 
@@ -142,18 +184,12 @@ export function CreateBillForm({
                                 <Checkbox
                                     checked={field.value?.includes(service.id)}
                                     onCheckedChange={(checked) => {
-                                    const newValue = checked
-                                        ? [...(field.value || []), service.id]
-                                        : (field.value || []).filter(
-                                            (value) => value !== service.id
-                                          );
-                                    field.onChange(newValue);
-                                    
-                                    const total = newValue.reduce((acc, serviceId) => {
-                                        const s = services.find(s => s.id === serviceId);
-                                        return acc + (s?.price || 0);
-                                    }, 0);
-                                    form.setValue('amountPaid', total);
+                                        const newValue = checked
+                                            ? [...(field.value || []), service.id]
+                                            : (field.value || []).filter(
+                                                (value) => value !== service.id
+                                            );
+                                        field.onChange(newValue);
                                     }}
                                 />
                                 </FormControl>
@@ -195,17 +231,47 @@ export function CreateBillForm({
             </FormItem>
           )}
         />
-        <FormField
-            control={form.control}
-            name="amountPaid"
-            render={({ field }) => (
-                <FormItem>
-                    <FormLabel>Amount to be Paid (INR)</FormLabel>
-                    <FormControl><Input type="number" {...field} /></FormControl>
-                    <FormMessage />
-                </FormItem>
-            )}
-        />
+        
+        <div className="space-y-2 rounded-lg border bg-accent/50 p-4">
+             <div className="flex justify-between items-center text-sm">
+                <span className="text-muted-foreground">Service Total</span>
+                <span className="font-medium">₹{serviceTotal}</span>
+             </div>
+
+            <FormField
+                control={form.control}
+                name="redeemPoints"
+                render={({ field }) => (
+                    <FormItem>
+                        <div className='flex justify-between items-center text-sm'>
+                            <FormLabel className="flex items-center gap-2">
+                                <Star className='h-4 w-4 text-amber-400' />
+                                <span>Redeem Points</span>
+                                <span className='text-xs text-muted-foreground'>(Avail: {customerPoints})</span>
+                            </FormLabel>
+                            <div className="flex items-center gap-2">
+                                <span className='text-muted-foreground'>- ₹</span>
+                                <FormControl>
+                                    <Input 
+                                        type="number" 
+                                        className="h-8 w-20 text-right" 
+                                        {...field}
+                                        max={Math.min(customerPoints, serviceTotal)}
+                                    />
+                                </FormControl>
+                            </div>
+                        </div>
+                         <FormMessage className="text-right" />
+                    </FormItem>
+                )}
+            />
+            <div className="flex justify-between items-center text-lg font-bold pt-2 border-t border-dashed">
+                <span>To Pay</span>
+                <span>₹{form.getValues('finalAmount')}</span>
+            </div>
+        </div>
+        
+
         <FormField
             control={form.control}
             name="paymentMethod"
@@ -245,5 +311,3 @@ export function CreateBillForm({
     </Form>
   );
 }
-
-    
