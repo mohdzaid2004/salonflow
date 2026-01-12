@@ -32,6 +32,7 @@ export type Customer = {
   phone: string;
   dob?: string;
   visitHistory: string;
+  loyaltyPoints?: number;
 };
 
 export type Appointment = {
@@ -47,3 +48,5 @@ export type Appointment = {
   paymentMethod: 'Cash' | 'Card' | 'UPI';
   amountPaid: number;
 };
+
+    

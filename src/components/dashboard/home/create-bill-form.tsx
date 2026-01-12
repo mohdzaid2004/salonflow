@@ -27,10 +27,13 @@ import {
   useFirestore,
   useUser,
   addDocumentNonBlocking,
+  updateDocumentNonBlocking,
 } from '@/firebase';
 import {
   collection,
   Timestamp,
+  doc,
+  increment,
 } from 'firebase/firestore';
 import type { Service, Staff, Customer, Appointment } from '@/lib/data';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
@@ -92,6 +95,15 @@ export function CreateBillForm({
       
       const appointmentsRef = collection(firestore, `salons/${salonId}/appointments`);
       const docRef = await addDocumentNonBlocking(appointmentsRef, appointmentData);
+
+      // Award loyalty points
+      const pointsEarned = Math.floor(data.amountPaid / 10);
+      if (pointsEarned > 0) {
+        const customerRef = doc(firestore, `salons/${salonId}/customers`, customer.id);
+        updateDocumentNonBlocking(customerRef, {
+          loyaltyPoints: increment(pointsEarned)
+        });
+      }
 
       const newAppointment: Appointment = {
           id: docRef.id,
@@ -233,3 +245,5 @@ export function CreateBillForm({
     </Form>
   );
 }
+
+    

@@ -15,7 +15,7 @@ import {
 } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { Phone, Cake } from 'lucide-react';
+import { Phone, Cake, Star } from 'lucide-react';
 
 export default function CustomerDetailPage() {
   const { id: customerId } = useParams();
@@ -118,6 +118,11 @@ export default function CustomerDetailPage() {
                     <span className="text-muted-foreground">Birthday:</span>
                     <span className="font-medium">{formatDate(customer.dob)}</span>
                 </div>
+                 <div className="flex items-center gap-4">
+                    <Star className="h-5 w-5 text-muted-foreground" />
+                    <span className="text-muted-foreground">Loyalty Points:</span>
+                    <span className="font-medium">{customer.loyaltyPoints || 0}</span>
+                </div>
            </div>
             <div>
                 <h3 className="mb-4 font-semibold">Visit History</h3>
@@ -130,3 +135,5 @@ export default function CustomerDetailPage() {
     </div>
   );
 }
+
+    
