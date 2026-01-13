@@ -111,8 +111,10 @@ export function CreateBillForm({
   }, [serviceTotal, customerPoints, form, loyaltyEnabled]);
 
   const sendWhatsAppMessage = (appointment: Appointment) => {
+    if (!salonId) return;
     const staffName = staff.find(s => s.id === appointment.staffId)?.name || 'our staff';
-    const feedbackLink = `${window.location.origin}/feedback/${appointment.id}`;
+    const feedbackId = `${salonId}_${appointment.id}`;
+    const feedbackLink = `${window.location.origin}/feedback/${feedbackId}`;
     
     const message = `Hi ${appointment.customerName}, thanks for visiting ${salon?.name || 'our salon'}! Your bill for today is ₹${appointment.amountPaid}.
     
@@ -333,5 +335,3 @@ We look forward to seeing you again!`;
     </Form>
   );
 }
-
-    
