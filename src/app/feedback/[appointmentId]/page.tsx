@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useTransition } from 'react';
+import { useState } from 'react';
 import { useParams } from 'next/navigation';
 import { useDoc, useFirestore, useMemoFirebase } from '@/firebase';
 import { doc, collection, Timestamp, addDoc } from 'firebase/firestore';
@@ -16,25 +16,30 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Logo } from '@/components/logo';
 
 export default function FeedbackPage() {
-  const { appointmentId } = useParams();
+  const { appointmentId: compositeId } = useParams();
   const firestore = useFirestore();
   const { toast } = useToast();
   
   const [rating, setRating] = useState(0);
   const [hoverRating, setHoverRating] = useState(0);
   const [comment, setComment] = useState('');
-  const [isPending, startTransition] = useTransition();
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Safely extract IDs from the composite key
+  const [salonId, appointmentId] = useMemo(() => {
+    const id = Array.isArray(compositeId) ? compositeId[0] : compositeId;
+    const parts = id?.split('_');
+    return parts?.length === 2 ? [parts[0], parts[1]] : [null, null];
+  }, [compositeId]);
+
 
   const appointmentDocRef = useMemoFirebase(() => {
-    if (!firestore || !appointmentId) return null;
-    const pathSegments = (appointmentId as string).split('_');
-    if (pathSegments.length < 2) return null;
-    return doc(firestore, `salons/${pathSegments[0]}/appointments`, pathSegments[1]);
-  }, [firestore, appointmentId]);
+    if (!firestore || !salonId || !appointmentId) return null;
+    return doc(firestore, `salons/${salonId}/appointments`, appointmentId);
+  }, [firestore, salonId, appointmentId]);
 
   const { data: appointment, isLoading: isLoadingAppointment } = useDoc<Appointment>(appointmentDocRef);
 
-  const salonId = appointment?.salonId;
   const staffId = appointment?.staffId;
 
   const salonDocRef = useMemoFirebase(() => {
@@ -54,7 +59,7 @@ export default function FeedbackPage() {
 
   const getInitials = (name: string) => name.split(' ').map((n) => n[0]).join('');
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (rating === 0) {
       toast({
         variant: 'destructive',
@@ -65,39 +70,39 @@ export default function FeedbackPage() {
     }
     if (!salonId || !staffId || !appointment?.customerId || !appointmentId) return;
 
-    startTransition(async () => {
-      const reviewData: Omit<Review, 'id'> = {
-        salonId,
-        staffId,
-        customerId: appointment.customerId,
-        appointmentId: appointment.id,
-        rating,
-        comment,
-        createdAt: Timestamp.now(),
-      };
+    setIsSubmitting(true);
+    const reviewData: Omit<Review, 'id' | 'reviewId'> = {
+      salonId,
+      staffId,
+      customerId: appointment.customerId,
+      appointmentId: appointment.id,
+      rating,
+      comment,
+      createdAt: Timestamp.now(),
+    };
+    
+    try {
+      const reviewsRef = collection(firestore, `salons/${salonId}/reviews`);
+      await addDoc(reviewsRef, reviewData);
       
-      try {
-        const reviewsRef = collection(firestore, `salons/${salonId}/reviews`);
-        await addDoc(reviewsRef, reviewData);
-        
-        toast({
-          title: 'Feedback Submitted!',
-          description: 'Thank you for helping us improve. This window will now close.',
-        });
+      toast({
+        title: 'Feedback Submitted!',
+        description: 'Thank you for helping us improve. This window will now close.',
+      });
 
-        // Close the window after a short delay to allow the user to read the toast.
-        setTimeout(() => {
-          window.close();
-        }, 2000);
+      setTimeout(() => {
+        window.close();
+      }, 2000);
 
-      } catch (error) {
-        toast({
-          variant: 'destructive',
-          title: 'Submission Failed',
-          description: 'Could not submit your review. Please try again.',
-        });
-      }
-    });
+    } catch (error) {
+      toast({
+        variant: 'destructive',
+        title: 'Submission Failed',
+        description: 'Could not submit your review. Please try again.',
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
   
   if (isLoading) {
@@ -164,7 +169,7 @@ export default function FeedbackPage() {
                   onMouseEnter={() => setHoverRating(starValue)}
                   onMouseLeave={() => setHoverRating(0)}
                   onClick={() => setRating(starValue)}
-                  disabled={isPending}
+                  disabled={isSubmitting}
                 >
                   <Star
                     className={cn(
@@ -184,13 +189,13 @@ export default function FeedbackPage() {
             value={comment}
             onChange={(e) => setComment(e.target.value)}
             rows={4}
-            disabled={isPending}
+            disabled={isSubmitting}
           />
 
         </CardContent>
         <CardFooter>
-          <Button className="w-full" onClick={handleSubmit} disabled={isPending}>
-            {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+          <Button className="w-full" onClick={handleSubmit} disabled={isSubmitting}>
+            {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             Submit Review
           </Button>
         </CardFooter>
