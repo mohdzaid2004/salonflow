@@ -110,6 +110,21 @@ export function CreateBillForm({
     }
   }, [serviceTotal, customerPoints, form, loyaltyEnabled]);
 
+  const sendWhatsAppMessage = (appointment: Appointment) => {
+    const staffName = staff.find(s => s.id === appointment.staffId)?.name || 'our staff';
+    const feedbackLink = `${window.location.origin}/feedback/${appointment.id}`;
+    
+    const message = `Hi ${appointment.customerName}, thanks for visiting ${salon?.name || 'our salon'}! Your bill for today is ₹${appointment.amountPaid}.
+    
+We'd love to hear your feedback on your service with ${staffName}. Please take a moment to leave a review:
+${feedbackLink}
+    
+We look forward to seeing you again!`;
+
+    const whatsappUrl = `https://web.whatsapp.com/send?phone=91${appointment.customerPhone}&text=${encodeURIComponent(message)}`;
+    window.open(whatsappUrl, '_blank');
+  }
+
 
   async function onSubmit(data: BillFormValues) {
     startTransition(async () => {
@@ -157,6 +172,7 @@ export function CreateBillForm({
       }
 
       onBillCreated(newAppointment);
+      sendWhatsAppMessage(newAppointment);
       setOpen(false);
     });
   }
@@ -317,3 +333,5 @@ export function CreateBillForm({
     </Form>
   );
 }
+
+    

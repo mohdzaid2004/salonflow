@@ -300,6 +300,56 @@
         "onlineBookingLink",
         "advancedReports"
       ]
+    },
+    "Review": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Review",
+      "type": "object",
+      "description": "Represents a customer review for a staff member after an appointment.",
+      "properties": {
+        "reviewId": {
+          "type": "string",
+          "description": "Unique identifier for the review."
+        },
+        "salonId": {
+          "type": "string",
+          "description": "Reference to Salon."
+        },
+        "staffId": {
+          "type": "string",
+          "description": "Reference to the Staff member being reviewed."
+        },
+        "customerId": {
+          "type": "string",
+          "description": "Reference to the Customer who gave the review."
+        },
+        "appointmentId": {
+          "type": "string",
+          "description": "Reference to the Appointment this review is for."
+        },
+        "rating": {
+          "type": "number",
+          "description": "The star rating given, from 1 to 5."
+        },
+        "comment": {
+          "type": "string",
+          "description": "Optional text comment from the customer."
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "The timestamp when the review was submitted.",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "reviewId",
+        "salonId",
+        "staffId",
+        "customerId",
+        "appointmentId",
+        "rating",
+        "createdAt"
+      ]
     }
   },
   "auth": {
@@ -405,8 +455,30 @@
             }
           ]
         }
+      },
+       {
+        "path": "/salons/{salonId}/reviews/{reviewId}",
+        "definition": {
+          "entityName": "Review",
+          "schema": {
+            "$ref": "#/backend/entities/Review"
+          },
+          "description": "Represents a customer review for a staff member. Includes denormalized 'salonId' for authorization independence.",
+          "params": [
+            {
+              "name": "salonId",
+              "description": "Unique identifier for the salon."
+            },
+            {
+              "name": "reviewId",
+              "description": "Unique identifier for the review."
+            }
+          ]
+        }
       }
     ],
     "reasoning": "This Firestore structure is designed for a multi-tenant Salon Management SaaS application. The top-level collection, `salons`, represents individual salons. Each salon's data is then stored in subcollections under its respective document. This approach ensures data isolation and scalability for multiple salons within the same application instance.\\n\\nKey features of this structure:\\n\\n1.  **Multi-Tenancy:** The `salons` collection serves as the root for tenant isolation. Each salon has its own set of subcollections, preventing data mixing.\\n2.  **Authorization Independence:** The `salonId` is present in every document within a salon's subcollections (e.g., `/salons/{salonId}/users/{userId}`). This denormalization allows security rules to validate that a user or resource belongs to the correct salon without needing to perform costly `get()` operations to retrieve parent data. The rule can simply check `request.resource.data.salonId == resource.data.salonId`.\\n3.  **QAPs (Rules are not Filters):** The structure facilitates secure `list` operations. For example, listing all `users` associated with a particular `salonId` can be secured by ensuring the `salonId` in the requested documents matches the `salonId` of the user making the request.\\n4. **Ownership:** Using hierarchical paths such as `/salons/{salonId}/users/{userId}` establishes a clear ownership model where each document inherently belongs to a specific salon. This simplifies security rules based on ownership.\\n\\nThis structure also supports easy querying within a specific salon's data. For example, fetching all appointments for a specific staff member in a salon is straightforward using collection group queries (once enabled).\\n\\nThis design avoids hierarchical authorization dependencies to support atomic operations and simplifies debugging. All rules can rely solely on `request.auth.uid` and the `salonId` denormalized into each document for authorization."
   }
 }
+
+    

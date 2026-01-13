@@ -51,4 +51,15 @@ export type Appointment = {
   amountPaid: number;
 };
 
+export type Review = {
+  id: string;
+  salonId: string;
+  staffId: string;
+  customerId: string;
+  appointmentId: string;
+  rating: number;
+  comment?: string;
+  createdAt: unknown; // Firebase Timestamp
+};
+
     
