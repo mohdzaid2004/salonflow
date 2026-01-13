@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import { useDoc, useFirestore, useMemoFirebase } from '@/firebase';
 import { doc, collection, Timestamp, addDoc } from 'firebase/firestore';
@@ -24,14 +24,15 @@ export default function FeedbackPage() {
   const [hoverRating, setHoverRating] = useState(0);
   const [comment, setComment] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [initialLoading, setInitialLoading] = useState(true);
 
   // Safely extract IDs from the composite key
   const [salonId, appointmentId] = useMemo(() => {
     const id = Array.isArray(compositeId) ? compositeId[0] : compositeId;
-    const parts = id?.split('_');
-    return parts?.length === 2 ? [parts[0], parts[1]] : [null, null];
+    if (!id) return [null, null];
+    const parts = id.split('_');
+    return parts.length === 2 ? [parts[0], parts[1]] : [null, null];
   }, [compositeId]);
-
 
   const appointmentDocRef = useMemoFirebase(() => {
     if (!firestore || !salonId || !appointmentId) return null;
@@ -41,23 +42,32 @@ export default function FeedbackPage() {
   const { data: appointment, isLoading: isLoadingAppointment } = useDoc<Appointment>(appointmentDocRef);
 
   const staffId = appointment?.staffId;
+  const salonDocId = appointment?.salonId; // Use salonId from appointment data for consistency
 
   const salonDocRef = useMemoFirebase(() => {
-    if (!firestore || !salonId) return null;
-    return doc(firestore, 'salons', salonId);
-  }, [firestore, salonId]);
+    if (!firestore || !salonDocId) return null;
+    return doc(firestore, 'salons', salonDocId);
+  }, [firestore, salonDocId]);
 
   const staffDocRef = useMemoFirebase(() => {
-    if (!firestore || !salonId || !staffId) return null;
-    return doc(firestore, `salons/${salonId}/staff`, staffId);
-  }, [firestore, salonId, staffId]);
+    if (!firestore || !salonDocId || !staffId) return null;
+    return doc(firestore, `salons/${salonDocId}/staff`, staffId);
+  }, [firestore, salonDocId, staffId]);
 
   const { data: salon, isLoading: isLoadingSalon } = useDoc<Salon>(salonDocRef);
   const { data: staff, isLoading: isLoadingStaff } = useDoc<Staff>(staffDocRef);
 
-  const isLoading = !firestore || isLoadingAppointment || isLoadingSalon || isLoadingStaff;
+  // This effect handles the initial loading screen.
+  // It waits until the primary data fetching is no longer loading.
+  useEffect(() => {
+    if (!isLoadingAppointment) {
+      setInitialLoading(false);
+    }
+  }, [isLoadingAppointment]);
+  
+  const isLoading = initialLoading || (!appointment && !isLoadingAppointment) || (appointment && (isLoadingSalon || isLoadingStaff));
 
-  const getInitials = (name: string) => name.split(' ').map((n) => n[0]).join('');
+  const getInitials = (name: string) => name ? name.split(' ').map((n) => n[0]).join('') : '';
 
   const handleSubmit = async () => {
     if (rating === 0) {
@@ -68,7 +78,14 @@ export default function FeedbackPage() {
       });
       return;
     }
-    if (!firestore || !salonId || !staffId || !appointment?.customerId || !appointmentId) return;
+    if (!firestore || !salonId || !staffId || !appointment?.customerId || !appointmentId) {
+       toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: 'Could not submit review due to missing information.',
+      });
+      return;
+    }
 
     setIsSubmitting(true);
     const reviewData: Omit<Review, 'id' | 'reviewId'> = {
@@ -95,12 +112,12 @@ export default function FeedbackPage() {
       }, 2000);
 
     } catch (error) {
+      console.error(error);
       toast({
         variant: 'destructive',
         title: 'Submission Failed',
         description: 'Could not submit your review. Please try again.',
       });
-    } finally {
       setIsSubmitting(false);
     }
   };
@@ -142,7 +159,6 @@ export default function FeedbackPage() {
       </div>
     );
   }
-
 
   return (
     <div className="flex min-h-dvh flex-col items-center justify-center bg-background px-4 py-12">
