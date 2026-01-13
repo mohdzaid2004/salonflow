@@ -24,7 +24,6 @@ export default function FeedbackPage() {
   const [hoverRating, setHoverRating] = useState(0);
   const [comment, setComment] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [initialLoading, setInitialLoading] = useState(true);
 
   // Safely extract IDs from the composite key
   const [salonId, appointmentId] = useMemo(() => {
@@ -57,15 +56,9 @@ export default function FeedbackPage() {
   const { data: salon, isLoading: isLoadingSalon } = useDoc<Salon>(salonDocRef);
   const { data: staff, isLoading: isLoadingStaff } = useDoc<Staff>(staffDocRef);
 
-  // This effect handles the initial loading screen.
-  // It waits until the primary data fetching is no longer loading.
-  useEffect(() => {
-    if (!isLoadingAppointment) {
-      setInitialLoading(false);
-    }
-  }, [isLoadingAppointment]);
-  
-  const isLoading = initialLoading || (!appointment && !isLoadingAppointment) || (appointment && (isLoadingSalon || isLoadingStaff));
+  // Unified loading state
+  const isLoading = isLoadingAppointment || (appointment && (isLoadingSalon || isLoadingStaff));
+  const isDataInvalid = !isLoading && (!appointment || !salon || !staff);
 
   const getInitials = (name: string) => name ? name.split(' ').map((n) => n[0]).join('') : '';
 
@@ -147,7 +140,7 @@ export default function FeedbackPage() {
     );
   }
 
-  if (!appointment || !salon || !staff) {
+  if (isDataInvalid) {
     return (
        <div className="flex min-h-dvh flex-col items-center justify-center bg-background px-4">
         <Card className="w-full max-w-md text-center">
