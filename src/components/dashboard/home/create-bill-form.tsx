@@ -118,7 +118,7 @@ export function CreateBillForm({
         return;
       }
       
-      const loyaltyRatio = salon?.loyaltyPointsRatio || 10;
+      const loyaltyPercentage = salon?.loyaltyPointsRatio || 5; // Default to 5%
       const pointsToRedeem = loyaltyEnabled ? Math.min(data.redeemPoints, customerPoints, serviceTotal) : 0;
       
       const appointmentData = {
@@ -139,7 +139,7 @@ export function CreateBillForm({
 
       // Award and Redeem loyalty points if enabled
       if (loyaltyEnabled) {
-        const pointsEarned = Math.floor(data.finalAmount / loyaltyRatio);
+        const pointsEarned = Math.floor(data.finalAmount * (loyaltyPercentage / 100));
         const pointsChange = pointsEarned - pointsToRedeem;
         
         if (pointsChange !== 0) {
@@ -317,5 +317,3 @@ export function CreateBillForm({
     </Form>
   );
 }
-
-    

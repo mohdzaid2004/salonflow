@@ -34,7 +34,7 @@ const themeColors = [
 ];
 
 const loyaltySchema = z.object({
-  loyaltyPointsRatio: z.coerce.number().min(1, 'Ratio must be at least 1.'),
+  loyaltyPointsRatio: z.coerce.number().min(0, 'Percentage must be 0 or more.'),
 });
 
 type LoyaltyFormValues = z.infer<typeof loyaltySchema>;
@@ -56,7 +56,7 @@ export default function SettingsPage() {
   const loyaltyForm = useForm<LoyaltyFormValues>({
     resolver: zodResolver(loyaltySchema),
     values: {
-      loyaltyPointsRatio: salon?.loyaltyPointsRatio || 10,
+      loyaltyPointsRatio: salon?.loyaltyPointsRatio || 5, // Default to 5%
     }
   });
 
@@ -106,7 +106,7 @@ export default function SettingsPage() {
         await updateDoc(salonDocRef, { loyaltyPointsRatio: data.loyaltyPointsRatio });
         toast({
           title: 'Loyalty settings updated',
-          description: 'Your loyalty points ratio has been saved.',
+          description: 'Your loyalty points percentage has been saved.',
         });
       } catch (error) {
         toast({
@@ -220,7 +220,7 @@ export default function SettingsPage() {
               <form onSubmit={loyaltyForm.handleSubmit(handleLoyaltySubmit)}>
                 <div className="grid gap-4 sm:grid-cols-3">
                   <div className="sm:col-span-2">
-                    <Label htmlFor="loyalty-ratio">Rupees per Point</Label>
+                    <Label htmlFor="loyalty-ratio">Points Award Percentage (%)</Label>
                     <Controller
                       name="loyaltyPointsRatio"
                       control={loyaltyForm.control}
@@ -237,7 +237,7 @@ export default function SettingsPage() {
                       <p className="mt-1 text-sm text-destructive">{loyaltyForm.formState.errors.loyaltyPointsRatio.message}</p>
                     )}
                     <p className="mt-2 text-xs text-muted-foreground">
-                      e.g., a value of 10 means the customer earns 1 point for every ₹10 spent.
+                      The percentage of the final bill awarded as points. e.g., a value of 10 means 10% of the bill is converted to points.
                     </p>
                   </div>
                   <div className="flex items-end">
@@ -252,5 +252,3 @@ export default function SettingsPage() {
     </div>
   );
 }
-
-    
