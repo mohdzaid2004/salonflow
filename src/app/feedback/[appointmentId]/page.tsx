@@ -55,7 +55,7 @@ export default function FeedbackPage() {
   const { data: salon, isLoading: isLoadingSalon } = useDoc<Salon>(salonDocRef);
   const { data: staff, isLoading: isLoadingStaff } = useDoc<Staff>(staffDocRef);
 
-  const isLoading = isLoadingAppointment || isLoadingSalon || isLoadingStaff;
+  const isLoading = !firestore || isLoadingAppointment || isLoadingSalon || isLoadingStaff;
 
   const getInitials = (name: string) => name.split(' ').map((n) => n[0]).join('');
 
@@ -68,14 +68,14 @@ export default function FeedbackPage() {
       });
       return;
     }
-    if (!salonId || !staffId || !appointment?.customerId || !appointmentId) return;
+    if (!firestore || !salonId || !staffId || !appointment?.customerId || !appointmentId) return;
 
     setIsSubmitting(true);
     const reviewData: Omit<Review, 'id' | 'reviewId'> = {
       salonId,
       staffId,
       customerId: appointment.customerId,
-      appointmentId: appointment.id,
+      appointmentId: appointmentId,
       rating,
       comment,
       createdAt: Timestamp.now(),
