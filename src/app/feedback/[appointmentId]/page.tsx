@@ -14,6 +14,8 @@ import { useToast } from '@/hooks/use-toast';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Logo } from '@/components/logo';
+import { Label } from '@/components/ui/label';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 
 type PageStatus = 'loading' | 'loaded' | 'invalid' | 'submitted';
 
@@ -28,7 +30,6 @@ export default function FeedbackPage() {
   const [staff, setStaff] = useState<Staff | null>(null);
   
   const [rating, setRating] = useState(0);
-  const [hoverRating, setHoverRating] = useState(0);
   const [comment, setComment] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -42,7 +43,7 @@ export default function FeedbackPage() {
 
   useEffect(() => {
     if (!firestore || !salonId || !appointmentId) {
-      if (compositeId) { // only set invalid if we have a compositeId but no salon/appt id
+      if (compositeId) { 
           setStatus('invalid');
       }
       return;
@@ -133,6 +134,7 @@ export default function FeedbackPage() {
       await addDoc(reviewsRef, reviewData);
       
       setStatus('submitted');
+      setTimeout(() => window.close(), 2000);
 
     } catch (error) {
       console.error(error);
@@ -216,29 +218,37 @@ export default function FeedbackPage() {
               <AvatarFallback>{getInitials(staff.name)}</AvatarFallback>
             </Avatar>
 
-            <div className="flex justify-center space-x-2">
+            <RadioGroup
+              onValueChange={(value) => setRating(Number(value))}
+              className="flex justify-center space-x-2"
+              disabled={isSubmitting}
+            >
               {[...Array(5)].map((_, i) => {
                 const starValue = i + 1;
                 return (
-                  <button
-                    key={starValue}
-                    onMouseEnter={() => setHoverRating(starValue)}
-                    onMouseLeave={() => setHoverRating(0)}
-                    onClick={() => setRating(starValue)}
-                    disabled={isSubmitting}
-                  >
-                    <Star
-                      className={cn(
-                        'h-8 w-8 cursor-pointer transition-colors',
-                        starValue <= (hoverRating || rating)
-                          ? 'text-yellow-400 fill-yellow-400'
-                          : 'text-gray-300'
-                      )}
+                  <div key={starValue} className="flex items-center">
+                    <RadioGroupItem
+                      value={String(starValue)}
+                      id={`rating-${starValue}`}
+                      className="peer sr-only"
                     />
-                  </button>
+                    <Label
+                      htmlFor={`rating-${starValue}`}
+                      className="cursor-pointer"
+                    >
+                      <Star
+                        className={cn(
+                          'h-8 w-8 transition-colors',
+                          starValue <= rating
+                            ? 'fill-yellow-400 text-yellow-400'
+                            : 'text-gray-300 peer-hover:fill-yellow-200 peer-hover:text-yellow-200'
+                        )}
+                      />
+                    </Label>
+                  </div>
                 );
               })}
-            </div>
+            </RadioGroup>
             
             <Textarea 
               placeholder={`Tell us more about your experience (optional)`}
