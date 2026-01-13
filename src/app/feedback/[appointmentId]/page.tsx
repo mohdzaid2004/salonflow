@@ -2,8 +2,8 @@
 
 import { useState, useMemo, useEffect } from 'react';
 import { useParams } from 'next/navigation';
-import { useDoc, useFirestore, useMemoFirebase } from '@/firebase';
-import { doc, collection, Timestamp, addDoc } from 'firebase/firestore';
+import { useFirestore, useMemoFirebase } from '@/firebase';
+import { doc, getDoc, collection, Timestamp, addDoc } from 'firebase/firestore';
 import type { Appointment, Salon, Staff, Review } from '@/lib/data';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -15,10 +15,17 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Logo } from '@/components/logo';
 
+type PageStatus = 'loading' | 'loaded' | 'invalid' | 'submitted';
+
 export default function FeedbackPage() {
   const { appointmentId: compositeId } = useParams();
   const firestore = useFirestore();
   const { toast } = useToast();
+
+  const [status, setStatus] = useState<PageStatus>('loading');
+  const [appointment, setAppointment] = useState<Appointment | null>(null);
+  const [salon, setSalon] = useState<Salon | null>(null);
+  const [staff, setStaff] = useState<Staff | null>(null);
   
   const [rating, setRating] = useState(0);
   const [hoverRating, setHoverRating] = useState(0);
@@ -33,32 +40,62 @@ export default function FeedbackPage() {
     return parts.length === 2 ? [parts[0], parts[1]] : [null, null];
   }, [compositeId]);
 
-  const appointmentDocRef = useMemoFirebase(() => {
-    if (!firestore || !salonId || !appointmentId) return null;
-    return doc(firestore, `salons/${salonId}/appointments`, appointmentId);
-  }, [firestore, salonId, appointmentId]);
+  useEffect(() => {
+    if (!firestore || !salonId || !appointmentId) {
+      if (compositeId) { // only set invalid if we have a compositeId but no salon/appt id
+          setStatus('invalid');
+      }
+      return;
+    }
 
-  const { data: appointment, isLoading: isLoadingAppointment } = useDoc<Appointment>(appointmentDocRef);
+    const fetchData = async () => {
+      setStatus('loading');
+      try {
+        const appointmentDocRef = doc(firestore, `salons/${salonId}/appointments`, appointmentId);
+        const appointmentSnap = await getDoc(appointmentDocRef);
 
-  const staffId = appointment?.staffId;
-  const salonDocId = appointment?.salonId; // Use salonId from appointment data for consistency
+        if (!appointmentSnap.exists()) {
+          setStatus('invalid');
+          return;
+        }
 
-  const salonDocRef = useMemoFirebase(() => {
-    if (!firestore || !salonDocId) return null;
-    return doc(firestore, 'salons', salonDocId);
-  }, [firestore, salonDocId]);
+        const apptData = { id: appointmentSnap.id, ...appointmentSnap.data() } as Appointment;
+        setAppointment(apptData);
 
-  const staffDocRef = useMemoFirebase(() => {
-    if (!firestore || !salonDocId || !staffId) return null;
-    return doc(firestore, `salons/${salonDocId}/staff`, staffId);
-  }, [firestore, salonDocId, staffId]);
+        // Now fetch salon and staff
+        const staffId = apptData.staffId;
+        const salonDocId = apptData.salonId;
+        
+        if (!staffId || !salonDocId) {
+            setStatus('invalid');
+            return;
+        }
 
-  const { data: salon, isLoading: isLoadingSalon } = useDoc<Salon>(salonDocRef);
-  const { data: staff, isLoading: isLoadingStaff } = useDoc<Staff>(staffDocRef);
+        const salonDocRef = doc(firestore, 'salons', salonDocId);
+        const staffDocRef = doc(firestore, `salons/${salonDocId}/staff`, staffId);
 
-  // Unified loading state
-  const isLoading = isLoadingAppointment || (appointment && (isLoadingSalon || isLoadingStaff));
-  const isDataInvalid = !isLoading && (!appointment || !salon || !staff);
+        const [salonSnap, staffSnap] = await Promise.all([
+          getDoc(salonDocRef),
+          getDoc(staffDocRef)
+        ]);
+
+        if (!salonSnap.exists() || !staffSnap.exists()) {
+          setStatus('invalid');
+          return;
+        }
+
+        setSalon({ id: salonSnap.id, ...salonSnap.data() } as Salon);
+        setStaff({ id: staffSnap.id, ...staffSnap.data() } as Staff);
+        setStatus('loaded');
+
+      } catch (error) {
+        console.error("Error fetching feedback data:", error);
+        setStatus('invalid');
+      }
+    };
+
+    fetchData();
+  }, [firestore, salonId, appointmentId, compositeId]);
 
   const getInitials = (name: string) => name ? name.split(' ').map((n) => n[0]).join('') : '';
 
@@ -71,7 +108,7 @@ export default function FeedbackPage() {
       });
       return;
     }
-    if (!firestore || !salonId || !staffId || !appointment?.customerId || !appointmentId) {
+    if (!firestore || !salonId || !appointment?.staffId || !appointment?.customerId || !appointmentId) {
        toast({
         variant: 'destructive',
         title: 'Error',
@@ -81,28 +118,21 @@ export default function FeedbackPage() {
     }
 
     setIsSubmitting(true);
-    const reviewData: Omit<Review, 'id' | 'reviewId'> = {
-      salonId,
-      staffId,
-      customerId: appointment.customerId,
-      appointmentId: appointmentId,
-      rating,
-      comment,
-      createdAt: Timestamp.now(),
-    };
-    
     try {
+      const reviewData: Omit<Review, 'id' | 'reviewId'> = {
+        salonId,
+        staffId: appointment.staffId,
+        customerId: appointment.customerId,
+        appointmentId: appointmentId,
+        rating,
+        comment,
+        createdAt: Timestamp.now(),
+      };
+      
       const reviewsRef = collection(firestore, `salons/${salonId}/reviews`);
       await addDoc(reviewsRef, reviewData);
       
-      toast({
-        title: 'Feedback Submitted!',
-        description: 'Thank you for helping us improve. This window will now close.',
-      });
-
-      setTimeout(() => {
-        window.close();
-      }, 2000);
+      setStatus('submitted');
 
     } catch (error) {
       console.error(error);
@@ -115,7 +145,7 @@ export default function FeedbackPage() {
     }
   };
   
-  if (isLoading) {
+  if (status === 'loading') {
     return (
       <div className="flex min-h-dvh flex-col items-center justify-center bg-background px-4">
         <Card className="w-full max-w-md">
@@ -140,7 +170,7 @@ export default function FeedbackPage() {
     );
   }
 
-  if (isDataInvalid) {
+  if (status === 'invalid') {
     return (
        <div className="flex min-h-dvh flex-col items-center justify-center bg-background px-4">
         <Card className="w-full max-w-md text-center">
@@ -152,63 +182,84 @@ export default function FeedbackPage() {
       </div>
     );
   }
-
-  return (
-    <div className="flex min-h-dvh flex-col items-center justify-center bg-background px-4 py-12">
-      <div className="mb-8 flex items-center gap-2">
-        <Logo className="h-8 w-8 text-primary" />
-        <span className="font-headline text-2xl font-bold">{salon.name}</span>
+  
+  if (status === 'submitted') {
+    return (
+       <div className="flex min-h-dvh flex-col items-center justify-center bg-background px-4">
+        <Card className="w-full max-w-md text-center">
+          <CardHeader>
+            <CardTitle>Thank You!</CardTitle>
+            <CardDescription>Your feedback has been submitted. This window will close shortly.</CardDescription>
+          </CardHeader>
+           <CardContent>
+            <Button onClick={() => window.close()}>Close Now</Button>
+           </CardContent>
+        </Card>
       </div>
-      <Card className="w-full max-w-md">
-        <CardHeader className="text-center">
-          <CardTitle className="text-2xl">Leave a Review</CardTitle>
-          <CardDescription>How was your experience with {staff.name}?</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-6 text-center">
-          <Avatar className="mx-auto h-20 w-20 text-3xl">
-            <AvatarFallback>{getInitials(staff.name)}</AvatarFallback>
-          </Avatar>
+    );
+  }
 
-          <div className="flex justify-center space-x-2">
-            {[...Array(5)].map((_, i) => {
-              const starValue = i + 1;
-              return (
-                <button
-                  key={starValue}
-                  onMouseEnter={() => setHoverRating(starValue)}
-                  onMouseLeave={() => setHoverRating(0)}
-                  onClick={() => setRating(starValue)}
-                  disabled={isSubmitting}
-                >
-                  <Star
-                    className={cn(
-                      'h-8 w-8 cursor-pointer transition-colors',
-                      starValue <= (hoverRating || rating)
-                        ? 'text-yellow-400 fill-yellow-400'
-                        : 'text-gray-300'
-                    )}
-                  />
-                </button>
-              );
-            })}
-          </div>
-          
-          <Textarea 
-            placeholder={`Tell us more about your experience (optional)`}
-            value={comment}
-            onChange={(e) => setComment(e.target.value)}
-            rows={4}
-            disabled={isSubmitting}
-          />
+  if (status === 'loaded' && salon && staff) {
+    return (
+      <div className="flex min-h-dvh flex-col items-center justify-center bg-background px-4 py-12">
+        <div className="mb-8 flex items-center gap-2">
+          <Logo className="h-8 w-8 text-primary" />
+          <span className="font-headline text-2xl font-bold">{salon.name}</span>
+        </div>
+        <Card className="w-full max-w-md">
+          <CardHeader className="text-center">
+            <CardTitle className="text-2xl">Leave a Review</CardTitle>
+            <CardDescription>How was your experience with {staff.name}?</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-6 text-center">
+            <Avatar className="mx-auto h-20 w-20 text-3xl">
+              <AvatarFallback>{getInitials(staff.name)}</AvatarFallback>
+            </Avatar>
 
-        </CardContent>
-        <CardFooter>
-          <Button className="w-full" onClick={handleSubmit} disabled={isSubmitting}>
-            {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            Submit Review
-          </Button>
-        </CardFooter>
-      </Card>
-    </div>
-  );
+            <div className="flex justify-center space-x-2">
+              {[...Array(5)].map((_, i) => {
+                const starValue = i + 1;
+                return (
+                  <button
+                    key={starValue}
+                    onMouseEnter={() => setHoverRating(starValue)}
+                    onMouseLeave={() => setHoverRating(0)}
+                    onClick={() => setRating(starValue)}
+                    disabled={isSubmitting}
+                  >
+                    <Star
+                      className={cn(
+                        'h-8 w-8 cursor-pointer transition-colors',
+                        starValue <= (hoverRating || rating)
+                          ? 'text-yellow-400 fill-yellow-400'
+                          : 'text-gray-300'
+                      )}
+                    />
+                  </button>
+                );
+              })}
+            </div>
+            
+            <Textarea 
+              placeholder={`Tell us more about your experience (optional)`}
+              value={comment}
+              onChange={(e) => setComment(e.target.value)}
+              rows={4}
+              disabled={isSubmitting}
+            />
+
+          </CardContent>
+          <CardFooter>
+            <Button className="w-full" onClick={handleSubmit} disabled={isSubmitting}>
+              {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Submit Review
+            </Button>
+          </CardFooter>
+        </Card>
+      </div>
+    );
+  }
+
+  // Fallback for any unexpected state
+  return null;
 }
