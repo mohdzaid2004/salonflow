@@ -1,9 +1,9 @@
 'use client';
 
 import { useState, useTransition } from 'react';
-import { useParams, useRouter } from 'next/navigation';
-import { useDoc, useFirestore, useMemoFirebase, addDocumentNonBlocking } from '@/firebase';
-import { doc, collection, Timestamp } from 'firebase/firestore';
+import { useParams } from 'next/navigation';
+import { useDoc, useFirestore, useMemoFirebase } from '@/firebase';
+import { doc, collection, Timestamp, addDoc } from 'firebase/firestore';
 import type { Appointment, Salon, Staff, Review } from '@/lib/data';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -18,7 +18,6 @@ import { Logo } from '@/components/logo';
 export default function FeedbackPage() {
   const { appointmentId } = useParams();
   const firestore = useFirestore();
-  const router = useRouter();
   const { toast } = useToast();
   
   const [rating, setRating] = useState(0);
@@ -28,10 +27,6 @@ export default function FeedbackPage() {
 
   const appointmentDocRef = useMemoFirebase(() => {
     if (!firestore || !appointmentId) return null;
-    // Note: This is a simplified path for public access. 
-    // It assumes we can find the salonId from the appointment.
-    // In a real app, you might need a collection group query or have the salonId in the URL.
-    // For now, we will fetch the appointment, then the salon.
     const pathSegments = (appointmentId as string).split('_');
     if (pathSegments.length < 2) return null;
     return doc(firestore, `salons/${pathSegments[0]}/appointments`, pathSegments[1]);
@@ -81,16 +76,27 @@ export default function FeedbackPage() {
         createdAt: Timestamp.now(),
       };
       
-      const reviewsRef = collection(firestore, `salons/${salonId}/reviews`);
-      await addDocumentNonBlocking(reviewsRef, reviewData);
-      
-      toast({
-        title: 'Feedback Submitted!',
-        description: 'Thank you for helping us improve.',
-      });
+      try {
+        const reviewsRef = collection(firestore, `salons/${salonId}/reviews`);
+        await addDoc(reviewsRef, reviewData);
+        
+        toast({
+          title: 'Feedback Submitted!',
+          description: 'Thank you for helping us improve. This window will now close.',
+        });
 
-      // Redirect to a thank you page or the salon's main site
-      router.push('/');
+        // Close the window after a short delay to allow the user to read the toast.
+        setTimeout(() => {
+          window.close();
+        }, 2000);
+
+      } catch (error) {
+        toast({
+          variant: 'destructive',
+          title: 'Submission Failed',
+          description: 'Could not submit your review. Please try again.',
+        });
+      }
     });
   };
   
@@ -146,7 +152,6 @@ export default function FeedbackPage() {
         </CardHeader>
         <CardContent className="space-y-6 text-center">
           <Avatar className="mx-auto h-20 w-20 text-3xl">
-            {/* You can add staff photos later */}
             <AvatarFallback>{getInitials(staff.name)}</AvatarFallback>
           </Avatar>
 
@@ -159,6 +164,7 @@ export default function FeedbackPage() {
                   onMouseEnter={() => setHoverRating(starValue)}
                   onMouseLeave={() => setHoverRating(0)}
                   onClick={() => setRating(starValue)}
+                  disabled={isPending}
                 >
                   <Star
                     className={cn(
@@ -178,6 +184,7 @@ export default function FeedbackPage() {
             value={comment}
             onChange={(e) => setComment(e.target.value)}
             rows={4}
+            disabled={isPending}
           />
 
         </CardContent>
@@ -191,5 +198,3 @@ export default function FeedbackPage() {
     </div>
   );
 }
-
-    
