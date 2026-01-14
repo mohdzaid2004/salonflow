@@ -20,6 +20,12 @@ export function PageHeader() {
     if (pathname.startsWith('/dashboard/customers/')) {
         return 'Customer Details';
     }
+    
+    // Handle dynamic routes like /staff/[id]
+    if (pathname.startsWith('/dashboard/staff/')) {
+        return 'Staff Details';
+    }
+
 
     // Default title
     return 'Dashboard';

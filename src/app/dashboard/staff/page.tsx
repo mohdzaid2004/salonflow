@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useTransition } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useCollection, useFirestore, useUser, useMemoFirebase, deleteDocumentNonBlocking } from '@/firebase';
 import {
   Table,
@@ -34,7 +34,7 @@ import {
     AlertDialogHeader,
     AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
-import { MoreHorizontal, PlusCircle, Trash2 } from 'lucide-react';
+import { MoreHorizontal, PlusCircle, Trash2, Star } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -44,12 +44,13 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { collection, query, doc } from 'firebase/firestore';
-import type { Staff } from '@/lib/data';
+import type { Staff, Review } from '@/lib/data';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useHeaderActions } from '@/components/dashboard/header-actions-context';
 import { AddStaffForm } from '@/components/dashboard/staff/add-staff-form';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { useToast } from '@/hooks/use-toast';
+import Link from 'next/link';
 
 export default function StaffPage() {
   const firestore = useFirestore();
@@ -88,8 +89,38 @@ export default function StaffPage() {
     if (!firestore || !salonId) return null;
     return query(collection(firestore, `salons/${salonId}/staff`));
   }, [firestore, salonId]);
+  
+  const reviewsQuery = useMemoFirebase(() => {
+    if (!firestore || !salonId) return null;
+    return query(collection(firestore, `salons/${salonId}/reviews`));
+  }, [firestore, salonId]);
 
-  const { data: staff, isLoading } = useCollection<Staff>(staffQuery);
+  const { data: staff, isLoading: isLoadingStaff } = useCollection<Staff>(staffQuery);
+  const { data: reviews, isLoading: isLoadingReviews } = useCollection<Review>(reviewsQuery);
+  
+  const staffWithReviews = useMemo(() => {
+    if (!staff || !reviews) return [];
+    
+    const reviewMap = new Map<string, { totalRating: number, count: number }>();
+    
+    reviews.forEach(review => {
+      const existing = reviewMap.get(review.staffId) || { totalRating: 0, count: 0 };
+      existing.totalRating += review.rating;
+      existing.count += 1;
+      reviewMap.set(review.staffId, existing);
+    });
+
+    return staff.map(s => {
+      const reviewData = reviewMap.get(s.id);
+      return {
+        ...s,
+        reviewCount: reviewData?.count || 0,
+        averageRating: reviewData ? (reviewData.totalRating / reviewData.count) : 0,
+      }
+    });
+
+  }, [staff, reviews]);
+
 
   const handleDeleteClick = (staffMember: Staff) => {
     setSelectedStaff(staffMember);
@@ -129,6 +160,9 @@ export default function StaffPage() {
           </div>
         </TableCell>
         <TableCell>
+            <Skeleton className="h-4 w-24" />
+        </TableCell>
+        <TableCell>
           <div className="flex justify-end">
             <Skeleton className="h-8 w-8" />
           </div>
@@ -136,6 +170,8 @@ export default function StaffPage() {
       </TableRow>
     ));
   };
+  
+  const isLoading = isLoadingStaff || isLoadingReviews || isUserLoading;
 
   return (
     <>
@@ -152,26 +188,38 @@ export default function StaffPage() {
             <TableHeader>
               <TableRow>
                 <TableHead>Name</TableHead>
+                <TableHead>Avg. Rating</TableHead>
                 <TableHead>
                   <span className="sr-only">Actions</span>
                 </TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {isLoading || isUserLoading ? (
+              {isLoading ? (
                 renderSkeleton()
-              ) : staff && staff.length > 0 ? (
-                staff.map((staffMember) => (
+              ) : staffWithReviews && staffWithReviews.length > 0 ? (
+                staffWithReviews.map((staffMember) => (
                   <TableRow key={staffMember.id}>
                     <TableCell>
-                      <div className="flex items-center gap-4">
+                      <Link href={`/dashboard/staff/${staffMember.id}`} className="flex items-center gap-4 group">
                         <Avatar>
                           <AvatarFallback>
                             {getInitials(staffMember.name)}
                           </AvatarFallback>
                         </Avatar>
-                        <span className="font-medium">{staffMember.name}</span>
-                      </div>
+                        <span className="font-medium group-hover:underline">{staffMember.name}</span>
+                      </Link>
+                    </TableCell>
+                    <TableCell>
+                        {staffMember.reviewCount > 0 ? (
+                            <div className="flex items-center gap-2">
+                                <Star className="h-4 w-4 text-amber-400 fill-amber-400" />
+                                <span className="font-medium">{staffMember.averageRating.toFixed(1)}</span>
+                                <span className="text-sm text-muted-foreground">({staffMember.reviewCount} reviews)</span>
+                            </div>
+                        ) : (
+                            <span className="text-sm text-muted-foreground">No reviews yet</span>
+                        )}
                     </TableCell>
                     <TableCell>
                       <div className="flex justify-end">
@@ -204,7 +252,7 @@ export default function StaffPage() {
               ) : (
                 <TableRow>
                   <TableCell
-                    colSpan={2}
+                    colSpan={3}
                     className="h-24 text-center text-muted-foreground"
                   >
                     No staff found. Click "Add Staff" to get started.
