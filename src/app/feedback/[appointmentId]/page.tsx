@@ -3,7 +3,7 @@
 import { useState, useMemo, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import { useFirestore, useMemoFirebase } from '@/firebase';
-import { doc, getDoc, collection, Timestamp, addDoc } from 'firebase/firestore';
+import { doc, getDoc, collection, Timestamp, addDoc, query, where, getDocs, limit } from 'firebase/firestore';
 import type { Appointment, Salon, Staff, Review } from '@/lib/data';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -17,7 +17,7 @@ import { Logo } from '@/components/logo';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 
-type PageStatus = 'loading' | 'loaded' | 'invalid' | 'submitted';
+type PageStatus = 'loading' | 'loaded' | 'invalid' | 'submitted' | 'already-submitted';
 
 export default function FeedbackPage() {
   const { appointmentId: compositeId } = useParams();
@@ -52,6 +52,17 @@ export default function FeedbackPage() {
     const fetchData = async () => {
       setStatus('loading');
       try {
+        // 1. Check if a review already exists for this appointment
+        const reviewsRef = collection(firestore, `salons/${salonId}/reviews`);
+        const reviewQuery = query(reviewsRef, where('appointmentId', '==', appointmentId), limit(1));
+        const reviewSnapshot = await getDocs(reviewQuery);
+
+        if (!reviewSnapshot.empty) {
+          setStatus('already-submitted');
+          return;
+        }
+
+        // 2. If no review, fetch appointment details
         const appointmentDocRef = doc(firestore, `salons/${salonId}/appointments`, appointmentId);
         const appointmentSnap = await getDoc(appointmentDocRef);
 
@@ -63,7 +74,7 @@ export default function FeedbackPage() {
         const apptData = { id: appointmentSnap.id, ...appointmentSnap.data() } as Appointment;
         setAppointment(apptData);
 
-        // Now fetch salon and staff
+        // 3. Now fetch salon and staff
         const staffId = apptData.staffId;
         const salonDocId = apptData.salonId;
         
@@ -120,7 +131,7 @@ export default function FeedbackPage() {
 
     setIsSubmitting(true);
     try {
-      const reviewData: Omit<Review, 'id' | 'reviewId'> = {
+      const reviewData: Omit<Review, 'id' | 'reviewId'> & {reviewId?: string} = {
         salonId,
         staffId: appointment.staffId,
         customerId: appointment.customerId,
@@ -185,13 +196,18 @@ export default function FeedbackPage() {
     );
   }
   
-  if (status === 'submitted') {
+  if (status === 'submitted' || status === 'already-submitted') {
+    const title = status === 'submitted' ? 'Thank You!' : 'Feedback Submitted';
+    const description = status === 'submitted' 
+        ? 'Your feedback has been submitted. This window will close shortly.' 
+        : 'You have already submitted feedback for this appointment.';
+    
     return (
        <div className="flex min-h-dvh flex-col items-center justify-center bg-background px-4">
         <Card className="w-full max-w-md text-center">
           <CardHeader>
-            <CardTitle>Thank You!</CardTitle>
-            <CardDescription>Your feedback has been submitted. This window will close shortly.</CardDescription>
+            <CardTitle>{title}</CardTitle>
+            <CardDescription>{description}</CardDescription>
           </CardHeader>
            <CardContent>
             <Button onClick={() => window.close()}>Close Now</Button>
