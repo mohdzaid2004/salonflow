@@ -7,22 +7,23 @@ export function PageHeader() {
   const pathname = usePathname();
   
   const getTitle = () => {
+    const currentPath = pathname.replace('/(dashboard)', '');
     // Hide title on settings page
-    if (pathname === '/dashboard/settings') {
+    if (currentPath === '/dashboard/settings') {
       return '';
     }
 
     // Exact match for home/overview
-    const exactMatch = MainNavItems.find(item => item.href === pathname);
+    const exactMatch = MainNavItems.find(item => item.href.replace('/(dashboard)', '') === currentPath);
     if (exactMatch) return exactMatch.label;
 
     // Handle dynamic routes like /customers/[id]
-    if (pathname.startsWith('/dashboard/customers/')) {
+    if (currentPath.startsWith('/dashboard/customers/')) {
         return 'Customer Details';
     }
     
     // Handle dynamic routes like /staff/[id]
-    if (pathname.startsWith('/dashboard/staff/')) {
+    if (currentPath.startsWith('/dashboard/staff/')) {
         return 'Staff Details';
     }
 
