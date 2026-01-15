@@ -89,10 +89,15 @@ export default {
             height: '0',
           },
         },
+        'text-shimmer': {
+          '0%': { 'background-position': '200% 0' },
+          '100%': { 'background-position': '-200% 0' },
+        },
       },
       animation: {
         'accordion-down': 'accordion-down 0.2s ease-out',
         'accordion-up': 'accordion-up 0.2s ease-out',
+        'text-shimmer': 'text-shimmer 5s linear infinite',
       },
     },
   },

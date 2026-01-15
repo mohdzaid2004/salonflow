@@ -22,7 +22,9 @@ export function HeroSection() {
       <div className="container relative mx-auto grid max-w-7xl gap-6 px-4 text-primary-foreground md:px-6">
         <div className="max-w-xl space-y-4">
           <h1 className="font-headline text-4xl font-bold tracking-tight sm:text-5xl md:text-6xl">
-            Modernize Your Salon, Effortlessly.
+            <span className="animate-text-shimmer bg-[linear-gradient(110deg,#e2e8f0,45%,#94a3b8,55%,#e2e8f0)] bg-[length:250%_100%] bg-clip-text text-transparent">
+              Modernize Your Salon, Effortlessly.
+            </span>
           </h1>
           <p className="text-lg text-primary-foreground/80 md:text-xl">
             SalonFlow is the all-in-one platform for Indian salons. Manage bookings,
