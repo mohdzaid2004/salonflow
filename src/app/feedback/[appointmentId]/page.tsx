@@ -240,8 +240,8 @@ export default function FeedbackPage() {
                         className={cn(
                           'h-8 w-8 transition-colors',
                           starValue <= rating
-                            ? 'fill-yellow-400 text-yellow-400'
-                            : 'text-gray-300 peer-hover:fill-yellow-200 peer-hover:text-yellow-200'
+                            ? 'fill-amber-400 text-amber-400'
+                            : 'text-gray-300 peer-hover:fill-amber-200 peer-hover:text-amber-200'
                         )}
                       />
                     </Label>
