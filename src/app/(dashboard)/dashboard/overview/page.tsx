@@ -313,10 +313,11 @@ export default function OverviewPage() {
                   A breakdown of revenue from services this month.
                  </CardDescription>
             </CardHeader>
-            <CardContent className="pt-0">
+            <CardContent className="relative pt-0 h-72">
                 {revenueByService.length > 0 ? (
-                <ChartContainer config={{}} className="min-h-[200px] w-full">
-                    <ResponsiveContainer width="100%" height={240}>
+                <div className="absolute inset-0">
+                <ChartContainer config={{}} className="h-full w-full">
+                    <ResponsiveContainer width="100%" height="100%">
                         <PieChart>
                         <ChartTooltip
                             cursor={false}
@@ -357,8 +358,9 @@ export default function OverviewPage() {
                         </PieChart>
                     </ResponsiveContainer>
                 </ChartContainer>
+                </div>
                  ) : (
-                <div className="flex h-72 w-full items-center justify-center">
+                <div className="flex h-full w-full items-center justify-center">
                   <p className="text-sm text-muted-foreground">No revenue data for this month yet.</p>
                 </div>
               )}
@@ -371,9 +373,10 @@ export default function OverviewPage() {
                     A bar graph showing total revenue per day for the last week.
                 </CardDescription>
             </CardHeader>
-            <CardContent>
+            <CardContent className="relative h-72">
                 {last7DaysRevenue.length > 0 ? (
-                <ChartContainer config={{}} className="h-72 w-full">
+                <div className="absolute inset-0">
+                <ChartContainer config={{}} className="h-full w-full">
                     <ResponsiveContainer width="100%" height="100%">
                         <BarChart data={last7DaysRevenue}>
                          <ChartTooltip
@@ -400,8 +403,9 @@ export default function OverviewPage() {
                         </BarChart>
                     </ResponsiveContainer>
                 </ChartContainer>
+                </div>
                  ) : (
-                <div className="flex h-72 w-full items-center justify-center">
+                <div className="flex h-full w-full items-center justify-center">
                   <p className="text-sm text-muted-foreground">Not enough data for the last 7 days.</p>
                 </div>
               )}
