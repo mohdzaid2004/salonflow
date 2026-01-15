@@ -31,10 +31,7 @@ export const MainNavItems = [
 export function MainNav({ salon }: { salon: Salon | null }) {
   const pathname = usePathname();
 
-  const visibleNavItems = MainNavItems.map(item => ({
-    ...item,
-    href: item.href.replace('/dashboard', '/(dashboard)/dashboard'),
-  })).filter(item => {
+  const visibleNavItems = MainNavItems.filter(item => {
     // This can be extended later if more features are conditional
     return true;
   });
@@ -45,7 +42,7 @@ export function MainNav({ salon }: { salon: Salon | null }) {
         <SidebarMenuItem key={link.href}>
           <Link href={link.href}>
             <SidebarMenuButton
-              isActive={pathname.startsWith(link.href.replace('/(dashboard)', '')) && (link.href.replace('/(dashboard)', '') !== '/dashboard/home' || pathname === '/dashboard/home')}
+              isActive={pathname.startsWith(link.href) && (link.href !== '/dashboard/home' || pathname === '/dashboard/home')}
               tooltip={link.label}
             >
               <link.icon />
