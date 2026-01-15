@@ -141,7 +141,7 @@ export default function StaffDetailPage() {
           </Avatar>
           <div>
             <CardTitle className="text-2xl">{staff.name}</CardTitle>
-            <CardDescription className='flex items-center gap-4 pt-1'>
+            <div className='flex items-center gap-4 pt-1 text-sm text-muted-foreground'>
                 <div className="flex items-center gap-2">
                     <Phone className="h-4 w-4" />
                     <span>{staff.phone || 'N/A'}</span>
@@ -150,7 +150,7 @@ export default function StaffDetailPage() {
                     <Cake className="h-4 w-4" />
                     <span>{staff.dob ? formatDate(new Date(staff.dob)) : 'N/A'}</span>
                 </div>
-            </CardDescription>
+            </div>
           </div>
         </CardHeader>
         <CardContent className="pt-6">
