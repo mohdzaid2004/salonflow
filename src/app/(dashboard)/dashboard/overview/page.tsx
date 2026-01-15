@@ -168,13 +168,6 @@ export default function OverviewPage() {
     return <><span className="font-arial">₹</span>{formattedAmount}</>;
   };
   
-  const formatYAxis = (tick: number) => {
-    if (tick >= 1000) {
-      return `₹${tick / 1000}k`;
-    }
-    return `₹${tick}`;
-  };
-
   const renderSkeleton = () => (
     <>
       <Card>
@@ -313,7 +306,7 @@ export default function OverviewPage() {
                   A breakdown of revenue from services this month.
                  </CardDescription>
             </CardHeader>
-            <CardContent className="relative pt-0 h-72">
+            <CardContent className="relative h-72 pt-0">
                 {revenueByService.length > 0 ? (
                 <div className="absolute inset-0">
                 <ChartContainer config={{}} className="h-full w-full">
@@ -391,13 +384,6 @@ export default function OverviewPage() {
                             fontSize={12}
                             tickLine={false}
                             axisLine={false}
-                         />
-                         <YAxis 
-                             stroke="#888888"
-                             fontSize={12}
-                             tickLine={false}
-                             axisLine={false}
-                             tickFormatter={formatYAxis}
                          />
                         <Bar dataKey="revenue" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
                         </BarChart>
