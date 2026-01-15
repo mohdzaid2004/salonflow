@@ -5,7 +5,6 @@ import { useParams } from 'next/navigation';
 import { useDoc, useCollection, useFirestore, useUser, useMemoFirebase } from '@/firebase';
 import { doc, collection, query, where, Timestamp } from 'firebase/firestore';
 import type { Staff, Review, Customer } from '@/lib/data';
-import { PageHeader } from '@/components/page-header';
 import {
   Card,
   CardContent,
@@ -97,7 +96,6 @@ export default function StaffDetailPage() {
   if (isLoading) {
     return (
       <div className="space-y-4">
-        <PageHeader />
         <Card>
           <CardHeader className="flex-row items-center gap-4 space-y-0">
             <Skeleton className="h-16 w-16 rounded-full" />
@@ -118,7 +116,6 @@ export default function StaffDetailPage() {
   if (!staff) {
     return (
       <div>
-        <PageHeader />
         <Card>
           <CardHeader>
             <CardTitle>Staff Not Found</CardTitle>
@@ -133,7 +130,6 @@ export default function StaffDetailPage() {
 
   return (
     <div className="grid flex-1 items-start gap-4">
-      <PageHeader />
       <Card>
         <CardHeader className="flex-row items-center gap-4 space-y-0 border-b pb-6">
           <Avatar className="h-16 w-16 text-2xl">
@@ -141,7 +137,7 @@ export default function StaffDetailPage() {
           </Avatar>
           <div>
             <CardTitle className="text-2xl">{staff.name}</CardTitle>
-            <div className='flex items-center gap-4 pt-1 text-sm text-muted-foreground'>
+            <div className='text-sm text-muted-foreground flex items-center gap-4 pt-1'>
                 <div className="flex items-center gap-2">
                     <Phone className="h-4 w-4" />
                     <span>{staff.phone || 'N/A'}</span>
