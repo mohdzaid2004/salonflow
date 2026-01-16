@@ -21,7 +21,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
-import { Loader2, Star } from 'lucide-react';
+import { Loader2, Star, ChevronsUpDown, X } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import {
   useFirestore,
@@ -37,7 +37,15 @@ import {
 } from 'firebase/firestore';
 import type { Service, Staff, Customer, Appointment, Salon } from '@/lib/data';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { Checkbox } from '@/components/ui/checkbox';
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuCheckboxItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+} from '@/components/ui/dropdown-menu';
+import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 
 
@@ -183,51 +191,77 @@ We look forward to seeing you again!`;
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
         <FormField
-            control={form.control}
-            name="serviceIds"
-            render={() => (
-                <FormItem>
-                <div className="mb-4">
-                    <FormLabel>Services</FormLabel>
+          control={form.control}
+          name="serviceIds"
+          render={({ field }) => (
+            <FormItem className="flex flex-col">
+              <FormLabel>Services</FormLabel>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <FormControl>
+                    <Button variant="outline" className="w-full justify-between font-normal">
+                      <span>
+                        {field.value?.length > 0
+                          ? `${field.value.length} service(s) selected`
+                          : 'Select services'}
+                      </span>
+                      <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                    </Button>
+                  </FormControl>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent className="w-[--radix-dropdown-menu-trigger-width]">
+                  <DropdownMenuLabel>Available Services</DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  {services.map((service) => (
+                    <DropdownMenuCheckboxItem
+                      key={service.id}
+                      checked={field.value?.includes(service.id)}
+                      onSelect={(e) => e.preventDefault()} // This prevents the menu from closing
+                      onCheckedChange={(checked) => {
+                        const currentServices = field.value || [];
+                        return checked
+                          ? field.onChange([...currentServices, service.id])
+                          : field.onChange(
+                              currentServices.filter(
+                                (value) => value !== service.id
+                              )
+                            );
+                      }}
+                    >
+                      <span className="flex-grow">{service.name}</span>
+                      <span className="text-muted-foreground text-xs ml-4">₹{service.price}</span>
+                    </DropdownMenuCheckboxItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+              <FormMessage />
+              {field.value?.length > 0 && (
+                <div className="flex flex-wrap gap-2 pt-2">
+                  {field.value.map((serviceId) => {
+                    const service = services.find((s) => s.id === serviceId);
+                    if (!service) return null;
+                    return (
+                      <Badge key={serviceId} variant="secondary" className="py-1 pl-3 pr-1.5 text-sm">
+                        {service.name}
+                        <button
+                          type="button"
+                          aria-label={`Remove ${service.name}`}
+                          className="ml-2 rounded-full outline-none ring-offset-background focus:ring-2 focus:ring-ring focus:ring-offset-2 hover:bg-background/50"
+                          onClick={() => {
+                            field.onChange(
+                              field.value?.filter((id) => id !== serviceId)
+                            );
+                          }}
+                        >
+                          <X className="h-3 w-3" />
+                        </button>
+                      </Badge>
+                    );
+                  })}
                 </div>
-                <div className="max-h-32 overflow-y-auto space-y-2 rounded-md border p-2">
-                    {services.map((service) => (
-                    <FormField
-                        key={service.id}
-                        control={form.control}
-                        name="serviceIds"
-                        render={({ field }) => {
-                        return (
-                            <FormItem
-                                key={service.id}
-                                className="flex flex-row items-start space-x-3 space-y-0"
-                            >
-                                <FormControl>
-                                <Checkbox
-                                    checked={field.value?.includes(service.id)}
-                                    onCheckedChange={(checked) => {
-                                        const newValue = checked
-                                            ? [...(field.value || []), service.id]
-                                            : (field.value || []).filter(
-                                                (value) => value !== service.id
-                                            );
-                                        field.onChange(newValue);
-                                    }}
-                                />
-                                </FormControl>
-                                <FormLabel className="font-normal w-full flex justify-between">
-                                    <span>{service.name}</span>
-                                    <span className="text-muted-foreground">₹{service.price}</span>
-                                </FormLabel>
-                            </FormItem>
-                        )
-                        }}
-                    />
-                    ))}
-                </div>
-                <FormMessage />
-                </FormItem>
-            )}
+              )}
+            </FormItem>
+          )}
         />
         <FormField
           control={form.control}
