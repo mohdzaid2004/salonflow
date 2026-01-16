@@ -16,7 +16,7 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-import { MoreHorizontal, Star } from 'lucide-react';
+import { MoreHorizontal, Star, Download } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -59,6 +59,38 @@ export default function CustomersPage() {
       .map((n) => n[0])
       .join('');
   };
+  
+  const handleDownloadCSV = () => {
+    if (!customers || customers.length === 0) {
+      return;
+    }
+
+    const headers = ['Name', 'Phone', 'Date of Birth', 'Loyalty Points'];
+    const csvRows = [headers.join(',')];
+
+    customers.forEach(customer => {
+      const row = [
+        `"${customer.name}"`,
+        `"${customer.phone}"`,
+        `"${customer.dob || 'N/A'}"`,
+        customer.loyaltyPoints || 0
+      ];
+      csvRows.push(row.join(','));
+    });
+
+    const csvString = csvRows.join('\n');
+    const blob = new Blob([csvString], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    if (link.download !== undefined) {
+      const url = URL.createObjectURL(blob);
+      link.setAttribute('href', url);
+      link.setAttribute('download', 'customers.csv');
+      link.style.visibility = 'hidden';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+  };
 
   const renderSkeleton = () => {
     return Array.from({ length: 5 }).map((_, i) => (
@@ -92,11 +124,17 @@ export default function CustomersPage() {
   return (
     <div className="grid flex-1 items-start gap-4">
       <Card>
-        <CardHeader>
-          <CardTitle>Customer List</CardTitle>
-          <CardDescription>
-            Here is a list of all customers for your salon.
-          </CardDescription>
+        <CardHeader className="flex flex-row items-center justify-between">
+            <div>
+              <CardTitle>Customer List</CardTitle>
+              <CardDescription>
+                Here is a list of all customers for your salon.
+              </CardDescription>
+            </div>
+            <Button onClick={handleDownloadCSV} size="sm" variant="outline" disabled={isLoading || !customers || customers.length === 0}>
+                <Download className="mr-2 h-4 w-4" />
+                Download CSV
+            </Button>
         </CardHeader>
         <CardContent>
           <Table>
