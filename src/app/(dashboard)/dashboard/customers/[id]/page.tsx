@@ -5,7 +5,6 @@ import { useParams } from 'next/navigation';
 import { useDoc, useFirestore, useUser, useMemoFirebase } from '@/firebase';
 import { doc } from 'firebase/firestore';
 import type { Customer, Salon } from '@/lib/data';
-import { PageHeader } from '@/components/page-header';
 import {
   Card,
   CardContent,
@@ -63,7 +62,6 @@ export default function CustomerDetailPage() {
   if (isLoading) {
     return (
       <div className="space-y-4">
-        <PageHeader />
         <Card>
           <CardHeader className="flex-row items-center gap-4 space-y-0">
             <Skeleton className="h-16 w-16 rounded-full" />
@@ -84,7 +82,6 @@ export default function CustomerDetailPage() {
   if (!customer) {
     return (
       <div>
-        <PageHeader />
         <Card>
           <CardHeader>
             <CardTitle>Customer Not Found</CardTitle>
@@ -99,7 +96,6 @@ export default function CustomerDetailPage() {
 
   return (
     <div className="grid flex-1 items-start gap-4">
-      <PageHeader />
       <Card>
         <CardHeader className="flex-row items-center gap-4 space-y-0 border-b pb-6">
           <Avatar className="h-16 w-16 text-2xl">
