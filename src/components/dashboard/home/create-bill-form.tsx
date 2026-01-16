@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useTransition, useEffect } from 'react';
+import { useState, useTransition, useEffect, useMemo } from 'react';
 import { useForm, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -79,7 +79,6 @@ export function CreateBillForm({
   const firestore = useFirestore();
   const { user } = useUser();
   const salonId = user?.uid;
-  const [serviceTotal, setServiceTotal] = useState(0);
 
   const form = useForm<BillFormValues>({
     resolver: zodResolver(billFormSchema),
@@ -93,30 +92,33 @@ export function CreateBillForm({
 
   const watchServiceIds = useWatch({ control: form.control, name: 'serviceIds' });
   const watchRedeemPoints = useWatch({ control: form.control, name: 'redeemPoints' });
+  const finalAmountForDisplay = useWatch({ control: form.control, name: 'finalAmount' });
+
   const customerPoints = customer.loyaltyPoints || 0;
   const loyaltyEnabled = salon?.loyaltyProgramEnabled;
 
-  useEffect(() => {
-    const total = (watchServiceIds || []).reduce((acc, serviceId) => {
+  const serviceTotal = useMemo(() => {
+    return (watchServiceIds || []).reduce((acc, serviceId) => {
         const s = services.find(s => s.id === serviceId);
         return acc + (s?.price || 0);
     }, 0);
-    setServiceTotal(total);
   }, [watchServiceIds, services]);
 
+
   useEffect(() => {
-    const pointsToRedeem = loyaltyEnabled ? Math.min(watchRedeemPoints, customerPoints, serviceTotal) : 0;
-    const finalAmount = serviceTotal - pointsToRedeem;
-    form.setValue('finalAmount', finalAmount);
-  }, [serviceTotal, watchRedeemPoints, form, customerPoints, loyaltyEnabled]);
-  
-  useEffect(() => {
-    // Validate redeemed points against new service total
-    const pointsToRedeem = loyaltyEnabled ? Math.min(form.getValues('redeemPoints'), customerPoints, serviceTotal) : 0;
-    if(form.getValues('redeemPoints') !== pointsToRedeem) {
-        form.setValue('redeemPoints', pointsToRedeem);
+    const currentRedeemInput = watchRedeemPoints || 0;
+    const maxRedeemable = Math.min(customerPoints, serviceTotal);
+    const cappedRedeemPoints = loyaltyEnabled ? Math.min(currentRedeemInput, maxRedeemable) : 0;
+    
+    if (currentRedeemInput !== cappedRedeemPoints) {
+        form.setValue('redeemPoints', cappedRedeemPoints);
     }
-  }, [serviceTotal, customerPoints, form, loyaltyEnabled]);
+
+    const finalAmount = serviceTotal - cappedRedeemPoints;
+    form.setValue('finalAmount', finalAmount);
+
+  }, [serviceTotal, watchRedeemPoints, customerPoints, loyaltyEnabled, form]);
+  
 
   const sendWhatsAppMessage = (appointment: Appointment) => {
     if (!salonId) return;
@@ -325,7 +327,7 @@ We look forward to seeing you again!`;
             )}
             <div className="flex justify-between items-center text-lg font-bold pt-2 border-t border-dashed">
                 <span>To Pay</span>
-                <span>₹{form.getValues('finalAmount')}</span>
+                <span>₹{finalAmountForDisplay}</span>
             </div>
         </div>
         
