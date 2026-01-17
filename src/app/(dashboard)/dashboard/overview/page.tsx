@@ -207,9 +207,7 @@ export default function OverviewPage() {
       <Card className="md:col-span-2 lg:col-span-3">
         <CardHeader>
           <CardTitle>Revenue by Service</CardTitle>
-          <CardDescription>
-            <Skeleton className="h-4 w-24" />
-          </CardDescription>
+          <Skeleton className="h-4 w-24" />
         </CardHeader>
         <CardContent className="pt-0">
            <Skeleton className="h-72 w-full" />
