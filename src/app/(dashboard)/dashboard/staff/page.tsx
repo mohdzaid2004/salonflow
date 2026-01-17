@@ -34,7 +34,7 @@ import {
     AlertDialogHeader,
     AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
-import { MoreHorizontal, PlusCircle, Trash2, Star } from 'lucide-react';
+import { MoreHorizontal, PlusCircle, Trash2, Star, Users, MessageSquare, Award } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -120,6 +120,42 @@ export default function StaffPage() {
     });
 
   }, [staff, reviews]);
+  
+  const isLoading = isLoadingStaff || isLoadingReviews || isUserLoading;
+
+  const stats = useMemo(() => {
+    if (isLoading || !staffWithReviews || staffWithReviews.length === 0) {
+        return {
+            totalStaff: 0,
+            totalReviews: 0,
+            topRatedStaff: null,
+            mostReviewedStaff: null,
+        };
+    }
+
+    const totalStaff = staffWithReviews.length;
+    const totalReviews = staffWithReviews.reduce((acc, s) => acc + s.reviewCount, 0);
+
+    let topRatedStaff: (Staff & { reviewCount: number, averageRating: number }) | null = null;
+    if (totalReviews > 0) {
+        topRatedStaff = [...staffWithReviews]
+            .filter(s => s.reviewCount > 0)
+            .sort((a, b) => b.averageRating - a.averageRating)[0];
+    }
+    
+    let mostReviewedStaff: (Staff & { reviewCount: number, averageRating: number }) | null = null;
+    if (totalReviews > 0) {
+        mostReviewedStaff = [...staffWithReviews]
+            .sort((a, b) => b.reviewCount - a.reviewCount)[0];
+    }
+
+    return {
+        totalStaff,
+        totalReviews,
+        topRatedStaff,
+        mostReviewedStaff,
+    };
+}, [staffWithReviews, isLoading]);
 
 
   const handleDeleteClick = (staffMember: Staff) => {
@@ -170,15 +206,81 @@ export default function StaffPage() {
       </TableRow>
     ));
   };
-  
-  const isLoading = isLoadingStaff || isLoadingReviews || isUserLoading;
 
   return (
     <>
     <div className="grid flex-1 items-start gap-4 md:gap-8">
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+            <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium">Total Staff</CardTitle>
+                    <Users className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                    {isLoading ? (
+                        <Skeleton className="h-8 w-1/2" />
+                    ) : (
+                        <div className="text-2xl font-bold">{stats.totalStaff}</div>
+                    )}
+                </CardContent>
+            </Card>
+            <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium">Total Reviews</CardTitle>
+                    <MessageSquare className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                    {isLoading ? (
+                         <Skeleton className="h-8 w-1/2" />
+                    ) : (
+                        <div className="text-2xl font-bold">{stats.totalReviews}</div>
+                    )}
+                </CardContent>
+            </Card>
+            <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium">Top Rated</CardTitle>
+                    <Star className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                     {isLoading ? (
+                         <Skeleton className="h-8 w-3/4" />
+                    ) : stats.topRatedStaff ? (
+                        <>
+                            <div className="text-2xl font-bold">{stats.topRatedStaff.name}</div>
+                            <p className="text-xs text-muted-foreground">
+                                {stats.topRatedStaff.averageRating.toFixed(1)} average rating
+                            </p>
+                        </>
+                    ) : (
+                        <p className="text-sm text-muted-foreground">No ratings yet</p>
+                    )}
+                </CardContent>
+            </Card>
+             <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium">Most Reviews</CardTitle>
+                    <Award className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                    {isLoading ? (
+                        <Skeleton className="h-8 w-3/4" />
+                    ) : stats.mostReviewedStaff ? (
+                        <>
+                            <div className="text-2xl font-bold">{stats.mostReviewedStaff.name}</div>
+                            <p className="text-xs text-muted-foreground">
+                                {stats.mostReviewedStaff.reviewCount} reviews
+                            </p>
+                        </>
+                    ) : (
+                         <p className="text-sm text-muted-foreground">No reviews yet</p>
+                    )}
+                </CardContent>
+            </Card>
+        </div>
       <Card>
         <CardHeader>
-          <CardTitle>Staff Management</CardTitle>
+          <CardTitle>Staff Members</CardTitle>
           <CardDescription>
             Manage your team of stylists and professionals.
           </CardDescription>
