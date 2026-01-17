@@ -327,7 +327,7 @@ export default function OverviewPage() {
                             data={revenueByService}
                             dataKey="value"
                             nameKey="name"
-                            cx="40%"
+                            cx="50%"
                             cy="50%"
                             outerRadius={100}
                             innerRadius={60}
@@ -339,7 +339,7 @@ export default function OverviewPage() {
                             ))}
                         </Pie>
                         <text
-                          x="40%"
+                          x="50%"
                           y="50%"
                           textAnchor="middle"
                           dominantBaseline="middle"
@@ -347,7 +347,6 @@ export default function OverviewPage() {
                         >
                           {formatCurrency(monthlyStats.totalRevenue)}
                         </text>
-                        <Legend layout="vertical" verticalAlign="middle" align="right" />
                         </PieChart>
                     </ResponsiveContainer>
                 </ChartContainer>
