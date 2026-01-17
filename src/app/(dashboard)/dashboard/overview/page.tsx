@@ -327,10 +327,10 @@ export default function OverviewPage() {
                             data={revenueByService}
                             dataKey="value"
                             nameKey="name"
-                            cx="50%"
+                            cx="40%"
                             cy="50%"
-                            outerRadius={80}
-                            innerRadius={50}
+                            outerRadius={100}
+                            innerRadius={60}
                             paddingAngle={2}
                             labelLine={false}
                         >
@@ -339,7 +339,7 @@ export default function OverviewPage() {
                             ))}
                         </Pie>
                         <text
-                          x="50%"
+                          x="40%"
                           y="50%"
                           textAnchor="middle"
                           dominantBaseline="middle"
