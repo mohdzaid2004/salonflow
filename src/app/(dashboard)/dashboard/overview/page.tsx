@@ -206,7 +206,10 @@ export default function OverviewPage() {
       </Card>
       <Card className="md:col-span-2 lg:col-span-3">
         <CardHeader>
-          <CardTitle>Revenue by Service ({currentMonthLabel})</CardTitle>
+          <CardTitle>Revenue by Service</CardTitle>
+          <CardDescription>
+            <Skeleton className="h-4 w-24" />
+          </CardDescription>
         </CardHeader>
         <CardContent className="pt-0">
            <Skeleton className="h-72 w-full" />
@@ -301,9 +304,9 @@ export default function OverviewPage() {
         </Card>
         <Card className="md:col-span-2 lg:col-span-3">
             <CardHeader>
-                <CardTitle>Revenue by Service ({currentMonthLabel})</CardTitle>
+                <CardTitle>Revenue by Service</CardTitle>
                  <CardDescription>
-                  A breakdown of revenue from services this month.
+                  {currentMonthLabel}
                  </CardDescription>
             </CardHeader>
             <CardContent className="relative h-72 pt-0">
