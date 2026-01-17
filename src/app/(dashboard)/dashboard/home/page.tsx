@@ -319,7 +319,7 @@ export default function HomePage() {
 
       {/* New Customer Registration Dialog */}
       <Dialog open={showNewCustomerDialog} onOpenChange={setShowNewCustomerDialog}>
-        <DialogContent>
+        <DialogContent onPointerDownOutside={(e) => e.preventDefault()}>
           <DialogHeader>
             <DialogTitle>New Customer Registration</DialogTitle>
             <DialogDescription>
@@ -365,7 +365,7 @@ export default function HomePage() {
       
       {/* Create Bill Dialog */}
       <Dialog open={showCreateBillDialog} onOpenChange={setShowCreateBillDialog}>
-        <DialogContent>
+        <DialogContent onPointerDownOutside={(e) => e.preventDefault()}>
           <DialogHeader>
             <DialogTitle>Create Bill for {selectedCustomer?.name}</DialogTitle>
             <DialogDescription>
