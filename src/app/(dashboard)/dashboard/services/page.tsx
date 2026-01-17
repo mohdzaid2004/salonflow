@@ -77,10 +77,10 @@ export default function ServicesPage() {
   const { data: services, isLoading } = useCollection<Service>(servicesQuery);
 
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-IN', {
-      style: 'currency',
-      currency: 'INR',
+    const formattedAmount = new Intl.NumberFormat('en-IN', {
+      maximumFractionDigits: 2,
     }).format(amount);
+    return <><span className="font-arial">₹</span>{formattedAmount}</>;
   };
 
   const renderSkeleton = () => {
