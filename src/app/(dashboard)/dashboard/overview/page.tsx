@@ -171,7 +171,7 @@ export default function OverviewPage() {
   
   const renderSkeleton = () => (
     <>
-      <Card>
+      <Card className="lg:col-span-2">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
           <CardTitle className="text-sm font-medium">
               Today's Revenue
@@ -180,10 +180,9 @@ export default function OverviewPage() {
           </CardHeader>
           <CardContent>
               <Skeleton className="h-8 w-3/4" />
-              <Skeleton className="mt-2 h-4 w-1/2" />
           </CardContent>
       </Card>
-      <Card>
+      <Card className="lg:col-span-2">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
           <CardTitle className="text-sm font-medium">
               This Month's Revenue
@@ -192,25 +191,26 @@ export default function OverviewPage() {
           </CardHeader>
           <CardContent>
               <Skeleton className="h-8 w-3/4" />
-              <Skeleton className="mt-2 h-4 w-1/2" />
           </CardContent>
       </Card>
-      <Card>
+      <Card className="lg:col-span-2">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
           <CardTitle className="text-sm font-medium">Appointments</CardTitle>
           <CalendarDays className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
               <Skeleton className="h-8 w-1/2" />
-              <Skeleton className="mt-2 h-4 w-1/2" />
+              <p className="text-xs text-muted-foreground">
+                Completed today
+              </p>
           </CardContent>
       </Card>
       <Card className="md:col-span-2 lg:col-span-3">
         <CardHeader>
           <CardTitle>Revenue by Service</CardTitle>
-          <CardDescription>
-            <Skeleton className="h-4 w-24" />
-          </CardDescription>
+           <CardDescription>
+              <Skeleton className="h-4 w-24" />
+            </CardDescription>
         </CardHeader>
         <CardContent className="pt-0">
            <Skeleton className="h-72 w-full" />
@@ -228,10 +228,10 @@ export default function OverviewPage() {
   )
 
   return (
-    <div className="grid gap-4 md:grid-cols-2 md:gap-8 lg:grid-cols-3">
+    <div className="grid gap-4 md:grid-cols-2 md:gap-8 lg:grid-cols-6">
       {isLoading ? renderSkeleton() : (
       <>
-        <Card>
+        <Card className="lg:col-span-2">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">
               Today's Revenue
@@ -242,7 +242,7 @@ export default function OverviewPage() {
               <div className="text-2xl font-bold">{formatCurrency(todaysStats.totalRevenue)}</div>
           </CardContent>
         </Card>
-        <Card>
+        <Card className="lg:col-span-2">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">
               This Month's Revenue
@@ -253,7 +253,7 @@ export default function OverviewPage() {
               <div className="text-2xl font-bold">{formatCurrency(monthlyStats.totalRevenue)}</div>
           </CardContent>
         </Card>
-        <Card>
+        <Card className="lg:col-span-2">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Appointments</CardTitle>
             <CalendarDays className="h-4 w-4 text-muted-foreground" />
