@@ -218,7 +218,6 @@ We look forward to seeing you again!`;
                     <DropdownMenuCheckboxItem
                       key={service.id}
                       checked={field.value?.includes(service.id)}
-                      onSelect={(e) => e.preventDefault()} // This prevents the menu from closing
                       onCheckedChange={(checked) => {
                         const currentServices = field.value || [];
                         return checked
