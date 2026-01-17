@@ -46,18 +46,6 @@ import {
   DropdownMenuSeparator,
 } from '@/components/ui/dropdown-menu';
 import { Badge } from '@/components/ui/badge';
-import { cn } from '@/lib/utils';
-
-
-const billFormSchema = z.object({
-  serviceIds: z.array(z.string()).min(1, 'At least one service is required.'),
-  staffId: z.string().min(1, 'Please select a staff member.'),
-  paymentMethod: z.enum(['Cash', 'Card', 'UPI'], { required_error: 'Please select a payment method.'}),
-  redeemPoints: z.coerce.number().min(0, 'Cannot redeem negative points.'),
-  finalAmount: z.coerce.number(),
-});
-
-type BillFormValues = z.infer<typeof billFormSchema>;
 
 export function CreateBillForm({
   customer,
@@ -80,6 +68,37 @@ export function CreateBillForm({
   const { user } = useUser();
   const salonId = user?.uid;
 
+  const customerPoints = customer.loyaltyPoints || 0;
+  const loyaltyEnabled = salon?.loyaltyProgramEnabled;
+
+  const billFormSchema = useMemo(() => {
+    return z.object({
+      serviceIds: z.array(z.string()).min(1, 'At least one service is required.'),
+      staffId: z.string().min(1, 'Please select a staff member.'),
+      paymentMethod: z.enum(['Cash', 'Card', 'UPI'], { required_error: 'Please select a payment method.'}),
+      redeemPoints: z.coerce.number().min(0, "Cannot redeem negative points."),
+      finalAmount: z.coerce.number(),
+    }).refine((data) => {
+        if (!loyaltyEnabled) return true; // if loyalty is off, no validation needed
+        return data.redeemPoints <= customerPoints;
+    }, {
+        message: `Cannot redeem more than ${customerPoints} available points.`,
+        path: ["redeemPoints"],
+    }).refine((data) => {
+        if (!loyaltyEnabled) return true;
+        const serviceTotal = (data.serviceIds || []).reduce((acc, serviceId) => {
+            const s = services.find(s => s.id === serviceId);
+            return acc + (s?.price || 0);
+        }, 0);
+        return data.redeemPoints <= serviceTotal;
+    }, {
+        message: "Cannot redeem more points than the service total.",
+        path: ["redeemPoints"],
+    });
+  }, [customerPoints, services, loyaltyEnabled]);
+
+  type BillFormValues = z.infer<typeof billFormSchema>;
+
   const form = useForm<BillFormValues>({
     resolver: zodResolver(billFormSchema),
     defaultValues: {
@@ -88,14 +107,12 @@ export function CreateBillForm({
       redeemPoints: 0,
       finalAmount: 0,
     },
+    mode: 'onChange',
   });
 
   const watchServiceIds = useWatch({ control: form.control, name: 'serviceIds' });
   const watchRedeemPoints = useWatch({ control: form.control, name: 'redeemPoints' });
   const finalAmountForDisplay = useWatch({ control: form.control, name: 'finalAmount' });
-
-  const customerPoints = customer.loyaltyPoints || 0;
-  const loyaltyEnabled = salon?.loyaltyProgramEnabled;
 
   const serviceTotal = useMemo(() => {
     return (watchServiceIds || []).reduce((acc, serviceId) => {
@@ -106,18 +123,10 @@ export function CreateBillForm({
 
 
   useEffect(() => {
-    const currentRedeemInput = watchRedeemPoints || 0;
-    const maxRedeemable = Math.min(customerPoints, serviceTotal);
-    const cappedRedeemPoints = loyaltyEnabled ? Math.min(currentRedeemInput, maxRedeemable) : 0;
-    
-    if (currentRedeemInput !== cappedRedeemPoints) {
-        form.setValue('redeemPoints', cappedRedeemPoints);
-    }
-
-    const finalAmount = serviceTotal - cappedRedeemPoints;
-    form.setValue('finalAmount', finalAmount);
-
-  }, [serviceTotal, watchRedeemPoints, customerPoints, loyaltyEnabled, form]);
+    const redeemPoints = watchRedeemPoints || 0;
+    const finalAmount = serviceTotal - redeemPoints;
+    form.setValue('finalAmount', Math.max(0, finalAmount));
+  }, [serviceTotal, watchRedeemPoints, form]);
   
 
   const sendWhatsAppMessage = (appointment: Appointment) => {
@@ -146,7 +155,7 @@ We look forward to seeing you again!`;
       }
       
       const loyaltyPercentage = salon?.loyaltyPointsRatio || 5; // Default to 5%
-      const pointsToRedeem = loyaltyEnabled ? Math.min(data.redeemPoints, customerPoints, serviceTotal) : 0;
+      const pointsToRedeem = loyaltyEnabled ? data.redeemPoints : 0;
       
       const appointmentData = {
         serviceIds: data.serviceIds,
@@ -228,6 +237,7 @@ We look forward to seeing you again!`;
                               )
                             );
                       }}
+                      onSelect={(e) => e.preventDefault()}
                     >
                       <span className="flex-grow">{service.name}</span>
                       <span className="text-muted-foreground text-xs ml-4">₹{service.price}</span>
@@ -310,11 +320,30 @@ We look forward to seeing you again!`;
                                 <div className="flex items-center gap-2">
                                     <span className='text-muted-foreground'>- ₹</span>
                                     <FormControl>
-                                        <Input 
-                                            type="number" 
-                                            className="h-8 w-20 text-right" 
-                                            {...field}
-                                            max={Math.min(customerPoints, serviceTotal)}
+                                        <Input
+                                          type="text"
+                                          inputMode="numeric"
+                                          className="h-8 w-20 text-right"
+                                          ref={field.ref}
+                                          name={field.name}
+                                          value={field.value}
+                                          onFocus={(e) => {
+                                            if (e.target.value === '0') {
+                                              field.onChange('');
+                                            }
+                                          }}
+                                          onBlur={(e) => {
+                                            field.onBlur();
+                                            if (e.target.value === '') {
+                                              field.onChange(0);
+                                            }
+                                          }}
+                                          onChange={(e) => {
+                                            const val = e.target.value;
+                                            if (/^\d*$/.test(val)) {
+                                              field.onChange(val === '' ? '' : Number(val));
+                                            }
+                                          }}
                                         />
                                     </FormControl>
                                 </div>
