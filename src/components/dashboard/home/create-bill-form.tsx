@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import {
   Form,
   FormControl,
+  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -46,6 +47,7 @@ import {
   DropdownMenuSeparator,
 } from '@/components/ui/dropdown-menu';
 import { Badge } from '@/components/ui/badge';
+import { Switch } from '@/components/ui/switch';
 
 export function CreateBillForm({
   customer,
@@ -78,6 +80,7 @@ export function CreateBillForm({
       paymentMethod: z.enum(['Cash', 'Card', 'UPI'], { required_error: 'Please select a payment method.'}),
       redeemPoints: z.coerce.number().min(0, "Cannot redeem negative points."),
       finalAmount: z.coerce.number(),
+      sendWhatsApp: z.boolean(),
     }).refine((data) => {
         if (!loyaltyEnabled) return true; // if loyalty is off, no validation needed
         return data.redeemPoints <= customerPoints;
@@ -106,6 +109,7 @@ export function CreateBillForm({
       staffId: '',
       redeemPoints: 0,
       finalAmount: 0,
+      sendWhatsApp: true,
     },
     mode: 'onChange',
   });
@@ -193,7 +197,9 @@ We look forward to seeing you again!`;
       }
 
       onBillCreated(newAppointment);
-      sendWhatsAppMessage(newAppointment);
+      if (data.sendWhatsApp) {
+        sendWhatsAppMessage(newAppointment);
+      }
       setOpen(false);
     });
   }
@@ -389,6 +395,27 @@ We look forward to seeing you again!`;
                 <FormMessage />
                 </FormItem>
             )}
+        />
+
+        <FormField
+          control={form.control}
+          name="sendWhatsApp"
+          render={({ field }) => (
+            <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
+              <div className="space-y-0.5">
+                <FormLabel>Send WhatsApp Notification</FormLabel>
+                <FormDescription>
+                  Send bill and feedback link to the customer.
+                </FormDescription>
+              </div>
+              <FormControl>
+                <Switch
+                  checked={field.value}
+                  onCheckedChange={field.onChange}
+                />
+              </FormControl>
+            </FormItem>
+          )}
         />
         
         <Button type="submit" className="w-full" disabled={isPending}>
