@@ -10,6 +10,8 @@ export type Salon = {
   themeColor?: string;
   loyaltyPointsRatio?: number;
   loyaltyProgramEnabled?: boolean;
+  billingStatus?: 'trialing' | 'active' | 'past_due' | 'canceled';
+  trialEndsAt?: unknown; // Firebase Timestamp
 };
 
 export type Service = {
@@ -61,5 +63,3 @@ export type Review = {
   comment?: string;
   createdAt: unknown; // Firebase Timestamp
 };
-
-    

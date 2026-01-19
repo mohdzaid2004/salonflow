@@ -22,6 +22,7 @@ import { Loader2 } from 'lucide-react';
 import { HeaderActions } from '@/components/dashboard/header-actions';
 import { doc } from 'firebase/firestore';
 import type { Salon } from '@/lib/data';
+import { SubscriptionBanner } from '@/components/dashboard/subscription-banner';
 
 const THEME_COLOR_KEY = 'salonflow-theme-color';
 const DEFAULT_THEME_COLOR = '275 100% 25.3%';
@@ -137,6 +138,7 @@ export default function DashboardLayout({
                 <UserNav />
               </div>
             </header>
+            <SubscriptionBanner salon={salon} />
             <main className={`flex flex-1 flex-col ${isHomePage ? 'items-center' : ''} gap-4 bg-background p-4`}>
               {children}
             </main>
