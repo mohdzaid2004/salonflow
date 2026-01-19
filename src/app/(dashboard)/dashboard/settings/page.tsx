@@ -8,22 +8,37 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-import { useDoc, useFirestore, useUser, useMemoFirebase } from '@/firebase';
-import { doc, updateDoc } from 'firebase/firestore';
+import { useAuth, useDoc, useFirestore, useUser, useMemoFirebase } from '@/firebase';
+import { doc, updateDoc, deleteDoc } from 'firebase/firestore';
 import type { Salon } from '@/lib/data';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
+import { Button, buttonVariants } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
-import { useTransition } from 'react';
+import { useState, useTransition } from 'react';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { cn } from '@/lib/utils';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { Separator } from '@/components/ui/separator';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { deleteUser } from 'firebase/auth';
+import { useRouter } from 'next/navigation';
+import { Loader2 } from 'lucide-react';
+
 
 const themeColors = [
   { name: 'Default', value: '275 100% 25.3%', className: 'bg-[hsl(275,100%,25.3%)]' },
@@ -41,9 +56,14 @@ type LoyaltyFormValues = z.infer<typeof loyaltySchema>;
 
 export default function SettingsPage() {
   const { user } = useUser();
+  const auth = useAuth();
   const firestore = useFirestore();
+  const router = useRouter();
   const { toast } = useToast();
   const [isPending, startTransition] = useTransition();
+  const [isDeleting, startDeleteTransition] = useTransition();
+  const [deleteConfirmation, setDeleteConfirmation] = useState('');
+
 
   const salonId = user?.uid;
   const salonDocRef = useMemoFirebase(() => {
@@ -117,6 +137,60 @@ export default function SettingsPage() {
       }
     });
   }
+
+  const handleDeleteAccount = async () => {
+    if (!user || !firestore) {
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: 'Could not delete account. Not logged in.',
+      });
+      return;
+    }
+
+    startDeleteTransition(async () => {
+      try {
+        const salonId = user.uid;
+
+        // This operation is simplified for this prototype.
+        // It deletes the main salon and user documents, and the user's login.
+        // In a production app, a server-side function would be needed
+        // to recursively delete all sub-collections (staff, services, etc.).
+        const salonRef = doc(firestore, 'salons', salonId);
+        const userProfileRef = doc(firestore, `salons/${salonId}/users`, user.uid);
+        
+        await deleteDoc(userProfileRef); // Delete user profile first
+        await deleteDoc(salonRef); // Then delete salon doc
+
+        // Finally, delete the user from Firebase Authentication.
+        await deleteUser(user);
+
+        toast({
+          title: "Account Deleted",
+          description: "Your account and all salon data have been permanently removed."
+        });
+        
+        router.push('/');
+
+      } catch (error: any) {
+        console.error("Account deletion error:", error);
+        if (error.code === 'auth/requires-recent-login') {
+          toast({
+            variant: 'destructive',
+            title: 'Action Required',
+            description: 'This is a sensitive operation. Please log out and log back in before deleting your account.',
+            duration: 5000,
+          });
+        } else {
+          toast({
+            variant: 'destructive',
+            title: 'Deletion Failed',
+            description: 'An unexpected error occurred. Please try again.',
+          });
+        }
+      }
+    });
+  };
 
   return (
     <div className="grid flex-1 items-start gap-4">
@@ -249,6 +323,50 @@ export default function SettingsPage() {
           </CardContent>
         </Card>
       )}
+
+      <Card className="border-destructive">
+        <CardHeader>
+          <CardTitle className="text-destructive">Danger Zone</CardTitle>
+          <CardDescription>
+            Permanently delete your account and all of your salon's data. This action is irreversible.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <AlertDialog onOpenChange={(open) => !open && setDeleteConfirmation('')}>
+            <AlertDialogTrigger asChild>
+              <Button variant="destructive">Delete Account</Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  This will permanently delete your account, your salon, and all associated data like staff, services, and customers.
+                  <br /><br />
+                  To confirm, type <strong>DELETE</strong> in the box below.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <Input
+                value={deleteConfirmation}
+                onChange={(e) => setDeleteConfirmation(e.target.value)}
+                placeholder='Type "DELETE"'
+                className="my-2"
+              />
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction
+                  onClick={handleDeleteAccount}
+                  disabled={deleteConfirmation !== 'DELETE' || isDeleting}
+                  className={buttonVariants({ variant: "destructive" })}
+                >
+                  {isDeleting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  I understand, delete my account
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        </CardContent>
+      </Card>
+
     </div>
   );
 }
