@@ -99,8 +99,8 @@ service cloud.firestore {
       allow get: if isSignedIn() && (isOwner(salonId) || isSalonMember(salonId));
       allow list: if false; // Disallow listing all salons in the database for privacy.
       allow create: if isOwner(salonId) && hasValidSalonId(salonId);
-      allow update: if isSignedIn() && isSalonMember(salonId) && resource != null;
-      allow delete: if false; // Prevent accidental tenant deletion from the client.
+      allow update: if isSignedIn() && (isOwner(salonId) || isSalonMember(salonId)) && resource != null;
+      allow delete: if isOwner(salonId);
     }
 
     /**
