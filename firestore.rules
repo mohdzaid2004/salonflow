@@ -94,8 +94,9 @@ service cloud.firestore {
      * @principle Enforces data isolation between tenants at the root level.
      */
     match /salons/{salonId} {
-      // A user must be an authenticated member of the salon to read its data.
-      allow get: if isSignedIn() && isSalonMember(salonId);
+      // Allow read if user is the owner of the salon (UID matches salonId) OR is a member.
+      // This breaks the circular dependency for the salon owner.
+      allow get: if isSignedIn() && (isOwner(salonId) || isSalonMember(salonId));
       allow list: if false; // Disallow listing all salons in the database for privacy.
       allow create: if isOwner(salonId) && hasValidSalonId(salonId);
       allow update: if isSignedIn() && isSalonMember(salonId) && resource != null;

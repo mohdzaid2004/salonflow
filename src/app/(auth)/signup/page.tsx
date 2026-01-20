@@ -58,7 +58,7 @@ export default function SignupPage() {
     },
   });
 
-  const onSubmit = async (data: SignupFormValues) => {
+  const onSubmit = (data: SignupFormValues) => {
     setIsSubmitting(true);
     if (!auth || !firestore) {
       toast({
@@ -70,88 +70,93 @@ export default function SignupPage() {
       return;
     }
     
-    try {
-      // 1. Create the user in Firebase Auth
-      const userCredential = await createUserWithEmailAndPassword(
-        auth,
-        data.email,
-        data.password
-      );
-      const user = userCredential.user;
+    createUserWithEmailAndPassword(auth, data.email, data.password)
+      .then(async (userCredential) => {
+        const user = userCredential.user;
+        const salonId = user.uid;
+        
+        try {
+          // These operations are critical for the user's account to be functional.
+          // We run them sequentially to ensure the salon and user profile are created.
+          const trialEndsAt = new Date();
+          trialEndsAt.setDate(trialEndsAt.getDate() + 15);
 
-      // The salonId for a new salon is the UID of the user who created it.
-      const salonId = user.uid;
-      const trialEndsAt = new Date();
-      trialEndsAt.setDate(trialEndsAt.getDate() + 15);
+          // 1. Create the user's own profile document. This is required for security rules.
+          const userRef = doc(firestore, `salons/${salonId}/users`, user.uid);
+          await setDoc(userRef, {
+            name: 'Owner',
+            role: 'owner',
+            email: user.email,
+            salonId: salonId,
+          });
 
-      // 2. Create the user's own profile document within their salon's subcollection
-      // This is CRITICAL for the security rules to work. The `isSalonMember` check
-      // needs this document to exist to verify the user belongs to the salon.
-      const userRef = doc(firestore, `salons/${salonId}/users`, user.uid);
-      await setDoc(userRef, {
-        name: 'Owner', // Set a default name
-        role: 'owner',
-        email: user.email,
-        salonId: salonId, // Denormalize salonId for rule validation
-      });
+          // 2. Create the salon document.
+          const salonRef = doc(firestore, 'salons', salonId);
+          await setDoc(salonRef, {
+            salonId: salonId,
+            name: data.salonName,
+            ownerId: user.uid,
+            appointmentsEnabled: true,
+            loyaltyProgramEnabled: true,
+            loyaltyPointsRatio: 10,
+            address: '',
+            city: '',
+            state: '',
+            phone: '',
+            logoUrl: '',
+            languageDefault: 'en',
+            timezone: 'IST',
+            subscriptionPlanId: 'starter',
+            billingStatus: 'trialing',
+            businessHours: JSON.stringify({}),
+            trialEndsAt: Timestamp.fromDate(trialEndsAt),
+            themeColor: '275 100% 25.3%',
+          });
 
-      // 3. Create the salon document itself
-      const salonRef = doc(firestore, 'salons', salonId);
-      await setDoc(salonRef, {
-        salonId: salonId,
-        name: data.salonName,
-        ownerId: user.uid,
-        appointmentsEnabled: true,
-        loyaltyProgramEnabled: true,
-        loyaltyPointsRatio: 10,
-        address: '',
-        city: '',
-        state: '',
-        phone: '',
-        logoUrl: '',
-        languageDefault: 'en',
-        timezone: 'IST',
-        subscriptionPlanId: 'starter',
-        billingStatus: 'trialing',
-        businessHours: JSON.stringify({}),
-        trialEndsAt: Timestamp.fromDate(trialEndsAt),
-        themeColor: '275 100% 25.3%',
-      });
+          // 3. Update the user's auth profile.
+          await updateProfile(user, { displayName: "Owner" });
 
-      // 4. Update the user's display name in Firebase Auth (optional but good practice)
-      await updateProfile(user, { displayName: "Owner" });
+          toast({
+            title: 'Success!',
+            description: 'Your salon has been created. Redirecting to dashboard...',
+          });
 
-      toast({
-        title: 'Success!',
-        description: 'Your salon has been created. Redirecting to dashboard...',
-      });
+          // 4. Redirect to the dashboard.
+          router.push('/dashboard/home');
 
-      // 5. Redirect to the dashboard
-      router.push('/dashboard/home');
-
-    } catch (error) {
-      let errorMessage = 'An unknown error occurred. Please try again.';
-      if (error instanceof FirebaseError) {
-        switch (error.code) {
-          case 'auth/email-already-in-use':
-            errorMessage = 'This email is already registered.';
-            break;
-          case 'auth/weak-password':
-            errorMessage = 'The password is too weak.';
-            break;
-          case 'auth/invalid-email':
-            errorMessage = 'Please enter a valid email address.';
-            break;
+        } catch (setupError) {
+          console.error("Error setting up salon data:", setupError);
+          toast({
+            variant: 'destructive',
+            title: 'Setup Failed',
+            description: "Your account was created, but we couldn't set up your salon. Please contact support.",
+          });
         }
-      }
-      toast({
-        variant: 'destructive',
-        title: 'Sign-up Failed',
-        description: errorMessage,
+      })
+      .catch((error) => {
+        let errorMessage = 'An unknown error occurred. Please try again.';
+        if (error instanceof FirebaseError) {
+          switch (error.code) {
+            case 'auth/email-already-in-use':
+              errorMessage = 'This email is already registered.';
+              break;
+            case 'auth/weak-password':
+              errorMessage = 'The password is too weak.';
+              break;
+            case 'auth/invalid-email':
+              errorMessage = 'Please enter a valid email address.';
+              break;
+          }
+        }
+        toast({
+          variant: 'destructive',
+          title: 'Sign-up Failed',
+          description: errorMessage,
+        });
+      })
+      .finally(() => {
+        setIsSubmitting(false);
       });
-    } finally {
-      setIsSubmitting(false);
-    }
   };
 
   return (
