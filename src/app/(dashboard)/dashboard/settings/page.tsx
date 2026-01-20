@@ -159,8 +159,8 @@ export default function SettingsPage() {
         const salonRef = doc(firestore, 'salons', salonId);
         const userProfileRef = doc(firestore, `salons/${salonId}/users`, user.uid);
         
-        await deleteDoc(userProfileRef); // Delete user profile first
-        await deleteDoc(salonRef); // Then delete salon doc
+        await deleteDoc(salonRef); // Delete salon doc first
+        await deleteDoc(userProfileRef); // Then delete user profile
 
         // Finally, delete the user from Firebase Authentication.
         await deleteUser(user);
