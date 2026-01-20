@@ -65,9 +65,9 @@ service cloud.firestore {
      */
     function isSalonMember(salonId) {
       let userProfilePath = /databases/$(database)/documents/salons/$(salonId)/users/$(request.auth.uid);
-      // Check for existence before accessing data to prevent null pointer errors
-      // if the user profile document doesn't exist for any reason.
-      return exists(userProfilePath) && get(userProfilePath).data.salonId == salonId;
+      // A user is a member of the salon if their user profile document exists within that salon's `users` subcollection.
+      // This `exists()` check is permitted by the `isOwner` rule on the `users` collection, avoiding circular dependencies.
+      return exists(userProfilePath);
     }
 
     /**
