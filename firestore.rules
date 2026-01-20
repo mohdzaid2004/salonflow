@@ -24,7 +24,7 @@
  * Denormalization for Authorization: To ensure fast and secure authorization checks, a `salonId` field is
  * denormalized onto every document within a salon's subcollections. This allows rules to verify a document's
  * tenancy without performing slow and costly `get()` operations on parent documents. A user's membership
- * within a salon is verified by checking their own user document at `/salons/{salonId}/users/{auth.uid}`.
+ * within a salon is verified by checking their own user document at `/salons/{salonId}/users/$(request.auth.uid)`.
  *
  * Structural Segregation: The use of distinct subcollections for each data type (users, services, etc.) under a
  * salon's path provides a clear and secure separation of concerns, simplifying rules and queries.
@@ -100,7 +100,7 @@ service cloud.firestore {
       allow list: if false; // Disallow listing all salons in the database for privacy.
       allow create: if isOwner(salonId) && hasValidSalonId(salonId);
       allow update: if isSignedIn() && (isOwner(salonId) || isSalonMember(salonId)) && resource != null;
-      allow delete: if isOwner(salonId);
+      allow delete: if request.auth.uid == salonId;
     }
 
     /**
@@ -118,7 +118,7 @@ service cloud.firestore {
       allow list: if false; // Listing all users is disabled to prevent recursion issues.
       allow create: if isOwner(userId) && hasValidSalonId(salonId);
       allow update: if isExistingOwner(userId) && isSalonIdImmutable();
-      allow delete: if isExistingOwner(userId);
+      allow delete: if request.auth.uid == userId;
     }
 
     /**

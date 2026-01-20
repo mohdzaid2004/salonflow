@@ -9,7 +9,7 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { useAuth, useDoc, useFirestore, useUser, useMemoFirebase } from '@/firebase';
-import { doc, updateDoc, deleteDoc } from 'firebase/firestore';
+import { doc, updateDoc, deleteDoc, writeBatch } from 'firebase/firestore';
 import type { Salon } from '@/lib/data';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Switch } from '@/components/ui/switch';
@@ -152,17 +152,19 @@ export default function SettingsPage() {
       try {
         const salonId = user.uid;
 
-        // This operation is simplified for this prototype.
-        // It deletes the main salon and user documents, and the user's login.
         // In a production app, a server-side function would be needed
         // to recursively delete all sub-collections (staff, services, etc.).
         const salonRef = doc(firestore, 'salons', salonId);
         const userProfileRef = doc(firestore, `salons/${salonId}/users`, user.uid);
         
-        await deleteDoc(salonRef); // Delete salon doc first
-        await deleteDoc(userProfileRef); // Then delete user profile
+        // Use a batch to delete Firestore documents atomically
+        const batch = writeBatch(firestore);
+        batch.delete(salonRef);
+        batch.delete(userProfileRef);
+        await batch.commit();
 
         // Finally, delete the user from Firebase Authentication.
+        // This MUST be done after the Firestore operations that require auth.
         await deleteUser(user);
 
         toast({
