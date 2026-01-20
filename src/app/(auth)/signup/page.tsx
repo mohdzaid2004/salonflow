@@ -130,7 +130,6 @@ export default function SignupPage() {
       router.push('/dashboard/home');
 
     } catch (error) {
-      console.error(error);
       let errorMessage = 'An unknown error occurred. Please try again.';
       if (error instanceof FirebaseError) {
         switch (error.code) {
