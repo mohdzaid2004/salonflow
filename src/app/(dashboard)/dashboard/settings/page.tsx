@@ -152,13 +152,11 @@ export default function SettingsPage() {
       try {
         const salonId = user.uid;
 
-        // In a production app, a server-side function would be needed
-        // to recursively delete all sub-collections (staff, services, etc.).
+        // Use a batch to delete Firestore documents atomically
+        const batch = writeBatch(firestore);
         const salonRef = doc(firestore, 'salons', salonId);
         const userProfileRef = doc(firestore, `salons/${salonId}/users`, user.uid);
         
-        // Use a batch to delete Firestore documents atomically
-        const batch = writeBatch(firestore);
         batch.delete(salonRef);
         batch.delete(userProfileRef);
         await batch.commit();
