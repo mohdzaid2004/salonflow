@@ -60,7 +60,7 @@ service cloud.firestore {
 
     /**
      * Checks if the currently authenticated user is a member of the specified salon.
-     * It performs a single `get` operation to the user's own profile to verify their salonId.
+     * It performs a single `exists` operation to the user's own profile to verify their salon membership.
      * This is the core function for enforcing multi-tenancy.
      */
     function isSalonMember(salonId) {
@@ -114,8 +114,8 @@ service cloud.firestore {
       // CRITICAL FIX: A user must always be able to read their own profile.
       // This breaks the circular dependency where isSalonMember needs to read the profile,
       // but reading the profile required isSalonMember. Other members of the same salon can also read profiles.
-      allow get: if isOwner(userId) || (isSignedIn() && isSalonMember(salonId));
-      allow list: if isSignedIn() && isSalonMember(salonId);
+      allow get: if isOwner(userId) || isSalonMember(salonId);
+      allow list: if isSalonMember(salonId);
       allow create: if isOwner(userId) && hasValidSalonId(salonId);
       allow update: if isExistingOwner(userId) && isSalonIdImmutable();
       allow delete: if isExistingOwner(userId);
