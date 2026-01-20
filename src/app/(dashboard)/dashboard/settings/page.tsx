@@ -139,11 +139,11 @@ export default function SettingsPage() {
   }
 
   const handleDeleteAccount = async () => {
-    if (!user || !firestore) {
+    if (!user || !firestore || !auth) {
       toast({
         variant: 'destructive',
         title: 'Error',
-        description: 'Could not delete account. Not logged in.',
+        description: 'Could not delete account. Not logged in or auth service is unavailable.',
       });
       return;
     }
