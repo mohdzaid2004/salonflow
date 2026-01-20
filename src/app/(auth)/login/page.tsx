@@ -61,39 +61,38 @@ export default function LoginPage() {
     }
   }, [user, isUserLoading, router]);
 
-  const onSubmit = async (data: LoginFormValues) => {
+  const onSubmit = (data: LoginFormValues) => {
     setIsSubmitting(true);
-    try {
-      await signInWithEmailAndPassword(auth, data.email, data.password);
-      // The onAuthStateChanged listener in the provider will handle the redirect.
-    } catch (error) {
-      if (error instanceof FirebaseError) {
-        let errorMessage = 'An unknown error occurred. Please try again.';
-        switch (error.code) {
-          case 'auth/user-not-found':
-          case 'auth/wrong-password':
-          case 'auth/invalid-credential':
-            errorMessage = 'Invalid email or password.';
-            break;
-          case 'auth/invalid-email':
-            errorMessage = 'Please enter a valid email address.';
-            break;
+    signInWithEmailAndPassword(auth, data.email, data.password)
+      .catch((error) => {
+        if (error instanceof FirebaseError) {
+          let errorMessage = 'An unknown error occurred. Please try again.';
+          switch (error.code) {
+            case 'auth/user-not-found':
+            case 'auth/wrong-password':
+            case 'auth/invalid-credential':
+              errorMessage = 'Invalid email or password.';
+              break;
+            case 'auth/invalid-email':
+              errorMessage = 'Please enter a valid email address.';
+              break;
+          }
+          toast({
+            variant: 'destructive',
+            title: 'Login Failed',
+            description: errorMessage,
+          });
+        } else {
+          toast({
+            variant: 'destructive',
+            title: 'Login Failed',
+            description: 'An unexpected error occurred. Please try again.',
+          });
         }
-        toast({
-          variant: 'destructive',
-          title: 'Login Failed',
-          description: errorMessage,
-        });
-      } else {
-        toast({
-          variant: 'destructive',
-          title: 'Login Failed',
-          description: 'An unexpected error occurred. Please try again.',
-        });
-      }
-    } finally {
-      setIsSubmitting(false);
-    }
+      })
+      .finally(() => {
+        setIsSubmitting(false);
+      });
   };
 
   // Render a loading state while checking for user
