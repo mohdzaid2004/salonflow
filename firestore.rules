@@ -66,7 +66,7 @@ service cloud.firestore {
     function isSalonMember(salonId) {
       let userProfilePath = /databases/$(database)/documents/salons/$(salonId)/users/$(request.auth.uid);
       // A user is a member of the salon if their user profile document exists within that salon's `users` subcollection.
-      // This `exists()` check is permitted by the `isOwner` rule on the `users` collection, avoiding circular dependencies.
+      // This `exists()` call is permitted by the `isOwner` rule on the `users` collection, avoiding circular dependencies.
       return exists(userProfilePath);
     }
 
@@ -111,11 +111,10 @@ service cloud.firestore {
      * @principle Users manage their own profile, but other salon members can view profiles for collaboration.
      */
     match /salons/{salonId}/users/{userId} {
-      // CRITICAL FIX: A user must always be able to read their own profile.
-      // This breaks the circular dependency where isSalonMember needs to read the profile,
-      // but reading the profile required isSalonMember. Other members of the same salon can also read profiles.
-      allow get: if isOwner(userId) || isSalonMember(salonId);
-      allow list: if isSalonMember(salonId);
+      // A user must always be able to read their own profile.
+      // This is the non-recursive rule that breaks the circular dependency.
+      allow get: if isOwner(userId);
+      allow list: if false; // Listing all users is disabled to prevent recursion issues.
       allow create: if isOwner(userId) && hasValidSalonId(salonId);
       allow update: if isExistingOwner(userId) && isSalonIdImmutable();
       allow delete: if isExistingOwner(userId);
