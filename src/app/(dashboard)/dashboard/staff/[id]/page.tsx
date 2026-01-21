@@ -75,7 +75,16 @@ export default function StaffDetailPage() {
   
   const formatDate = (date: unknown) => {
     if (!date) return 'N/A';
-    return (date as Timestamp).toDate().toLocaleDateString('en-IN', {
+    
+    // If it's a Firebase Timestamp, convert it to a JS Date.
+    // Otherwise, assume it's something the Date constructor can handle (like another Date object or a string).
+    const dateObj = date instanceof Timestamp ? date.toDate() : new Date(date as any);
+    
+    if (isNaN(dateObj.getTime())) {
+        return "N/A";
+    }
+
+    return dateObj.toLocaleDateString('en-IN', {
       day: 'numeric', month: 'short', year: 'numeric'
     });
   }
