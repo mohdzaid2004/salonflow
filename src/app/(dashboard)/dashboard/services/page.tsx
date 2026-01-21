@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useCollection, useFirestore, useUser, useMemoFirebase } from '@/firebase';
+import { useCollection, useFirestore, useUser, useMemoFirebase, deleteDocumentNonBlocking } from '@/firebase';
 import {
   Table,
   TableBody,
@@ -24,7 +24,17 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
-import { MoreHorizontal, PlusCircle } from 'lucide-react';
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
+import { MoreHorizontal, PlusCircle, Pencil, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -33,21 +43,28 @@ import {
   DropdownMenuLabel,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { collection, query } from 'firebase/firestore';
+import { collection, query, doc } from 'firebase/firestore';
 import type { Service } from '@/lib/data';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useHeaderActions } from '@/components/dashboard/header-actions-context';
 import { AddServiceForm } from '@/components/dashboard/services/add-service-form';
+import { EditServiceForm } from '@/components/dashboard/services/edit-service-form';
+import { useToast } from '@/hooks/use-toast';
 
 export default function ServicesPage() {
   const firestore = useFirestore();
   const { user, isUserLoading } = useUser();
   const { setActions } = useHeaderActions();
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const { toast } = useToast();
+
+  const [isAddDialogOpen, setAddDialogOpen] = useState(false);
+  const [isEditDialogOpen, setEditDialogOpen] = useState(false);
+  const [isDeleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [selectedService, setSelectedService] = useState<Service | null>(null);
 
   useEffect(() => {
     setActions(
-      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+      <Dialog open={isAddDialogOpen} onOpenChange={setAddDialogOpen}>
         <DialogTrigger asChild>
           <Button>
             <PlusCircle className="mr-2 h-4 w-4" />
@@ -58,13 +75,13 @@ export default function ServicesPage() {
           <DialogHeader>
             <DialogTitle>Add a New Service</DialogTitle>
           </DialogHeader>
-          <AddServiceForm setOpen={setIsDialogOpen} />
+          <AddServiceForm setOpen={setAddDialogOpen} />
         </DialogContent>
       </Dialog>
     );
     // Cleanup on unmount
     return () => setActions(null);
-  }, [setActions, isDialogOpen]);
+  }, [setActions, isAddDialogOpen]);
 
 
   const salonId = user?.uid;
@@ -81,6 +98,31 @@ export default function ServicesPage() {
       maximumFractionDigits: 2,
     }).format(amount);
     return <><span className="font-arial">₹</span>{formattedAmount}</>;
+  };
+  
+  const handleEditClick = (service: Service) => {
+    setSelectedService(service);
+    setEditDialogOpen(true);
+  };
+
+  const handleDeleteClick = (service: Service) => {
+    setSelectedService(service);
+    setDeleteDialogOpen(true);
+  };
+
+  const handleDeleteConfirm = () => {
+    if (!selectedService || !firestore || !salonId) return;
+
+    const serviceDocRef = doc(firestore, `salons/${salonId}/services`, selectedService.id);
+    deleteDocumentNonBlocking(serviceDocRef);
+
+    toast({
+      title: "Service Deleted",
+      description: `${selectedService.name} has been removed.`,
+    });
+
+    setDeleteDialogOpen(false);
+    setSelectedService(null);
   };
 
   const renderSkeleton = () => {
@@ -102,6 +144,7 @@ export default function ServicesPage() {
   };
 
   return (
+    <>
     <div className="grid flex-1 items-start gap-4 md:gap-8">
       <Card>
         <CardHeader>
@@ -148,8 +191,17 @@ export default function ServicesPage() {
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
                             <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                            <DropdownMenuItem>Edit</DropdownMenuItem>
-                            <DropdownMenuItem>Delete</DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => handleEditClick(service)}>
+                                <Pencil className="mr-2 h-4 w-4" />
+                                Edit
+                            </DropdownMenuItem>
+                            <DropdownMenuItem 
+                                className="text-destructive"
+                                onClick={() => handleDeleteClick(service)}
+                            >
+                                <Trash2 className="mr-2 h-4 w-4" />
+                                Delete
+                            </DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>
                       </div>
@@ -171,5 +223,40 @@ export default function ServicesPage() {
         </CardContent>
       </Card>
     </div>
+
+    {/* Edit Dialog */}
+    <Dialog open={isEditDialogOpen} onOpenChange={setEditDialogOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+            <DialogHeader>
+                <DialogTitle>Edit Service</DialogTitle>
+            </DialogHeader>
+            {selectedService && (
+                <EditServiceForm
+                    service={selectedService}
+                    setOpen={setEditDialogOpen}
+                />
+            )}
+        </DialogContent>
+    </Dialog>
+
+    {/* Delete Alert Dialog */}
+    <AlertDialog open={isDeleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+            <AlertDialogHeader>
+            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+                This action cannot be undone. This will permanently delete the service
+                <span className="font-semibold"> {selectedService?.name}</span>.
+            </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setSelectedService(null)}>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDeleteConfirm}>
+                Continue
+            </AlertDialogAction>
+            </AlertDialogFooter>
+        </AlertDialogContent>
+    </AlertDialog>
+    </>
   );
 }
