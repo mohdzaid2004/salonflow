@@ -80,6 +80,12 @@ export default function MySubscriptionPage() {
   const trialEndsAt = salon?.trialEndsAt ? (salon.trialEndsAt as Timestamp).toDate() : null;
   const daysRemainingInTrial = trialEndsAt ? differenceInDays(trialEndsAt, new Date()) : 0;
 
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('en-IN', {
+      maximumFractionDigits: 0,
+    }).format(amount);
+  };
+
   const renderSkeleton = () => (
     <div className="space-y-8">
       <Card>
@@ -155,7 +161,7 @@ export default function MySubscriptionPage() {
                                 {salon.billingStatus === 'trialing' ? 'Trial Period' : 'Current Plan'}
                              </p>
                              <p className="text-4xl font-bold">
-                                {salon.billingStatus === 'trialing' ? 'Free' : `₹${currentPlan.monthlyPrice}`}
+                                {salon.billingStatus === 'trialing' ? 'Free' : <><span className='font-arial'>₹</span>{formatCurrency(currentPlan.monthlyPrice)}</>}
                                 <span className="text-lg font-normal text-muted-foreground">/month</span>
                              </p>
                         </div>
@@ -176,7 +182,7 @@ export default function MySubscriptionPage() {
                                 {plan.isPopular && <Badge>Most Popular</Badge>}
                             </div>
                             <div className="flex items-baseline gap-1">
-                                <span className="text-3xl font-bold">₹{plan.monthlyPrice}</span>
+                                <span className="text-3xl font-bold"><span className='font-arial'>₹</span>{formatCurrency(plan.monthlyPrice)}</span>
                                 <span className="text-muted-foreground">/ month</span>
                             </div>
                             <CardDescription>{plan.description}</CardDescription>
