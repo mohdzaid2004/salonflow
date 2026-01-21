@@ -113,7 +113,7 @@ export default function StaffDetailPage() {
               <Skeleton className="h-4 w-64" />
             </div>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className="space-y-4 pt-6">
             <Skeleton className="h-10 w-full" />
             <Skeleton className="h-48 w-full" />
           </CardContent>
@@ -170,7 +170,7 @@ export default function StaffDetailPage() {
 
             {reviews && reviews.length > 0 ? (
                 <div className="space-y-6">
-                    {reviews.map(review => (
+                    {reviews.sort((a,b) => (b.createdAt as Timestamp).toMillis() - (a.createdAt as Timestamp).toMillis()).map(review => (
                         <div key={review.id} className="grid grid-cols-12 gap-4">
                             <div className="col-span-1">
                                 <Avatar className='h-10 w-10'>
