@@ -89,7 +89,8 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
     return () => unsubscribe(); // Cleanup
   }, [auth]); // Depends on the auth instance
 
-  // Memoize the context value
+  // Memoize the context value.
+  // Dependencies are primitives or stable objects, preventing unnecessary re-creations.
   const contextValue = useMemo((): FirebaseContextState => {
     const servicesAvailable = !!(firebaseApp && firestore && auth);
     return {
@@ -101,7 +102,14 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
       isUserLoading: userAuthState.isUserLoading,
       userError: userAuthState.userError,
     };
-  }, [firebaseApp, firestore, auth, userAuthState]);
+  }, [
+      firebaseApp,
+      firestore,
+      auth,
+      userAuthState.user,
+      userAuthState.isUserLoading,
+      userAuthState.userError
+  ]);
 
   return (
     <FirebaseContext.Provider value={contextValue}>
