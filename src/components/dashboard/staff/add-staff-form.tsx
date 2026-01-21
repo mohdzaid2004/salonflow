@@ -1,6 +1,6 @@
 'use client';
 
-import { useTransition } from 'react';
+import { useTransition, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -14,7 +14,7 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-import { Loader2 } from 'lucide-react';
+import { Loader2, CheckCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import {
   useFirestore,
@@ -41,6 +41,8 @@ export function AddStaffForm({
   setOpen: (open: boolean) => void;
 }) {
   const [isPending, startTransition] = useTransition();
+  const [isSuccess, setIsSuccess] = useState(false);
+  const [addedStaffName, setAddedStaffName] = useState('');
   const { toast } = useToast();
   const firestore = useFirestore();
   const { user } = useUser();
@@ -77,12 +79,24 @@ export function AddStaffForm({
       const staffRef = collection(firestore, `salons/${salonId}/staff`);
       addDocumentNonBlocking(staffRef, staffData);
 
-      toast({
-        title: 'Success!',
-        description: `${data.name} has been added to your staff.`,
-      });
-      setOpen(false);
+      setAddedStaffName(data.name);
+      setIsSuccess(true);
     });
+  }
+  
+  if (isSuccess) {
+    return (
+      <div className="flex flex-col items-center justify-center space-y-4 py-8">
+        <CheckCircle className="h-16 w-16 text-green-500" />
+        <h3 className="text-xl font-semibold">Staff Member Added!</h3>
+        <p className="text-center text-muted-foreground">
+          '{addedStaffName}' has been added to your staff.
+        </p>
+        <Button onClick={() => setOpen(false)} className="w-full">
+          Close
+        </Button>
+      </div>
+    );
   }
 
   return (

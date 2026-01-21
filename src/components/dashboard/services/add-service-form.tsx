@@ -1,6 +1,6 @@
 'use client';
 
-import { useTransition } from 'react';
+import { useTransition, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -14,7 +14,7 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-import { Loader2 } from 'lucide-react';
+import { Loader2, CheckCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import {
   useFirestore,
@@ -36,6 +36,8 @@ export function AddServiceForm({
   setOpen: (open: boolean) => void;
 }) {
   const [isPending, startTransition] = useTransition();
+  const [isSuccess, setIsSuccess] = useState(false);
+  const [addedServiceName, setAddedServiceName] = useState('');
   const { toast } = useToast();
   const firestore = useFirestore();
   const { user } = useUser();
@@ -68,14 +70,25 @@ export function AddServiceForm({
 
       const servicesRef = collection(firestore, `salons/${salonId}/services`);
       addDocumentNonBlocking(servicesRef, serviceData);
-
-      // Optimistic UI update
-      toast({
-        title: 'Success!',
-        description: 'New service has been added.',
-      });
-      setOpen(false);
+      
+      setAddedServiceName(data.name);
+      setIsSuccess(true);
     });
+  }
+
+  if (isSuccess) {
+    return (
+      <div className="flex flex-col items-center justify-center space-y-4 py-8">
+        <CheckCircle className="h-16 w-16 text-green-500" />
+        <h3 className="text-xl font-semibold">Service Added!</h3>
+        <p className="text-center text-muted-foreground">
+          '{addedServiceName}' has been added to your services.
+        </p>
+        <Button onClick={() => setOpen(false)} className="w-full">
+          Close
+        </Button>
+      </div>
+    );
   }
 
   return (
@@ -118,5 +131,3 @@ export function AddServiceForm({
     </Form>
   );
 }
-
-    

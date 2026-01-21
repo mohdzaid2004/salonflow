@@ -1,6 +1,6 @@
 'use client';
 
-import { useTransition } from 'react';
+import { useTransition, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -14,7 +14,7 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-import { Loader2 } from 'lucide-react';
+import { Loader2, CheckCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import {
   useFirestore,
@@ -44,6 +44,7 @@ export function EditStaffForm({
   setOpen: (open: boolean) => void;
 }) {
   const [isPending, startTransition] = useTransition();
+  const [isSuccess, setIsSuccess] = useState(false);
   const { toast } = useToast();
   const firestore = useFirestore();
   const { user } = useUser();
@@ -75,12 +76,23 @@ export function EditStaffForm({
       const staffRef = doc(firestore, `salons/${salonId}/staff`, staff.id);
       updateDocumentNonBlocking(staffRef, data);
 
-      toast({
-        title: 'Success!',
-        description: `${data.name}'s details have been updated.`,
-      });
-      setOpen(false);
+      setIsSuccess(true);
     });
+  }
+
+  if (isSuccess) {
+     return (
+      <div className="flex flex-col items-center justify-center space-y-4 py-8">
+        <CheckCircle className="h-16 w-16 text-green-500" />
+        <h3 className="text-xl font-semibold">Staff Member Updated!</h3>
+        <p className="text-center text-muted-foreground">
+          The details for '{form.getValues('name')}' have been saved.
+        </p>
+        <Button onClick={() => setOpen(false)} className="w-full">
+          Close
+        </Button>
+      </div>
+    );
   }
 
   return (
