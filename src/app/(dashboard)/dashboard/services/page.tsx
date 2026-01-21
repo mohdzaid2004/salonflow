@@ -142,9 +142,6 @@ export default function ServicesPage() {
       </TableRow>
     ));
   };
-  
-  // Find the latest version of the selected service to pass to the dialog
-  const serviceForEdit = services?.find(s => s.id === selectedService?.id) || null;
 
   return (
     <>
@@ -233,9 +230,10 @@ export default function ServicesPage() {
             <DialogHeader>
                 <DialogTitle>Edit Service</DialogTitle>
             </DialogHeader>
-            {serviceForEdit && (
+            {selectedService && (
                 <EditServiceForm
-                    service={serviceForEdit}
+                    key={selectedService.id}
+                    service={selectedService}
                     setOpen={setEditDialogOpen}
                 />
             )}
