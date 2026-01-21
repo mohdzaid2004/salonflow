@@ -5,7 +5,6 @@ import {
   useFirestore,
   useUser,
   useCollection,
-  useMemoFirebase,
 } from '@/firebase';
 import { collection, query, where, Timestamp } from 'firebase/firestore';
 import {
@@ -46,7 +45,7 @@ export default function DashboardPage() {
     };
   }, []);
 
-  const appointmentsQuery = useMemoFirebase(() => {
+  const appointmentsQuery = useMemo(() => {
     if (!salonId || !firestore) return null;
     return query(
       collection(firestore, `salons/${salonId}/appointments`),
@@ -58,14 +57,14 @@ export default function DashboardPage() {
   const { data: appointments, isLoading: isLoadingAppointments } =
     useCollection<Appointment>(appointmentsQuery);
 
-  const staffQuery = useMemoFirebase(() => {
+  const staffQuery = useMemo(() => {
     if (!firestore || !salonId) return null;
     return query(collection(firestore, `salons/${salonId}/staff`));
   }, [firestore, salonId]);
   const { data: staff, isLoading: isLoadingStaff } =
     useCollection<Staff>(staffQuery);
 
-  const servicesQuery = useMemoFirebase(() => {
+  const servicesQuery = useMemo(() => {
     if (!firestore || !salonId) return null;
     return query(collection(firestore, `salons/${salonId}/services`));
   }, [firestore, salonId]);

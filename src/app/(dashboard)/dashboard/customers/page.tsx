@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useRef } from 'react';
-import { useMemoFirebase, useCollection, useFirestore, useUser, useDoc } from '@/firebase';
+import { useState, useRef, useMemo } from 'react';
+import { useCollection, useFirestore, useUser, useDoc } from '@/firebase';
 import {
   Table,
   TableBody,
@@ -43,12 +43,12 @@ export default function CustomersPage() {
 
   const salonId = user?.uid;
 
-  const customersQuery = useMemoFirebase(() => {
+  const customersQuery = useMemo(() => {
     if (!firestore || !salonId) return null;
     return query(collection(firestore, `salons/${salonId}/customers`));
   }, [firestore, salonId]);
   
-  const salonDocRef = useMemoFirebase(() => {
+  const salonDocRef = useMemo(() => {
     if (!firestore || !salonId) return null;
     return doc(firestore, 'salons', salonId);
   }, [firestore, salonId]);

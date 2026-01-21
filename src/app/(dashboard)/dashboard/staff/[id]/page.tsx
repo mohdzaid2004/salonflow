@@ -2,7 +2,7 @@
 
 import { useMemo } from 'react';
 import { useParams } from 'next/navigation';
-import { useDoc, useCollection, useFirestore, useUser, useMemoFirebase } from '@/firebase';
+import { useDoc, useCollection, useFirestore, useUser } from '@/firebase';
 import { doc, collection, query, where, Timestamp } from 'firebase/firestore';
 import type { Staff, Review, Customer } from '@/lib/data';
 import {
@@ -24,12 +24,12 @@ export default function StaffDetailPage() {
 
   const salonId = user?.uid;
 
-  const staffDocRef = useMemoFirebase(() => {
+  const staffDocRef = useMemo(() => {
     if (!firestore || !salonId || !staffId) return null;
     return doc(firestore, `salons/${salonId}/staff`, staffId as string);
   }, [firestore, salonId, staffId]);
 
-  const reviewsQuery = useMemoFirebase(() => {
+  const reviewsQuery = useMemo(() => {
     if (!firestore || !salonId || !staffId) return null;
     return query(
       collection(firestore, `salons/${salonId}/reviews`),
@@ -37,7 +37,7 @@ export default function StaffDetailPage() {
     );
   }, [firestore, salonId, staffId]);
   
-  const customersQuery = useMemoFirebase(() => {
+  const customersQuery = useMemo(() => {
     if (!firestore || !salonId) return null;
     return query(collection(firestore, `salons/${salonId}/customers`));
   }, [firestore, salonId]);

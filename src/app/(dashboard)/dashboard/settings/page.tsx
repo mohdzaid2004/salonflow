@@ -8,7 +8,7 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-import { useAuth, useDoc, useFirestore, useUser, useMemoFirebase } from '@/firebase';
+import { useAuth, useDoc, useFirestore, useUser } from '@/firebase';
 import { doc, updateDoc, deleteDoc, writeBatch } from 'firebase/firestore';
 import type { Salon } from '@/lib/data';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -17,7 +17,7 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
-import { useState, useTransition } from 'react';
+import { useState, useTransition, useMemo } from 'react';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { cn } from '@/lib/utils';
 import { useForm, Controller } from 'react-hook-form';
@@ -66,7 +66,7 @@ export default function SettingsPage() {
 
 
   const salonId = user?.uid;
-  const salonDocRef = useMemoFirebase(() => {
+  const salonDocRef = useMemo(() => {
     if (!firestore || !salonId) return null;
     return doc(firestore, 'salons', salonId);
   }, [firestore, salonId]);

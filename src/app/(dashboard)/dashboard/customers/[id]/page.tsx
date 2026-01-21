@@ -2,7 +2,7 @@
 
 import { useMemo } from 'react';
 import { useParams } from 'next/navigation';
-import { useDoc, useFirestore, useUser, useMemoFirebase } from '@/firebase';
+import { useDoc, useFirestore, useUser } from '@/firebase';
 import { doc } from 'firebase/firestore';
 import type { Customer, Salon } from '@/lib/data';
 import {
@@ -23,12 +23,12 @@ export default function CustomerDetailPage() {
 
   const salonId = user?.uid;
 
-  const salonDocRef = useMemoFirebase(() => {
+  const salonDocRef = useMemo(() => {
     if (!firestore || !salonId) return null;
     return doc(firestore, 'salons', salonId);
   }, [firestore, salonId]);
 
-  const customerDocRef = useMemoFirebase(() => {
+  const customerDocRef = useMemo(() => {
     if (!firestore || !salonId || !customerId) return null;
     return doc(
       firestore,

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useMemo } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { MainNav } from '@/components/dashboard/main-nav';
 import { UserNav } from '@/components/dashboard/user-nav';
@@ -15,7 +15,7 @@ import {
   SidebarFooter,
 } from '@/components/ui/sidebar';
 import { Separator } from '@/components/ui/separator';
-import { useDoc, useFirestore, useUser, useMemoFirebase } from '@/firebase';
+import { useDoc, useFirestore, useUser } from '@/firebase';
 import { HeaderActionsProvider } from '@/components/dashboard/header-actions-context';
 import { PageHeader } from '@/components/page-header';
 import { Loader2 } from 'lucide-react';
@@ -48,7 +48,7 @@ export default function DashboardLayout({
 
   // The user's UID is the salon's ID upon signup.
   const salonId = user?.uid;
-  const salonDocRef = useMemoFirebase(() => {
+  const salonDocRef = useMemo(() => {
     if (!firestore || !salonId) return null;
     return doc(firestore, 'salons', salonId);
   }, [firestore, salonId]);

@@ -6,7 +6,7 @@ import {
   CardTitle,
   CardDescription,
 } from '@/components/ui/card';
-import { useCollection, useFirestore, useUser, useMemoFirebase } from '@/firebase';
+import { useCollection, useFirestore, useUser } from '@/firebase';
 import type { Appointment, Service } from '@/lib/data';
 import { collection, query, where, Timestamp } from 'firebase/firestore';
 import { useMemo } from 'react';
@@ -49,7 +49,7 @@ export default function OverviewPage() {
     };
   }, []);
 
-  const appointmentsQuery = useMemoFirebase(() => {
+  const appointmentsQuery = useMemo(() => {
     if (!salonId || !firestore) return null;
     return query(
       collection(firestore, `salons/${salonId}/appointments`),
@@ -57,7 +57,7 @@ export default function OverviewPage() {
     );
   }, [salonId, firestore]);
 
-  const servicesQuery = useMemoFirebase(() => {
+  const servicesQuery = useMemo(() => {
     if (!salonId || !firestore) return null;
     return query(collection(firestore, `salons/${salonId}/services`));
   }, [salonId, firestore]);

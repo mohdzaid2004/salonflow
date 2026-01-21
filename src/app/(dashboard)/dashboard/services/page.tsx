@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useMemo } from 'react';
-import { useCollection, useFirestore, useUser, useMemoFirebase, deleteDocumentNonBlocking } from '@/firebase';
+import { useCollection, useFirestore, useUser, deleteDocumentNonBlocking } from '@/firebase';
 import {
   Table,
   TableBody,
@@ -62,7 +62,7 @@ export default function ServicesPage() {
 
   const salonId = user?.uid;
 
-  const servicesQuery = useMemoFirebase(() => {
+  const servicesQuery = useMemo(() => {
     if (!firestore || !salonId) return null;
     return query(collection(firestore, `salons/${salonId}/services`));
   }, [firestore, salonId]);

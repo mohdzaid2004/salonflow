@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -39,7 +39,7 @@ import {
 } from '@/components/ui/dialog';
 import { Loader2, Search, ArrowRight } from 'lucide-react';
 import { Logo } from '@/components/logo';
-import { useFirestore, useUser, useCollection, useDoc, useMemoFirebase } from '@/firebase';
+import { useFirestore, useUser, useCollection, useDoc } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
 import type { Customer, Service, Staff, Appointment, Salon } from '@/lib/data';
 import {
@@ -84,20 +84,20 @@ export default function HomePage() {
 
   const salonId = user?.uid;
 
-  const salonDocRef = useMemoFirebase(() => {
+  const salonDocRef = useMemo(() => {
     if (!firestore || !salonId) return null;
     return doc(firestore, 'salons', salonId);
   }, [firestore, salonId]);
   const { data: salon } = useDoc<Salon>(salonDocRef);
 
   // Fetch services and staff for the new bill form
-  const servicesQuery = useMemoFirebase(() => {
+  const servicesQuery = useMemo(() => {
     if (!firestore || !salonId) return null;
     return query(collection(firestore, `salons/${salonId}/services`));
   }, [firestore, salonId]);
   const { data: services } = useCollection<Service>(servicesQuery);
 
-  const staffQuery = useMemoFirebase(() => {
+  const staffQuery = useMemo(() => {
     if (!firestore || !salonId) return null;
     return query(collection(firestore, `salons/${salonId}/staff`));
   }, [firestore, salonId]);

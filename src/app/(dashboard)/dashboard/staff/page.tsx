@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useMemo } from 'react';
-import { useCollection, useFirestore, useUser, useMemoFirebase, deleteDocumentNonBlocking } from '@/firebase';
+import { useCollection, useFirestore, useUser, deleteDocumentNonBlocking } from '@/firebase';
 import {
   Table,
   TableBody,
@@ -65,12 +65,12 @@ export default function StaffPage() {
 
   const salonId = user?.uid;
 
-  const staffQuery = useMemoFirebase(() => {
+  const staffQuery = useMemo(() => {
     if (!firestore || !salonId) return null;
     return query(collection(firestore, `salons/${salonId}/staff`));
   }, [firestore, salonId]);
   
-  const reviewsQuery = useMemoFirebase(() => {
+  const reviewsQuery = useMemo(() => {
     if (!firestore || !salonId) return null;
     return query(collection(firestore, `salons/${salonId}/reviews`));
   }, [firestore, salonId]);
