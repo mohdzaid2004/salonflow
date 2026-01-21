@@ -10,7 +10,7 @@ export function PageHeader() {
     const currentPath = pathname.replace('/(dashboard)', '');
     
     // Don't show a title on the billing page as it has its own title
-    if (currentPath.startsWith('/dashboard/billing')) {
+    if (currentPath.startsWith('/dashboard/my-subscription')) {
       return '';
     }
 

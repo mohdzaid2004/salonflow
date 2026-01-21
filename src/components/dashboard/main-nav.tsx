@@ -15,16 +15,18 @@ import {
   IndianRupee,
   LayoutGrid,
   Home,
+  CreditCard,
 } from 'lucide-react';
 import type { Salon } from '@/lib/data';
 
 export const MainNavItems = [
   { href: '/dashboard/home', label: 'Home', icon: Home, feature: 'core' },
   { href: '/dashboard/overview', label: 'Overview', icon: LayoutGrid, feature: 'core' },
+  { href: '/dashboard/billing', label: 'Billing', icon: IndianRupee, feature: 'core' },
   { href: '/dashboard/services', label: 'Services', icon: Scissors, feature: 'core' },
   { href: '/dashboard/staff', label: 'Staff', icon: Users, feature: 'core' },
   { href: '/dashboard/customers', label: 'Customers', icon: BookUser, feature: 'core' },
-  { href: '/dashboard/billing', label: 'My Subscription', icon: IndianRupee, feature: 'core' },
+  { href: '/dashboard/my-subscription', label: 'Subscription', icon: CreditCard, feature: 'core' },
   { href: '/dashboard/settings', label: 'Settings', icon: Settings, feature: 'core' },
 ];
 
