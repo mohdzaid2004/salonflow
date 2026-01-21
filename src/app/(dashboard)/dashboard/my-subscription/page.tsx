@@ -17,6 +17,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
 import { Check, Calendar } from 'lucide-react';
 import { format, differenceInDays } from 'date-fns';
+import { useToast } from '@/hooks/use-toast';
 
 // Mock data for subscription plans, as there's no collection for it.
 const subscriptionPlans: SubscriptionPlan[] = [
@@ -63,6 +64,7 @@ const subscriptionPlans: SubscriptionPlan[] = [
 export default function MySubscriptionPage() {
   const { user } = useUser();
   const firestore = useFirestore();
+  const { toast } = useToast();
 
   const salonId = user?.uid;
 
@@ -84,6 +86,14 @@ export default function MySubscriptionPage() {
     return new Intl.NumberFormat('en-IN', {
       maximumFractionDigits: 0,
     }).format(amount);
+  };
+  
+  const handleManageBilling = () => {
+    toast({
+      title: "Manage Billing",
+      description: "In a real app, this would redirect to a billing portal like Stripe or Razorpay.",
+      duration: 5000,
+    });
   };
 
   const renderSkeleton = () => (
@@ -165,7 +175,7 @@ export default function MySubscriptionPage() {
                                 <span className="text-lg font-normal text-muted-foreground">/month</span>
                              </p>
                         </div>
-                        <Button className="w-full">Manage Billing</Button>
+                        <Button className="w-full" onClick={handleManageBilling}>Manage Billing</Button>
                     </div>
                 </div>
             </CardContent>
