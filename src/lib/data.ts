@@ -12,6 +12,7 @@ export type Salon = {
   loyaltyProgramEnabled?: boolean;
   billingStatus?: 'trialing' | 'active' | 'past_due' | 'canceled';
   trialEndsAt?: unknown; // Firebase Timestamp
+  subscriptionPlanId?: string;
 };
 
 export type Service = {
@@ -62,4 +63,15 @@ export type Review = {
   rating: number;
   comment?: string;
   createdAt: unknown; // Firebase Timestamp
+};
+
+export type SubscriptionPlan = {
+  id: string;
+  name: string;
+  description: string;
+  monthlyPrice: number;
+  yearlyPrice: number;
+  staffLimit: number;
+  features: string[];
+  isPopular: boolean;
 };

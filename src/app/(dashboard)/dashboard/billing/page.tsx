@@ -1,27 +1,205 @@
-import { PageHeader } from '@/components/page-header';
+'use client';
+
+import { useMemo } from 'react';
+import { useDoc, useFirestore, useUser } from '@/firebase';
+import { doc, Timestamp } from 'firebase/firestore';
+import type { Salon, SubscriptionPlan } from '@/lib/data';
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
+  CardFooter
 } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Badge } from '@/components/ui/badge';
+import { Check, Calendar } from 'lucide-react';
+import { format, differenceInDays } from 'date-fns';
 
-export default function BillingPage() {
-  return (
-    <div className="grid flex-1 items-start gap-4 md:gap-8">
-      <PageHeader title="Billing" />
+// Mock data for subscription plans, as there's no collection for it.
+const subscriptionPlans: SubscriptionPlan[] = [
+  {
+    id: 'starter',
+    name: 'Starter',
+    description: 'For individual stylists or very small salons getting started.',
+    monthlyPrice: 499,
+    yearlyPrice: 4990,
+    staffLimit: 1,
+    features: ['1 Staff Member', 'Unlimited Appointments', 'Basic Billing'],
+    isPopular: false,
+  },
+  {
+    id: 'professional',
+    name: 'Professional',
+    description: 'For growing salons that need more power and automation.',
+    monthlyPrice: 999,
+    yearlyPrice: 9990,
+    staffLimit: 5,
+    features: [
+      'Up to 5 Staff',
+      'WhatsApp Reminders',
+      'GST Invoices & Reports',
+    ],
+    isPopular: true,
+  },
+  {
+    id: 'business',
+    name: 'Business',
+    description: 'For large salons that want to unlock their full potential.',
+    monthlyPrice: 1499,
+    yearlyPrice: 14990,
+    staffLimit: -1, // Unlimited
+    features: [
+      'Unlimited Staff',
+      'Online Booking Link',
+      'Advanced Reports',
+    ],
+    isPopular: false,
+  },
+];
+
+export default function MySubscriptionPage() {
+  const { user } = useUser();
+  const firestore = useFirestore();
+
+  const salonId = user?.uid;
+
+  const salonDocRef = useMemo(() => {
+    if (!firestore || !salonId) return null;
+    return doc(firestore, 'salons', salonId);
+  }, [firestore, salonId]);
+
+  const { data: salon, isLoading } = useDoc<Salon>(salonDocRef);
+
+  const currentPlan = useMemo(() => {
+    return subscriptionPlans.find(p => p.id === (salon?.subscriptionPlanId || 'starter'));
+  }, [salon]);
+
+  const trialEndsAt = salon?.trialEndsAt ? (salon.trialEndsAt as Timestamp).toDate() : null;
+  const daysRemainingInTrial = trialEndsAt ? differenceInDays(trialEndsAt, new Date()) : 0;
+
+  const renderSkeleton = () => (
+    <div className="space-y-8">
       <Card>
         <CardHeader>
-          <CardTitle>Billing & Invoices</CardTitle>
-          <CardDescription>
-            This section is under construction.
-          </CardDescription>
+          <Skeleton className="h-8 w-48" />
+          <Skeleton className="mt-2 h-4 w-64" />
         </CardHeader>
         <CardContent>
-          <p>Payment history, invoice generation, and GST reports will be available here soon.</p>
+          <Skeleton className="h-24 w-full" />
         </CardContent>
       </Card>
+      <div className="grid gap-8 md:grid-cols-2">
+        <Card><CardHeader><Skeleton className="h-32 w-full" /></CardHeader></Card>
+        <Card><CardHeader><Skeleton className="h-32 w-full" /></CardHeader></Card>
+      </div>
+    </div>
+  );
+
+  if (isLoading) {
+    return (
+        <div className="grid flex-1 items-start gap-4 md:gap-8">
+            {renderSkeleton()}
+        </div>
+    );
+  }
+
+  if (!salon || !currentPlan) {
+    return (
+        <div className="grid flex-1 items-start gap-4 md:gap-8">
+            <p>Could not load subscription details.</p>
+        </div>
+    );
+  }
+  
+  const otherPlans = subscriptionPlans.filter(p => p.id !== currentPlan.id);
+
+  return (
+    <div className="grid flex-1 items-start gap-4 md:gap-8">
+        <Card>
+            <CardHeader>
+                <div className="flex flex-col md:flex-row md:items-center md:justify-between">
+                    <div>
+                        <CardTitle className="text-2xl">My Subscription</CardTitle>
+                        <CardDescription>Manage your plan and billing details.</CardDescription>
+                    </div>
+                    {salon.billingStatus === 'trialing' && trialEndsAt && (
+                         <div className="mt-4 md:mt-0">
+                            <Badge variant={daysRemainingInTrial > 3 ? "secondary" : "destructive"}>
+                                <Calendar className="mr-2 h-4 w-4" />
+                                {daysRemainingInTrial > 0 ? `Trial ends in ${daysRemainingInTrial} day(s)` : 'Trial has ended'}
+                            </Badge>
+                         </div>
+                    )}
+                </div>
+            </CardHeader>
+            <CardContent>
+                <div className="grid gap-6 rounded-lg border p-6 md:grid-cols-3">
+                    <div className="md:col-span-2">
+                        <h3 className="text-xl font-bold text-primary">{currentPlan.name} Plan</h3>
+                        <p className="mt-2 text-muted-foreground">{currentPlan.description}</p>
+                        <ul className="mt-6 space-y-3">
+                            {currentPlan.features.map(feature => (
+                                <li key={feature} className="flex items-center gap-2">
+                                    <Check className="h-5 w-5 text-green-500" />
+                                    <span>{feature}</span>
+                                </li>
+                            ))}
+                        </ul>
+                    </div>
+                    <div className="flex flex-col justify-between rounded-md bg-accent/50 p-6">
+                        <div>
+                             <p className="text-sm font-medium text-muted-foreground">
+                                {salon.billingStatus === 'trialing' ? 'Trial Period' : 'Current Plan'}
+                             </p>
+                             <p className="text-4xl font-bold">
+                                {salon.billingStatus === 'trialing' ? 'Free' : `₹${currentPlan.monthlyPrice}`}
+                                <span className="text-lg font-normal text-muted-foreground">/month</span>
+                             </p>
+                        </div>
+                        <Button className="w-full">Manage Billing</Button>
+                    </div>
+                </div>
+            </CardContent>
+        </Card>
+        
+        <div className="mt-4">
+            <h2 className="mb-4 text-xl font-bold">Upgrade Your Plan</h2>
+            <div className="grid gap-8 md:grid-cols-2">
+                {otherPlans.map(plan => (
+                    <Card key={plan.id} className={plan.isPopular ? 'border-primary' : ''}>
+                        <CardHeader>
+                            <div className="flex items-center justify-between">
+                                <CardTitle className="font-headline">{plan.name}</CardTitle>
+                                {plan.isPopular && <Badge>Most Popular</Badge>}
+                            </div>
+                            <div className="flex items-baseline gap-1">
+                                <span className="text-3xl font-bold">₹{plan.monthlyPrice}</span>
+                                <span className="text-muted-foreground">/ month</span>
+                            </div>
+                            <CardDescription>{plan.description}</CardDescription>
+                        </CardHeader>
+                         <CardContent>
+                            <ul className="space-y-2">
+                                {plan.features.map((feature) => (
+                                    <li key={feature} className="flex items-center gap-2">
+                                    <Check className="h-4 w-4 text-primary" />
+                                    <span>{feature}</span>
+                                    </li>
+                                ))}
+                            </ul>
+                        </CardContent>
+                        <CardFooter>
+                            <Button className="w-full" variant={plan.isPopular ? 'default' : 'outline'}>
+                                {plan.monthlyPrice > currentPlan.monthlyPrice ? 'Upgrade' : 'Downgrade'}
+                            </Button>
+                        </CardFooter>
+                    </Card>
+                ))}
+            </div>
+        </div>
     </div>
   );
 }

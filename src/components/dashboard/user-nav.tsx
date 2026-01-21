@@ -68,7 +68,7 @@ export function UserNav() {
             <Link href="/dashboard/settings">Settings</Link>
           </DropdownMenuItem>
            <DropdownMenuItem asChild>
-            <Link href="/dashboard/billing">Subscription</Link>
+            <Link href="/dashboard/billing">My Subscription</Link>
           </DropdownMenuItem>
         </DropdownMenuGroup>
         <DropdownMenuSeparator />

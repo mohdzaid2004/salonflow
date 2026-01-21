@@ -8,6 +8,12 @@ export function PageHeader() {
   
   const getTitle = () => {
     const currentPath = pathname.replace('/(dashboard)', '');
+    
+    // Don't show a title on the billing page as it has its own title
+    if (currentPath.startsWith('/dashboard/billing')) {
+      return '';
+    }
+
     // Hide title on settings page
     if (currentPath === '/dashboard/settings') {
       return '';
