@@ -34,7 +34,7 @@ import { format } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
 import { useDoc } from '@/firebase';
 
-export default function BillingPage() {
+export default function BillingPage({}) {
   const firestore = useFirestore();
   const { user } = useUser();
   const { toast } = useToast();

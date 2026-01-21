@@ -54,7 +54,7 @@ const loyaltySchema = z.object({
 
 type LoyaltyFormValues = z.infer<typeof loyaltySchema>;
 
-export default function SettingsPage() {
+export default function SettingsPage({}) {
   const { user } = useUser();
   const auth = useAuth();
   const firestore = useFirestore();

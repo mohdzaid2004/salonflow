@@ -53,7 +53,7 @@ import Link from 'next/link';
 import { EditStaffForm } from '@/components/dashboard/staff/edit-staff-form';
 import { Pencil } from 'lucide-react';
 
-export default function StaffPage() {
+export default function StaffPage({}) {
   const firestore = useFirestore();
   const { user, isUserLoading } = useUser();
   const { toast } = useToast();

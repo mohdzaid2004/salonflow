@@ -16,7 +16,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Phone, Cake, Star, Calendar, IndianRupee, User as StaffIcon } from 'lucide-react';
 
-export default function CustomerDetailPage() {
+export default function CustomerDetailPage({}) {
   const { id: customerId } = useParams();
   const { user } = useUser();
   const firestore = useFirestore();

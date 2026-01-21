@@ -50,7 +50,7 @@ import { AddServiceForm } from '@/components/dashboard/services/add-service-form
 import { EditServiceForm } from '@/components/dashboard/services/edit-service-form';
 import { useToast } from '@/hooks/use-toast';
 
-export default function ServicesPage() {
+export default function ServicesPage({}) {
   const firestore = useFirestore();
   const { user, isUserLoading } = useUser();
   const { toast } = useToast();

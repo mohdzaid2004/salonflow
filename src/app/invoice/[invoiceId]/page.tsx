@@ -24,7 +24,7 @@ import { Printer } from 'lucide-react';
 
 type PageStatus = 'loading' | 'loaded' | 'invalid';
 
-export default function InvoicePage() {
+export default function InvoicePage({}) {
     const { invoiceId: compositeId } = useParams();
     const firestore = useFirestore();
 

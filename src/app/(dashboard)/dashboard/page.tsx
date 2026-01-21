@@ -28,7 +28,7 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog';
 
-export default function DashboardPage() {
+export default function DashboardPage({}) {
   const { user } = useUser();
   const firestore = useFirestore();
   const salonId = user?.uid;

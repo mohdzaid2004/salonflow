@@ -34,7 +34,7 @@ import Link from 'next/link';
 import { useToast } from '@/hooks/use-toast';
 import * as XLSX from 'xlsx';
 
-export default function CustomersPage() {
+export default function CustomersPage({}) {
   const firestore = useFirestore();
   const { user, isUserLoading } = useUser();
   const { toast } = useToast();

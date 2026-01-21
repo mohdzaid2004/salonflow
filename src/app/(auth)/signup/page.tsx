@@ -42,7 +42,7 @@ const signupFormSchema = z.object({
 
 type SignupFormValues = z.infer<typeof signupFormSchema>;
 
-export default function SignupPage() {
+export default function SignupPage({}) {
   const auth = useAuth();
   const firestore = useFirestore();
   const router = useRouter();

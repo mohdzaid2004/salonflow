@@ -4,7 +4,7 @@ import { Header } from '@/components/landing/header';
 import { HeroSection } from '@/components/landing/hero-section';
 import { PricingSection } from '@/components/landing/pricing-section';
 
-export default function Home() {
+export default function Home({}) {
   return (
     <div className="flex min-h-dvh flex-col">
       <Header />

@@ -17,7 +17,7 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Phone, Cake, Star, MessageSquare } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 
-export default function StaffDetailPage() {
+export default function StaffDetailPage({}) {
   const { id: staffId } = useParams();
   const { user } = useUser();
   const firestore = useFirestore();

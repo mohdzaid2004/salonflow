@@ -28,7 +28,7 @@ const COLORS = [
 ];
 
 
-export default function OverviewPage() {
+export default function OverviewPage({}) {
   const { user, isUserLoading } = useUser();
   const firestore = useFirestore();
   const salonId = user?.uid;

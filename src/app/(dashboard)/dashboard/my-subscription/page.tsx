@@ -61,7 +61,7 @@ const subscriptionPlans: SubscriptionPlan[] = [
   },
 ];
 
-export default function MySubscriptionPage() {
+export default function MySubscriptionPage({}) {
   const { user } = useUser();
   const firestore = useFirestore();
   const { toast } = useToast();

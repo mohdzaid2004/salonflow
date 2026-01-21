@@ -67,7 +67,7 @@ const newCustomerSchema = z.object({
 type SearchFormValues = z.infer<typeof searchSchema>;
 type NewCustomerFormValues = z.infer<typeof newCustomerSchema>;
 
-export default function HomePage() {
+export default function HomePage({}) {
   const firestore = useFirestore();
   const { user } = useUser();
   const { toast } = useToast();

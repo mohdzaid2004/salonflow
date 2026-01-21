@@ -19,7 +19,7 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 
 type PageStatus = 'loading' | 'loaded' | 'invalid' | 'submitted' | 'already-submitted';
 
-export default function FeedbackPage() {
+export default function FeedbackPage({}) {
   const { appointmentId: compositeId } = useParams();
   const firestore = useFirestore();
   const { toast } = useToast();
