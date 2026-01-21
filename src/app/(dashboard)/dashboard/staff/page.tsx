@@ -62,26 +62,28 @@ export default function StaffPage() {
   const [isDeleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [selectedStaff, setSelectedStaff] = useState<Staff | null>(null);
 
+  const addStaffAction = useMemo(() => (
+    <Dialog open={isAddDialogOpen} onOpenChange={setAddDialogOpen}>
+      <DialogTrigger asChild>
+        <Button>
+          <PlusCircle className="mr-2 h-4 w-4" />
+          Add Staff
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="sm:max-w-[425px]">
+        <DialogHeader>
+          <DialogTitle>Add a New Staff Member</DialogTitle>
+        </DialogHeader>
+        <AddStaffForm setOpen={setAddDialogOpen} />
+      </DialogContent>
+    </Dialog>
+  ), [isAddDialogOpen]);
+
   useEffect(() => {
-    setActions(
-      <Dialog open={isAddDialogOpen} onOpenChange={setAddDialogOpen}>
-        <DialogTrigger asChild>
-          <Button>
-            <PlusCircle className="mr-2 h-4 w-4" />
-            Add Staff
-          </Button>
-        </DialogTrigger>
-        <DialogContent className="sm:max-w-[425px]">
-          <DialogHeader>
-            <DialogTitle>Add a New Staff Member</DialogTitle>
-          </DialogHeader>
-          <AddStaffForm setOpen={setAddDialogOpen} />
-        </DialogContent>
-      </Dialog>
-    );
+    setActions(addStaffAction);
     // Cleanup on unmount
     return () => setActions(null);
-  }, [setActions, isAddDialogOpen]);
+  }, [setActions, addStaffAction]);
 
   const salonId = user?.uid;
 

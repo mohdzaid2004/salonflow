@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useCollection, useFirestore, useUser, useMemoFirebase, deleteDocumentNonBlocking } from '@/firebase';
 import {
   Table,
@@ -62,26 +62,28 @@ export default function ServicesPage() {
   const [isDeleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [selectedService, setSelectedService] = useState<Service | null>(null);
 
+  const addServiceAction = useMemo(() => (
+    <Dialog open={isAddDialogOpen} onOpenChange={setAddDialogOpen}>
+      <DialogTrigger asChild>
+        <Button>
+          <PlusCircle className="mr-2 h-4 w-4" />
+          Add Service
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="sm:max-w-[425px]">
+        <DialogHeader>
+          <DialogTitle>Add a New Service</DialogTitle>
+        </DialogHeader>
+        <AddServiceForm setOpen={setAddDialogOpen} />
+      </DialogContent>
+    </Dialog>
+  ), [isAddDialogOpen]);
+
   useEffect(() => {
-    setActions(
-      <Dialog open={isAddDialogOpen} onOpenChange={setAddDialogOpen}>
-        <DialogTrigger asChild>
-          <Button>
-            <PlusCircle className="mr-2 h-4 w-4" />
-            Add Service
-          </Button>
-        </DialogTrigger>
-        <DialogContent className="sm:max-w-[425px]">
-          <DialogHeader>
-            <DialogTitle>Add a New Service</DialogTitle>
-          </DialogHeader>
-          <AddServiceForm setOpen={setAddDialogOpen} />
-        </DialogContent>
-      </Dialog>
-    );
+    setActions(addServiceAction);
     // Cleanup on unmount
     return () => setActions(null);
-  }, [setActions, isAddDialogOpen]);
+  }, [setActions, addServiceAction]);
 
 
   const salonId = user?.uid;
