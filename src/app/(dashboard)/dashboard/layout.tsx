@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { MainNav } from '@/components/dashboard/main-nav';
 import { UserNav } from '@/components/dashboard/user-nav';
@@ -36,7 +36,6 @@ export default function DashboardLayout({
   const firestore = useFirestore();
   const router = useRouter();
   const pathname = usePathname();
-  const [themeColor, setThemeColor] = useState<string | null>(null);
 
   const isHomePage = pathname === '/dashboard/home';
 
@@ -57,27 +56,31 @@ export default function DashboardLayout({
   // Fetch the salon document. The dashboard will wait until this is loaded.
   const { data: salon, isLoading: isSalonLoading } = useDoc<Salon>(salonDocRef);
 
-  // Effect for efficient theme loading
+  // Effect to manage theme application without causing re-render loops.
   useEffect(() => {
-    // On initial load, try to get color from localStorage for speed
-    const storedColor = localStorage.getItem(THEME_COLOR_KEY);
-    if (storedColor) {
-      setThemeColor(storedColor);
-      document.documentElement.style.setProperty('--primary', storedColor);
-    } else {
-      document.documentElement.style.setProperty('--primary', DEFAULT_THEME_COLOR);
-    }
+    // Define the color to apply based on a priority system.
+    // Priority: 1. Salon data (if loaded), 2. localStorage, 3. Default.
+    let colorToApply = DEFAULT_THEME_COLOR;
 
-    // When salon data loads from Firestore, update theme and localStorage
     if (salon) {
-      const newColor = salon.themeColor || DEFAULT_THEME_COLOR;
-      if (newColor !== themeColor) {
-        setThemeColor(newColor);
-        localStorage.setItem(THEME_COLOR_KEY, newColor);
-        document.documentElement.style.setProperty('--primary', newColor);
+      // If salon data is loaded, it is the source of truth.
+      colorToApply = salon.themeColor || DEFAULT_THEME_COLOR;
+    } else if (!isSalonLoading) {
+      // If salon isn't loading (i.e., initial load before Firestore returns), check localStorage.
+      const storedColor = localStorage.getItem(THEME_COLOR_KEY);
+      if (storedColor) {
+        colorToApply = storedColor;
       }
     }
-  }, [salon, themeColor]);
+
+    // Apply the determined color to the document.
+    document.documentElement.style.setProperty('--primary', colorToApply);
+
+    // If salon data was the source, update localStorage to keep it in sync for next time.
+    if (salon) {
+      localStorage.setItem(THEME_COLOR_KEY, colorToApply);
+    }
+  }, [salon, isSalonLoading]); // This effect runs only when salon data or its loading state changes.
 
 
   // Show a full-page loader while authenticating the user OR fetching the essential salon data.
