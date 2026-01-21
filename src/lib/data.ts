@@ -51,6 +51,8 @@ export type Appointment = {
   date: unknown; // Firebase Timestamp
   status: 'booked' | 'completed' | 'cancelled';
   paymentMethod: 'Cash' | 'Card' | 'UPI';
+  subtotal: number;
+  pointsRedeemed: number;
   amountPaid: number;
 };
 

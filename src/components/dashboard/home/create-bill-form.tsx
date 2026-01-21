@@ -165,6 +165,8 @@ We look forward to seeing you again!`;
         serviceIds: data.serviceIds,
         staffId: data.staffId,
         paymentMethod: data.paymentMethod,
+        subtotal: serviceTotal,
+        pointsRedeemed: pointsToRedeem,
         amountPaid: data.finalAmount,
         salonId,
         customerId: customer.id,

@@ -106,6 +106,12 @@ We look forward to seeing you again!`;
     toast({ title: "Opening WhatsApp...", description: "Please send the message in the new tab." });
   }
 
+  const handlePrintInvoice = (appointment: Appointment) => {
+    if (!salonId) return;
+    const invoiceId = `${salonId}_${appointment.id}`;
+    window.open(`/invoice/${invoiceId}`, '_blank');
+  };
+
   const renderSkeleton = () => {
     return Array.from({ length: 5 }).map((_, i) => (
       <TableRow key={i}>
@@ -185,7 +191,7 @@ We look forward to seeing you again!`;
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
                             <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                            <DropdownMenuItem onSelect={() => toast({ title: "Coming soon!", description: "Printable invoices will be available shortly." })}>
+                            <DropdownMenuItem onSelect={() => handlePrintInvoice(appt)}>
                                 <Printer className="mr-2 h-4 w-4" />
                                 Print Invoice
                             </DropdownMenuItem>
