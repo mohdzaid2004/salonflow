@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import { useCollection, useFirestore, useUser, useMemoFirebase, deleteDocumentNonBlocking } from '@/firebase';
 import {
   Table,
@@ -46,44 +46,22 @@ import {
 import { collection, query, doc } from 'firebase/firestore';
 import type { Staff, Review } from '@/lib/data';
 import { Skeleton } from '@/components/ui/skeleton';
-import { useHeaderActions } from '@/components/dashboard/header-actions-context';
 import { AddStaffForm } from '@/components/dashboard/staff/add-staff-form';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { useToast } from '@/hooks/use-toast';
 import Link from 'next/link';
+import { EditStaffForm } from '@/components/dashboard/staff/edit-staff-form';
+import { Pencil } from 'lucide-react';
 
 export default function StaffPage() {
   const firestore = useFirestore();
   const { user, isUserLoading } = useUser();
-  const { setActions } = useHeaderActions();
   const { toast } = useToast();
 
   const [isAddDialogOpen, setAddDialogOpen] = useState(false);
+  const [isEditDialogOpen, setEditDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [selectedStaff, setSelectedStaff] = useState<Staff | null>(null);
-
-  const addStaffAction = useMemo(() => (
-    <Dialog open={isAddDialogOpen} onOpenChange={setAddDialogOpen}>
-      <DialogTrigger asChild>
-        <Button>
-          <PlusCircle className="mr-2 h-4 w-4" />
-          Add Staff
-        </Button>
-      </DialogTrigger>
-      <DialogContent className="sm:max-w-[425px]">
-        <DialogHeader>
-          <DialogTitle>Add a New Staff Member</DialogTitle>
-        </DialogHeader>
-        <AddStaffForm setOpen={setAddDialogOpen} />
-      </DialogContent>
-    </Dialog>
-  ), [isAddDialogOpen]);
-
-  useEffect(() => {
-    setActions(addStaffAction);
-    // Cleanup on unmount
-    return () => setActions(null);
-  }, [setActions, addStaffAction]);
 
   const salonId = user?.uid;
 
@@ -159,6 +137,10 @@ export default function StaffPage() {
     };
 }, [staffWithReviews, isLoading]);
 
+  const handleEditClick = (staffMember: Staff) => {
+    setSelectedStaff(staffMember);
+    setEditDialogOpen(true);
+  }
 
   const handleDeleteClick = (staffMember: Staff) => {
     setSelectedStaff(staffMember);
@@ -281,11 +263,27 @@ export default function StaffPage() {
             </Card>
         </div>
       <Card>
-        <CardHeader>
-          <CardTitle>Staff Members</CardTitle>
-          <CardDescription>
-            Manage your team of stylists and professionals.
-          </CardDescription>
+        <CardHeader className="flex flex-row items-center justify-between">
+            <div>
+                <CardTitle>Staff Members</CardTitle>
+                <CardDescription>
+                    Manage your team of stylists and professionals.
+                </CardDescription>
+            </div>
+            <Dialog open={isAddDialogOpen} onOpenChange={setAddDialogOpen}>
+                <DialogTrigger asChild>
+                    <Button>
+                    <PlusCircle className="mr-2 h-4 w-4" />
+                    Add Staff
+                    </Button>
+                </DialogTrigger>
+                <DialogContent className="sm:max-w-[425px]">
+                    <DialogHeader>
+                    <DialogTitle>Add a New Staff Member</DialogTitle>
+                    </DialogHeader>
+                    <AddStaffForm setOpen={setAddDialogOpen} />
+                </DialogContent>
+            </Dialog>
         </CardHeader>
         <CardContent>
           <Table>
@@ -340,7 +338,10 @@ export default function StaffPage() {
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
                             <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                            <DropdownMenuItem disabled>Edit</DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => handleEditClick(staffMember)}>
+                                <Pencil className='mr-2 h-4 w-4' />
+                                Edit
+                            </DropdownMenuItem>
                             <DropdownMenuItem 
                               className="text-destructive"
                               onClick={() => handleDeleteClick(staffMember)}>
@@ -368,6 +369,24 @@ export default function StaffPage() {
         </CardContent>
       </Card>
     </div>
+
+    {/* Edit Dialog */}
+    <Dialog open={isEditDialogOpen} onOpenChange={setEditDialogOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+            <DialogHeader>
+                <DialogTitle>Edit Staff Member</DialogTitle>
+            </DialogHeader>
+            {selectedStaff && (
+                <EditStaffForm
+                    key={selectedStaff.id} 
+                    staff={selectedStaff} 
+                    setOpen={setEditDialogOpen} 
+                />
+            )}
+        </DialogContent>
+    </Dialog>
+
+
     <AlertDialog open={isDeleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent>
             <AlertDialogHeader>

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import { useCollection, useFirestore, useUser, useMemoFirebase, deleteDocumentNonBlocking } from '@/firebase';
 import {
   Table,
@@ -46,7 +46,6 @@ import {
 import { collection, query, doc } from 'firebase/firestore';
 import type { Service } from '@/lib/data';
 import { Skeleton } from '@/components/ui/skeleton';
-import { useHeaderActions } from '@/components/dashboard/header-actions-context';
 import { AddServiceForm } from '@/components/dashboard/services/add-service-form';
 import { EditServiceForm } from '@/components/dashboard/services/edit-service-form';
 import { useToast } from '@/hooks/use-toast';
@@ -54,37 +53,12 @@ import { useToast } from '@/hooks/use-toast';
 export default function ServicesPage() {
   const firestore = useFirestore();
   const { user, isUserLoading } = useUser();
-  const { setActions } = useHeaderActions();
   const { toast } = useToast();
 
   const [isAddDialogOpen, setAddDialogOpen] = useState(false);
   const [isEditDialogOpen, setEditDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [selectedService, setSelectedService] = useState<Service | null>(null);
-
-  const addServiceAction = useMemo(() => (
-    <Dialog open={isAddDialogOpen} onOpenChange={setAddDialogOpen}>
-      <DialogTrigger asChild>
-        <Button>
-          <PlusCircle className="mr-2 h-4 w-4" />
-          Add Service
-        </Button>
-      </DialogTrigger>
-      <DialogContent className="sm:max-w-[425px]">
-        <DialogHeader>
-          <DialogTitle>Add a New Service</DialogTitle>
-        </DialogHeader>
-        <AddServiceForm setOpen={setAddDialogOpen} />
-      </DialogContent>
-    </Dialog>
-  ), [isAddDialogOpen]);
-
-  useEffect(() => {
-    setActions(addServiceAction);
-    // Cleanup on unmount
-    return () => setActions(null);
-  }, [setActions, addServiceAction]);
-
 
   const salonId = user?.uid;
 
@@ -149,11 +123,27 @@ export default function ServicesPage() {
     <>
     <div className="grid flex-1 items-start gap-4 md:gap-8">
       <Card>
-        <CardHeader>
-          <CardTitle>Manage Your Services</CardTitle>
-          <CardDescription>
-            Here is a list of all services offered at your salon.
-          </CardDescription>
+        <CardHeader className="flex flex-row items-center justify-between">
+          <div>
+            <CardTitle>Manage Your Services</CardTitle>
+            <CardDescription>
+              Here is a list of all services offered at your salon.
+            </CardDescription>
+          </div>
+          <Dialog open={isAddDialogOpen} onOpenChange={setAddDialogOpen}>
+            <DialogTrigger asChild>
+              <Button>
+                <PlusCircle className="mr-2 h-4 w-4" />
+                Add Service
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-[425px]">
+              <DialogHeader>
+                <DialogTitle>Add a New Service</DialogTitle>
+              </DialogHeader>
+              <AddServiceForm setOpen={setAddDialogOpen} />
+            </DialogContent>
+          </Dialog>
         </CardHeader>
         <CardContent>
           <Table>
