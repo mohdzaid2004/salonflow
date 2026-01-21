@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useEffect } from 'react';
 import { useParams } from 'next/navigation';
-import { useFirestore, useMemoFirebase } from '@/firebase';
+import { useFirestore } from '@/firebase';
 import { doc, getDoc, collection, Timestamp, addDoc, query, where, getDocs, limit } from 'firebase/firestore';
 import type { Appointment, Salon, Staff, Review } from '@/lib/data';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
