@@ -1,8 +1,8 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useMemo, useTransition } from 'react';
 import { useDoc, useFirestore, useUser } from '@/firebase';
-import { doc, Timestamp } from 'firebase/firestore';
+import { doc, Timestamp, updateDoc } from 'firebase/firestore';
 import type { Salon, SubscriptionPlan } from '@/lib/data';
 import {
   Card,
@@ -15,7 +15,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
-import { Check, Calendar } from 'lucide-react';
+import { Check, Calendar, Loader2 } from 'lucide-react';
 import { format, differenceInDays } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
 
@@ -65,6 +65,7 @@ export default function MySubscriptionPage() {
   const { user } = useUser();
   const firestore = useFirestore();
   const { toast } = useToast();
+  const [isPending, startTransition] = useTransition();
 
   const salonId = user?.uid;
 
@@ -93,6 +94,31 @@ export default function MySubscriptionPage() {
       title: "Manage Billing",
       description: "In a real app, this would redirect to a billing portal like Stripe or Razorpay.",
       duration: 5000,
+    });
+  };
+
+  const handlePlanChange = (planId: string, planName: string) => {
+    if (!salonDocRef) return;
+
+    startTransition(async () => {
+      try {
+        await updateDoc(salonDocRef, { 
+            subscriptionPlanId: planId,
+            // If user is on trial, upgrading moves them to 'active'
+            ...(salon?.billingStatus === 'trialing' && { billingStatus: 'active' })
+        });
+        toast({
+          title: 'Plan Changed!',
+          description: `You have successfully switched to the ${planName} plan.`,
+        });
+      } catch (error) {
+        console.error(error);
+        toast({
+          variant: 'destructive',
+          title: 'Update Failed',
+          description: 'Could not change your subscription plan. Please try again.',
+        });
+      }
     });
   };
 
@@ -175,7 +201,10 @@ export default function MySubscriptionPage() {
                                 <span className="text-lg font-normal text-muted-foreground">/month</span>
                              </p>
                         </div>
-                        <Button className="w-full" onClick={handleManageBilling}>Manage Billing</Button>
+                        <Button className="w-full" onClick={handleManageBilling} disabled={isPending}>
+                            {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                            Manage Billing
+                        </Button>
                     </div>
                 </div>
             </CardContent>
@@ -208,7 +237,13 @@ export default function MySubscriptionPage() {
                             </ul>
                         </CardContent>
                         <CardFooter>
-                            <Button className="w-full" variant={plan.isPopular ? 'default' : 'outline'}>
+                            <Button 
+                                className="w-full" 
+                                variant={plan.isPopular ? 'default' : 'outline'}
+                                onClick={() => handlePlanChange(plan.id, plan.name)}
+                                disabled={isPending}
+                            >
+                                {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                                 {plan.monthlyPrice > currentPlan.monthlyPrice ? 'Upgrade' : 'Downgrade'}
                             </Button>
                         </CardFooter>
