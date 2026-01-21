@@ -93,6 +93,18 @@ export default function ServicesPage() {
 
   const { data: services, isLoading } = useCollection<Service>(servicesQuery);
 
+  useEffect(() => {
+    if (selectedService && services) {
+      const updatedService = services.find(s => s.id === selectedService.id);
+      if (updatedService && (
+        updatedService.name !== selectedService.name ||
+        updatedService.price !== selectedService.price
+      )) {
+        setSelectedService(updatedService);
+      }
+    }
+  }, [services, selectedService]);
+
   const formatCurrency = (amount: number) => {
     const formattedAmount = new Intl.NumberFormat('en-IN', {
       maximumFractionDigits: 2,

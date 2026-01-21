@@ -47,7 +47,7 @@ export function EditServiceForm({
 
   const form = useForm<EditServiceFormValues>({
     resolver: zodResolver(editServiceFormSchema),
-    defaultValues: {
+    values: {
       name: service.name,
       price: service.price,
     },
