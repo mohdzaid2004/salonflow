@@ -64,16 +64,20 @@ export default function InvoicePage() {
                 const staffDocRef = doc(firestore, `salons/${salonId}/staff`, apptData.staffId);
                 const customerDocRef = doc(firestore, `salons/${salonId}/customers`, apptData.customerId);
                 
-                const servicesQuery = query(
-                    collection(firestore, `salons/${salonId}/services`),
-                    where('__name__', 'in', apptData.serviceIds)
-                );
+                let servicesSnap;
+                if (apptData.serviceIds && apptData.serviceIds.length > 0) {
+                    const servicesQuery = query(
+                        collection(firestore, `salons/${salonId}/services`),
+                        where('__name__', 'in', apptData.serviceIds)
+                    );
+                    servicesSnap = await getDocs(servicesQuery);
+                }
+                
 
-                const [salonSnap, staffSnap, customerSnap, servicesSnap] = await Promise.all([
+                const [salonSnap, staffSnap, customerSnap] = await Promise.all([
                     getDoc(salonDocRef),
                     getDoc(staffDocRef),
                     getDoc(customerDocRef),
-                    getDocs(servicesQuery)
                 ]);
 
                 if (!salonSnap.exists() || !staffSnap.exists() || !customerSnap.exists()) {
@@ -85,8 +89,10 @@ export default function InvoicePage() {
                 setStaff({ id: staffSnap.id, ...staffSnap.data() } as Staff);
                 setCustomer({ id: customerSnap.id, ...customerSnap.data() } as Customer);
 
-                const fetchedServices = servicesSnap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Service));
-                setServices(fetchedServices);
+                if (servicesSnap) {
+                    const fetchedServices = servicesSnap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Service));
+                    setServices(fetchedServices);
+                }
 
                 setStatus('loaded');
             } catch (error) {
@@ -105,9 +111,26 @@ export default function InvoicePage() {
       }
     }, [status]);
 
-    const formatCurrency = (amount: number) => {
-        return new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR' }).format(amount);
+    const formatCurrency = (amount: number | undefined | null) => {
+        return new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR' }).format(amount || 0);
     };
+    
+    const formatDateSafe = (date: unknown) => {
+        if (!date) return 'N/A';
+        if (date instanceof Timestamp) {
+            return format(date.toDate(), 'PPP');
+        }
+        try {
+            const d = new Date(date as any);
+            if (!isNaN(d.getTime())) {
+                return format(d, 'PPP');
+            }
+        } catch (e) {
+            // ignore
+        }
+        return 'Invalid Date';
+    }
+
 
     if (status === 'loading') {
         return (
@@ -125,6 +148,9 @@ export default function InvoicePage() {
             </div>
         );
     }
+
+    const subtotal = appointment.subtotal ?? services.reduce((acc, s) => acc + s.price, 0);
+    const pointsRedeemed = appointment.pointsRedeemed || 0;
 
 
     return (
@@ -158,7 +184,7 @@ export default function InvoicePage() {
                         <p>{customer?.phone}</p>
                     </div>
                     <div className="text-right">
-                        <p><span className="font-semibold">Invoice Date:</span> {format((appointment.date as Timestamp).toDate(), 'PPP')}</p>
+                        <p><span className="font-semibold">Invoice Date:</span> {formatDateSafe(appointment.date)}</p>
                         <p><span className="font-semibold">Billed by:</span> {staff?.name}</p>
                     </div>
                 </section>
@@ -188,12 +214,12 @@ export default function InvoicePage() {
                     <div className="w-full max-w-xs space-y-2">
                         <div className="flex justify-between">
                             <span className="text-muted-foreground">Subtotal</span>
-                            <span>{formatCurrency(appointment.subtotal)}</span>
+                            <span>{formatCurrency(subtotal)}</span>
                         </div>
-                        {appointment.pointsRedeemed > 0 && (
+                        {pointsRedeemed > 0 && (
                             <div className="flex justify-between">
                                 <span className="text-muted-foreground">Points Redeemed</span>
-                                <span>- {formatCurrency(appointment.pointsRedeemed)}</span>
+                                <span>- {formatCurrency(pointsRedeemed)}</span>
                             </div>
                         )}
                          <div className="flex justify-between font-bold text-lg border-t pt-2">
