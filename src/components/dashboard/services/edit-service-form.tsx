@@ -1,6 +1,6 @@
 'use client';
 
-import { useTransition } from 'react';
+import { useEffect, useTransition } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -47,11 +47,21 @@ export function EditServiceForm({
 
   const form = useForm<EditServiceFormValues>({
     resolver: zodResolver(editServiceFormSchema),
-    values: {
+    defaultValues: {
       name: service.name,
       price: service.price,
     },
   });
+
+  // This effect ensures the form is updated if the service prop changes
+  // while the dialog is open (e.g., due to background data refreshes).
+  useEffect(() => {
+    form.reset({
+      name: service.name,
+      price: service.price,
+    });
+  }, [service, form]);
+
 
   function onSubmit(data: EditServiceFormValues) {
     startTransition(() => {

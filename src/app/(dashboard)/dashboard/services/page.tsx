@@ -93,18 +93,6 @@ export default function ServicesPage() {
 
   const { data: services, isLoading } = useCollection<Service>(servicesQuery);
 
-  useEffect(() => {
-    if (selectedService && services) {
-      const updatedService = services.find(s => s.id === selectedService.id);
-      if (updatedService && (
-        updatedService.name !== selectedService.name ||
-        updatedService.price !== selectedService.price
-      )) {
-        setSelectedService(updatedService);
-      }
-    }
-  }, [services, selectedService]);
-
   const formatCurrency = (amount: number) => {
     const formattedAmount = new Intl.NumberFormat('en-IN', {
       maximumFractionDigits: 2,
@@ -154,6 +142,9 @@ export default function ServicesPage() {
       </TableRow>
     ));
   };
+  
+  // Find the latest version of the selected service to pass to the dialog
+  const serviceForEdit = services?.find(s => s.id === selectedService?.id) || null;
 
   return (
     <>
@@ -242,9 +233,9 @@ export default function ServicesPage() {
             <DialogHeader>
                 <DialogTitle>Edit Service</DialogTitle>
             </DialogHeader>
-            {selectedService && (
+            {serviceForEdit && (
                 <EditServiceForm
-                    service={selectedService}
+                    service={serviceForEdit}
                     setOpen={setEditDialogOpen}
                 />
             )}
