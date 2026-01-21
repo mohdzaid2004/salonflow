@@ -166,11 +166,11 @@ export default function HomePage() {
     const salonId = user.uid;
 
     try {
-        const customerData: Omit<Customer, 'id' | 'visitHistory' | 'loyaltyPoints'> & { visitHistory: string, loyaltyPoints: number } = {
+        const customerData: Omit<Customer, 'id' | 'visitHistory' | 'loyaltyPoints'> & { visitHistory: string[], loyaltyPoints: number } = {
             salonId: salonId,
             name: data.name,
             phone: newCustomerPhone,
-            visitHistory: '', // Initialize empty history
+            visitHistory: [], // Initialize empty history
             loyaltyPoints: 0,
             ...(data.dob && { dob: data.dob }),
         };

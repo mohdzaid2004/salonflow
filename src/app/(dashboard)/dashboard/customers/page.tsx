@@ -152,7 +152,7 @@ export default function CustomersPage() {
               phone: String(phone),
               dob: dob ? new Date(dob).toISOString().split('T')[0] : '', // Basic date handling
               loyaltyPoints: 0,
-              visitHistory: "",
+              visitHistory: [],
             });
             customersAdded++;
           }

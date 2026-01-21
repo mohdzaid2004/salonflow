@@ -236,8 +236,11 @@
           "description": "The customer's date of birth (optional)."
         },
         "visitHistory": {
-          "type": "string",
-          "description": "A record of the customer's visit history."
+          "type": "array",
+          "description": "An array of appointment IDs representing the customer's visit history.",
+          "items": {
+            "type": "string"
+          }
         },
         "loyaltyPoints": {
           "type": "number",
@@ -248,8 +251,7 @@
         "customerId",
         "salonId",
         "name",
-        "phone",
-        "visitHistory"
+        "phone"
       ]
     },
     "SubscriptionPlan": {

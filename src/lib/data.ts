@@ -36,7 +36,7 @@ export type Customer = {
   name: string;
   phone: string;
   dob?: string;
-  visitHistory: string;
+  visitHistory: string[];
   loyaltyPoints?: number;
 };
 

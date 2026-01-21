@@ -35,6 +35,7 @@ import {
   Timestamp,
   doc,
   increment,
+  arrayUnion,
 } from 'firebase/firestore';
 import type { Service, Staff, Customer, Appointment, Salon } from '@/lib/data';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
@@ -179,17 +180,23 @@ We look forward to seeing you again!`;
       const appointmentsRef = collection(firestore, `salons/${salonId}/appointments`);
       const docRef = await addDocumentNonBlocking(appointmentsRef, appointmentData);
 
+      const customerRef = doc(firestore, `salons/${salonId}/customers`, customer.id);
+      const updateData: any = {
+          visitHistory: arrayUnion(docRef.id)
+      };
+
       // Award and Redeem loyalty points if enabled
       if (loyaltyEnabled) {
         const pointsEarned = Math.floor(data.finalAmount * (loyaltyPercentage / 100));
         const pointsChange = pointsEarned - pointsToRedeem;
         
         if (pointsChange !== 0) {
-          const customerRef = doc(firestore, `salons/${salonId}/customers`, customer.id);
-          updateDocumentNonBlocking(customerRef, {
-            loyaltyPoints: increment(pointsChange)
-          });
+          updateData.loyaltyPoints = increment(pointsChange)
         }
+      }
+      
+      if(Object.keys(updateData).length > 0) {
+        updateDocumentNonBlocking(customerRef, updateData);
       }
 
 
