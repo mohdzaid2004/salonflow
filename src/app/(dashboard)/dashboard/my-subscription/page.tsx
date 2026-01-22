@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useMemo, useTransition } from 'react';
@@ -208,7 +209,7 @@ export default function MySubscriptionPage({}) {
             <div className="mt-4">
                 <h2 className="mb-4 text-xl font-bold">Upgrade Your Plan</h2>
                 <div className="grid gap-8 md:grid-cols-2">
-                    {otherPlans.map(plan => (
+                    {otherPlans.filter(p => p.id !== 'starter').map(plan => (
                         <Card key={plan.id} className={plan.isPopular ? 'border-primary' : ''}>
                             <CardHeader>
                                 <div className="flex items-center justify-between">
