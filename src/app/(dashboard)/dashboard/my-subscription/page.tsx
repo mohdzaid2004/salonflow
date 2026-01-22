@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useTransition, useState } from 'react';
+import { useMemo, useTransition, useState, useEffect } from 'react';
 import { useDoc, useFirestore, useUser } from '@/firebase';
 import { doc, Timestamp, updateDoc } from 'firebase/firestore';
 import type { Salon, SubscriptionPlan } from '@/lib/data';
@@ -64,12 +64,13 @@ const pricingTiers = [
 ];
 
 
-export default function MySubscriptionPage({}) {
+export default function MySubscriptionPage() {
   const { user } = useUser();
   const firestore = useFirestore();
   const { toast } = useToast();
   const [isPending, startTransition] = useTransition();
   const [selectedBillingCycle, setSelectedBillingCycle] = useState('monthly');
+  const [daysRemainingInTrial, setDaysRemainingInTrial] = useState<number | null>(null);
 
   const salonId = user?.uid;
 
@@ -85,7 +86,14 @@ export default function MySubscriptionPage({}) {
   }, [salon]);
 
   const trialEndsAt = salon?.trialEndsAt ? (salon.trialEndsAt as Timestamp).toDate() : null;
-  const daysRemainingInTrial = trialEndsAt ? differenceInDays(trialEndsAt, new Date()) : 0;
+  
+  useEffect(() => {
+    if (trialEndsAt) {
+      setDaysRemainingInTrial(differenceInDays(trialEndsAt, new Date()));
+    } else {
+      setDaysRemainingInTrial(0);
+    }
+  }, [trialEndsAt]);
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-IN', {
@@ -174,7 +182,7 @@ export default function MySubscriptionPage({}) {
                         <CardTitle className="text-2xl">My Subscription</CardTitle>
                         <CardDescription>Manage your plan and billing details.</CardDescription>
                     </div>
-                    {salon.billingStatus === 'trialing' && trialEndsAt && (
+                    {salon.billingStatus === 'trialing' && trialEndsAt && daysRemainingInTrial !== null && (
                          <div className="mt-4 md:mt-0">
                             <Badge variant={daysRemainingInTrial > 3 ? "secondary" : "destructive"}>
                                 <Calendar className="mr-2 h-4 w-4" />
