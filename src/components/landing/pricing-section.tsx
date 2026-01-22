@@ -12,36 +12,21 @@ import { Check } from 'lucide-react';
 
 const plans = [
   {
-    name: 'Starter',
-    price: '499',
+    name: 'Premium Plan',
+    price: '599',
     period: '/ month',
-    description: 'For individual stylists or very small salons getting started.',
-    features: ['1 Staff Member', 'Unlimited Appointments', 'Basic Billing'],
-    isPopular: false,
-  },
-  {
-    name: 'Professional',
-    price: '999',
-    period: '/ month',
-    description: 'For growing salons that need more power and automation.',
+    description:
+      'Everything you need to manage and grow your salon. Simple, powerful, and affordable.',
     features: [
-      'Up to 5 Staff',
-      'WhatsApp Reminders',
-      'GST Invoices & Reports',
+      'Unlimited Staff Members',
+      'Unlimited Appointments',
+      'GST Billing & Invoicing',
+      'Customer Management',
+      'WhatsApp Bill Sharing',
+      'Staff & Customer Reviews',
+      'Advanced Reporting',
     ],
     isPopular: true,
-  },
-  {
-    name: 'Business',
-    price: '1,499',
-    period: '/ month',
-    description: 'For large salons that want to unlock their full potential.',
-    features: [
-      'Unlimited Staff',
-      'Online Booking Link',
-      'Advanced Reports',
-    ],
-    isPopular: false,
   },
 ];
 
@@ -55,28 +40,21 @@ export function PricingSection() {
               Pricing
             </div>
             <h2 className="font-headline text-3xl font-bold tracking-tighter sm:text-5xl">
-              A Plan for Every Salon
+              Simple, All-Inclusive Pricing
             </h2>
             <p className="max-w-[900px] text-foreground/60 md:text-xl/relaxed lg:text-base/relaxed xl:text-xl/relaxed">
-              Choose the right plan for your business. All plans start with a
+              One plan with everything you need. All new sign-ups start with a
               14-day free trial.
             </p>
           </div>
         </div>
-        <div className="mx-auto grid max-w-sm items-start gap-8 sm:max-w-4xl sm:grid-cols-2 md:gap-12 lg:max-w-5xl lg:grid-cols-3">
+        <div className="mx-auto grid max-w-md items-start gap-8">
           {plans.map((plan) => (
             <Card
               key={plan.name}
               className={plan.isPopular ? 'border-primary shadow-lg' : ''}
             >
               <CardHeader className="pb-4">
-                {plan.isPopular && (
-                  <div className="text-right">
-                    <div className="inline-block rounded-full bg-primary px-3 py-1 text-xs text-primary-foreground">
-                      Most Popular
-                    </div>
-                  </div>
-                )}
                 <CardTitle className="font-headline">{plan.name}</CardTitle>
                 <div className="flex items-baseline gap-1">
                   <span className="text-4xl font-bold">
@@ -103,14 +81,14 @@ export function PricingSection() {
                   variant={plan.isPopular ? 'default' : 'outline'}
                   asChild
                 >
-                  <Link href="/login">Choose Plan</Link>
+                  <Link href="/signup">Get Started</Link>
                 </Button>
               </CardFooter>
             </Card>
           ))}
         </div>
         <div className="text-center text-sm text-foreground/60">
-            Yearly plans available with 2 months free!
+          Yearly plan available with 2 months free!
         </div>
       </div>
     </section>

@@ -19,47 +19,41 @@ import { Check, Calendar, Loader2 } from 'lucide-react';
 import { format, differenceInDays } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
 
-// Mock data for subscription plans, as there's no collection for it.
+// Simplified subscription plan structure
 const subscriptionPlans: SubscriptionPlan[] = [
   {
     id: 'starter',
-    name: 'Starter',
-    description: 'For individual stylists or very small salons getting started.',
-    monthlyPrice: 499,
-    yearlyPrice: 4990,
-    staffLimit: 1,
-    features: ['1 Staff Member', 'Unlimited Appointments', 'Basic Billing'],
+    name: 'Trial',
+    description: 'Your 15-day free trial to explore all features.',
+    monthlyPrice: 0,
+    yearlyPrice: 0,
+    staffLimit: -1,
+    features: [
+      'Unlimited Staff',
+      'Unlimited Appointments',
+      'Full Billing Suite',
+      'WhatsApp Reminders',
+      'Customer Feedback',
+    ],
     isPopular: false,
   },
   {
-    id: 'professional',
-    name: 'Professional',
-    description: 'For growing salons that need more power and automation.',
-    monthlyPrice: 999,
-    yearlyPrice: 9990,
-    staffLimit: 5,
-    features: [
-      'Up to 5 Staff',
-      'WhatsApp Reminders',
-      'GST Invoices & Reports',
-    ],
-    isPopular: true,
-  },
-  {
-    id: 'business',
-    name: 'Business',
-    description: 'For large salons that want to unlock their full potential.',
-    monthlyPrice: 1499,
-    yearlyPrice: 14990,
+    id: 'premium',
+    name: 'Premium',
+    description: 'The complete toolkit to run and grow your salon business.',
+    monthlyPrice: 599,
+    yearlyPrice: 5990,
     staffLimit: -1, // Unlimited
     features: [
-      'Unlimited Staff',
+      'Everything in Trial, plus:',
+      'GST Invoices & Reports',
       'Online Booking Link',
       'Advanced Reports',
     ],
-    isPopular: false,
+    isPopular: true,
   },
 ];
+
 
 export default function MySubscriptionPage({}) {
   const { user } = useUser();
@@ -210,47 +204,49 @@ export default function MySubscriptionPage({}) {
             </CardContent>
         </Card>
         
-        <div className="mt-4">
-            <h2 className="mb-4 text-xl font-bold">Upgrade Your Plan</h2>
-            <div className="grid gap-8 md:grid-cols-2">
-                {otherPlans.map(plan => (
-                    <Card key={plan.id} className={plan.isPopular ? 'border-primary' : ''}>
-                        <CardHeader>
-                            <div className="flex items-center justify-between">
-                                <CardTitle className="font-headline">{plan.name}</CardTitle>
-                                {plan.isPopular && <Badge>Most Popular</Badge>}
-                            </div>
-                            <div className="flex items-baseline gap-1">
-                                <span className="text-3xl font-bold"><span className='font-arial'>₹</span>{formatCurrency(plan.monthlyPrice)}</span>
-                                <span className="text-muted-foreground">/ month</span>
-                            </div>
-                            <CardDescription>{plan.description}</CardDescription>
-                        </CardHeader>
-                         <CardContent>
-                            <ul className="space-y-2">
-                                {plan.features.map((feature) => (
-                                    <li key={feature} className="flex items-center gap-2">
-                                    <Check className="h-4 w-4 text-primary" />
-                                    <span>{feature}</span>
-                                    </li>
-                                ))}
-                            </ul>
-                        </CardContent>
-                        <CardFooter>
-                            <Button 
-                                className="w-full" 
-                                variant={plan.isPopular ? 'default' : 'outline'}
-                                onClick={() => handlePlanChange(plan.id, plan.name)}
-                                disabled={isPending}
-                            >
-                                {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                                {plan.monthlyPrice > currentPlan.monthlyPrice ? 'Upgrade' : 'Downgrade'}
-                            </Button>
-                        </CardFooter>
-                    </Card>
-                ))}
+        {otherPlans.length > 0 && (
+            <div className="mt-4">
+                <h2 className="mb-4 text-xl font-bold">Upgrade Your Plan</h2>
+                <div className="grid gap-8 md:grid-cols-2">
+                    {otherPlans.map(plan => (
+                        <Card key={plan.id} className={plan.isPopular ? 'border-primary' : ''}>
+                            <CardHeader>
+                                <div className="flex items-center justify-between">
+                                    <CardTitle className="font-headline">{plan.name}</CardTitle>
+                                    {plan.isPopular && <Badge>Most Popular</Badge>}
+                                </div>
+                                <div className="flex items-baseline gap-1">
+                                    <span className="text-3xl font-bold"><span className='font-arial'>₹</span>{formatCurrency(plan.monthlyPrice)}</span>
+                                    <span className="text-muted-foreground">/ month</span>
+                                </div>
+                                <CardDescription>{plan.description}</CardDescription>
+                            </CardHeader>
+                            <CardContent>
+                                <ul className="space-y-2">
+                                    {plan.features.map((feature) => (
+                                        <li key={feature} className="flex items-center gap-2">
+                                        <Check className="h-4 w-4 text-primary" />
+                                        <span>{feature}</span>
+                                        </li>
+                                    ))}
+                                </ul>
+                            </CardContent>
+                            <CardFooter>
+                                <Button 
+                                    className="w-full" 
+                                    variant={plan.isPopular ? 'default' : 'outline'}
+                                    onClick={() => handlePlanChange(plan.id, plan.name)}
+                                    disabled={isPending}
+                                >
+                                    {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                    {plan.monthlyPrice > currentPlan.monthlyPrice ? 'Upgrade' : 'Downgrade'}
+                                </Button>
+                            </CardFooter>
+                        </Card>
+                    ))}
+                </div>
             </div>
-        </div>
+        )}
     </div>
   );
 }
