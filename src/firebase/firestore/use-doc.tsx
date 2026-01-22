@@ -44,7 +44,7 @@ export function useDoc<T = any>(
   type StateDataType = WithId<T> | null;
 
   const [data, setData] = useState<StateDataType>(null);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [isLoading, setIsLoading] = useState<boolean>(!!memoizedDocRef);
   const [error, setError] = useState<FirestoreError | Error | null>(null);
 
   useEffect(() => {
@@ -57,6 +57,7 @@ export function useDoc<T = any>(
 
     setIsLoading(true);
     setError(null);
+    setData(null);
 
     const unsubscribe = onSnapshot(
       memoizedDocRef,

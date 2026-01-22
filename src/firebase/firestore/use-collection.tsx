@@ -58,7 +58,7 @@ export function useCollection<T = any>(
   type StateDataType = ResultItemType[] | null;
 
   const [data, setData] = useState<StateDataType>(null);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [isLoading, setIsLoading] = useState<boolean>(!!targetRefOrQuery);
   const [error, setError] = useState<FirestoreError | Error | null>(null);
 
   useEffect(() => {
@@ -71,6 +71,7 @@ export function useCollection<T = any>(
 
     setIsLoading(true);
     setError(null);
+    setData(null);
 
     // Directly use targetRefOrQuery as it's assumed to be the final query
     const unsubscribe = onSnapshot(
