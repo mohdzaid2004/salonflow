@@ -44,7 +44,7 @@ export function PricingSection() {
             </h2>
             <p className="max-w-[900px] text-foreground/60 md:text-xl/relaxed lg:text-base/relaxed xl:text-xl/relaxed">
               One plan with everything you need. All new sign-ups start with a
-              14-day free trial.
+              15-day free trial.
             </p>
           </div>
         </div>
@@ -81,14 +81,14 @@ export function PricingSection() {
                   variant={plan.isPopular ? 'default' : 'outline'}
                   asChild
                 >
-                  <Link href="/signup">Get Started</Link>
+                  <Link href="/signup">Start Your Free Trial</Link>
                 </Button>
               </CardFooter>
             </Card>
           ))}
         </div>
         <div className="text-center text-sm text-foreground/60">
-          Yearly plan available with 2 months free!
+          Discounts available for quarterly and yearly billing!
         </div>
       </div>
     </section>

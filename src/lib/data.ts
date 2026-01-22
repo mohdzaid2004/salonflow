@@ -72,6 +72,7 @@ export type SubscriptionPlan = {
   name: string;
   description: string;
   monthlyPrice: number;
+  quarterlyPrice: number;
   yearlyPrice: number;
   staffLimit: number;
   features: string[];

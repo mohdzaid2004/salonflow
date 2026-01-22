@@ -1,7 +1,6 @@
-
 'use client';
 
-import { useMemo, useTransition } from 'react';
+import { useMemo, useTransition, useState } from 'react';
 import { useDoc, useFirestore, useUser } from '@/firebase';
 import { doc, Timestamp, updateDoc } from 'firebase/firestore';
 import type { Salon, SubscriptionPlan } from '@/lib/data';
@@ -19,6 +18,7 @@ import { Badge } from '@/components/ui/badge';
 import { Check, Calendar, Loader2 } from 'lucide-react';
 import { format, differenceInDays } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 
 // Simplified subscription plan structure
 const subscriptionPlans: SubscriptionPlan[] = [
@@ -28,6 +28,7 @@ const subscriptionPlans: SubscriptionPlan[] = [
     description: 'Your 15-day free trial to explore all features.',
     monthlyPrice: 0,
     yearlyPrice: 0,
+    quarterlyPrice: 0,
     staffLimit: -1,
     features: [
       'Unlimited Staff',
@@ -43,7 +44,8 @@ const subscriptionPlans: SubscriptionPlan[] = [
     name: 'Premium',
     description: 'The complete toolkit to run and grow your salon business.',
     monthlyPrice: 599,
-    yearlyPrice: 5990,
+    quarterlyPrice: 1599, // ~11% discount
+    yearlyPrice: 5990, // ~17% discount (2 months free)
     staffLimit: -1, // Unlimited
     features: [
       'Everything in Trial, plus:',
@@ -55,12 +57,19 @@ const subscriptionPlans: SubscriptionPlan[] = [
   },
 ];
 
+const pricingTiers = [
+    { id: 'monthly', name: 'Monthly', price: 599, period: 'per month', discount: '' },
+    { id: 'quarterly', name: 'Quarterly', price: 1599, period: 'per quarter', discount: 'Save ~11%' },
+    { id: 'annually', name: 'Annually', price: 5990, period: 'per year', discount: 'Save 17% (2 Months Free)' },
+];
+
 
 export default function MySubscriptionPage({}) {
   const { user } = useUser();
   const firestore = useFirestore();
   const { toast } = useToast();
   const [isPending, startTransition] = useTransition();
+  const [selectedBillingCycle, setSelectedBillingCycle] = useState('monthly');
 
   const salonId = user?.uid;
 
@@ -87,24 +96,23 @@ export default function MySubscriptionPage({}) {
   const handleManageBilling = () => {
     toast({
       title: "Manage Billing",
-      description: "In a real app, this would redirect to a billing portal like Stripe or Razorpay.",
+      description: "In a real app, this would redirect to a billing portal like Razorpay or Stripe.",
       duration: 5000,
     });
   };
 
-  const handlePlanChange = (planId: string, planName: string) => {
+  const handlePlanChange = (planId: string, billingCycle: string) => {
     if (!salonDocRef) return;
 
     startTransition(async () => {
       try {
         await updateDoc(salonDocRef, { 
             subscriptionPlanId: planId,
-            // If user is on trial, upgrading moves them to 'active'
             ...(salon?.billingStatus === 'trialing' && { billingStatus: 'active' })
         });
         toast({
-          title: 'Plan Changed!',
-          description: `You have successfully switched to the ${planName} plan.`,
+          title: 'Plan Updated!',
+          description: `You have successfully switched to the Premium (${billingCycle}) plan.`,
         });
       } catch (error) {
         console.error(error);
@@ -130,7 +138,6 @@ export default function MySubscriptionPage({}) {
       </Card>
       <div className="grid gap-8 md:grid-cols-2">
         <Card><CardHeader><Skeleton className="h-32 w-full" /></CardHeader></Card>
-        <Card><CardHeader><Skeleton className="h-32 w-full" /></CardHeader></Card>
       </div>
     </div>
   );
@@ -146,12 +153,17 @@ export default function MySubscriptionPage({}) {
   if (!salon || !currentPlan) {
     return (
         <div className="grid flex-1 items-start gap-4 md:gap-8">
-            <p>Could not load subscription details.</p>
+             <Card>
+                <CardHeader>
+                    <CardTitle>Error</CardTitle>
+                    <CardDescription>Could not load subscription details.</CardDescription>
+                </CardHeader>
+             </Card>
         </div>
     );
   }
   
-  const otherPlans = subscriptionPlans.filter(p => p.id !== currentPlan.id);
+  const premiumPlan = subscriptionPlans.find(p => p.id === 'premium');
 
   return (
     <div className="grid flex-1 items-start gap-4 md:gap-8">
@@ -196,7 +208,7 @@ export default function MySubscriptionPage({}) {
                                 <span className="text-lg font-normal text-muted-foreground">/month</span>
                              </p>
                         </div>
-                        <Button className="w-full" onClick={handleManageBilling} disabled={isPending}>
+                        <Button className="w-full" onClick={handleManageBilling} disabled={isPending || salon.billingStatus === 'trialing'}>
                             {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                             Manage Billing
                         </Button>
@@ -205,47 +217,55 @@ export default function MySubscriptionPage({}) {
             </CardContent>
         </Card>
         
-        {otherPlans.length > 0 && (
+        {currentPlan.id === 'starter' && premiumPlan && (
             <div className="mt-4">
-                <h2 className="mb-4 text-xl font-bold">Upgrade Your Plan</h2>
-                <div className="grid gap-8 md:grid-cols-2">
-                    {otherPlans.filter(p => p.id !== 'starter').map(plan => (
-                        <Card key={plan.id} className={plan.isPopular ? 'border-primary' : ''}>
-                            <CardHeader>
-                                <div className="flex items-center justify-between">
-                                    <CardTitle className="font-headline">{plan.name}</CardTitle>
-                                    {plan.isPopular && <Badge>Most Popular</Badge>}
-                                </div>
-                                <div className="flex items-baseline gap-1">
-                                    <span className="text-3xl font-bold"><span className='font-arial'>₹</span>{formatCurrency(plan.monthlyPrice)}</span>
-                                    <span className="text-muted-foreground">/ month</span>
-                                </div>
-                                <CardDescription>{plan.description}</CardDescription>
-                            </CardHeader>
-                            <CardContent>
-                                <ul className="space-y-2">
-                                    {plan.features.map((feature) => (
-                                        <li key={feature} className="flex items-center gap-2">
-                                        <Check className="h-4 w-4 text-primary" />
-                                        <span>{feature}</span>
-                                        </li>
-                                    ))}
-                                </ul>
-                            </CardContent>
-                            <CardFooter>
-                                <Button 
-                                    className="w-full" 
-                                    variant={plan.isPopular ? 'default' : 'outline'}
-                                    onClick={() => handlePlanChange(plan.id, plan.name)}
-                                    disabled={isPending}
-                                >
-                                    {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                                    {plan.monthlyPrice > currentPlan.monthlyPrice ? 'Upgrade' : 'Downgrade'}
-                                </Button>
-                            </CardFooter>
-                        </Card>
-                    ))}
-                </div>
+                <h2 className="mb-4 text-xl font-bold">Upgrade to Premium</h2>
+                 <Card className="border-primary">
+                    <CardHeader>
+                        <CardTitle className="font-headline">{premiumPlan.name}</CardTitle>
+                        <CardDescription>{premiumPlan.description}</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <Tabs defaultValue={selectedBillingCycle} onValueChange={setSelectedBillingCycle} className="w-full">
+                            <TabsList className="grid w-full grid-cols-3">
+                                <TabsTrigger value="monthly">Monthly</TabsTrigger>
+                                <TabsTrigger value="quarterly">Quarterly</TabsTrigger>
+                                <TabsTrigger value="annually">Annually</TabsTrigger>
+                            </TabsList>
+                            {pricingTiers.map(tier => (
+                                <TabsContent key={tier.id} value={tier.id}>
+                                    <div className="mt-4 rounded-lg border p-4">
+                                        <div className="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
+                                            <div>
+                                                <div className="flex items-baseline gap-2">
+                                                    <span className="text-3xl font-bold"><span className='font-arial'>₹</span>{formatCurrency(tier.price)}</span>
+                                                    <span className="text-muted-foreground">{tier.period}</span>
+                                                </div>
+                                                {tier.discount && <Badge variant="secondary" className='mt-2'>{tier.discount}</Badge>}
+                                            </div>
+                                             <Button 
+                                                className="w-full sm:w-auto"
+                                                onClick={() => handlePlanChange('premium', tier.name)}
+                                                disabled={isPending}
+                                            >
+                                                {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                                Upgrade to {tier.name}
+                                            </Button>
+                                        </div>
+                                    </div>
+                                </TabsContent>
+                            ))}
+                        </Tabs>
+                        <ul className="mt-6 space-y-2 text-sm">
+                            {premiumPlan.features.map((feature) => (
+                                <li key={feature} className="flex items-center gap-2">
+                                <Check className="h-4 w-4 text-primary" />
+                                <span>{feature}</span>
+                                </li>
+                            ))}
+                        </ul>
+                    </CardContent>
+                </Card>
             </div>
         )}
     </div>
