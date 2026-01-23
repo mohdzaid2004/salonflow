@@ -80,7 +80,11 @@ export default function BillingPage({}) {
   }, [appointments, customerSearch, staffSearch, staffMap]);
 
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR' }).format(amount);
+    const formattedAmount = new Intl.NumberFormat('en-IN', {
+      maximumFractionDigits: 2,
+      minimumFractionDigits: 2,
+    }).format(amount || 0);
+    return <><span className="font-arial">₹</span>{formattedAmount}</>;
   };
   
   const formatDate = (date: unknown) => {
