@@ -11,7 +11,7 @@
  * Key Security Decisions:
  * - Tenant Isolation: The primary goal is to prevent any user from accessing data outside of their own salon.
  * - Public Feedback Form: The feedback page needs to read specific documents to render. To support this, any
- *   authenticated user (including anonymous users) is allowed to `get` individual salon, staff, and appointment
+ *   user (including unauthenticated users) is allowed to `get` individual salon, staff, and appointment
  *   documents, and `list` reviews for a specific appointment. All other broad read (`list`) and write permissions
  *   remain strictly limited to salon members.
  * - Salon Creation: Creation of top-level salon documents (`/salons/{salonId}`) is allowed only if the user's UID matches the salonId.
@@ -88,7 +88,7 @@ service cloud.firestore {
      * @principle Enforces data isolation between tenants at the root level.
      */
     match /salons/{salonId} {
-      allow get: if isSignedIn(); // Allow GET for any authenticated user (incl. anonymous for feedback)
+      allow get: if true; // Allow GET for any user for feedback page
       allow list: if false; // Disallow listing all salons in the database for privacy.
       allow create: if isOwner(salonId) && hasValidSalonId(salonId);
       allow update: if isSignedIn() && (isOwner(salonId) || isSalonMember(salonId)) && resource != null;
@@ -123,7 +123,7 @@ service cloud.firestore {
      * @allow An anonymous user can GET a specific appointment for the feedback page.
      */
     match /salons/{salonId}/appointments/{appointmentId} {
-        allow get: if isSignedIn();
+        allow get: if true; // Allow GET for any user for feedback page
         allow list, write: if isSignedIn() && (isOwner(salonId) || isSalonMember(salonId));
     }
 
@@ -133,7 +133,7 @@ service cloud.firestore {
      * @allow An anonymous user can GET a specific staff member for the feedback page.
      */
     match /salons/{salonId}/staff/{staffId} {
-      allow get: if isSignedIn();
+      allow get: if true; // Allow GET for any user for feedback page
       allow list, write: if isSignedIn() && (isOwner(salonId) || isSalonMember(salonId));
     }
 
@@ -154,7 +154,7 @@ service cloud.firestore {
      */
     match /salons/{salonId}/reviews/{reviewId} {
       allow create: if true; // Public can create reviews
-      allow list: if isSignedIn(); // Allow LIST for anonymous users to check if review exists
+      allow list: if true; // Allow LIST for anyone to check if review exists
       allow get, update, delete: if isSignedIn() && (isOwner(salonId) || isSalonMember(salonId));
     }
   }

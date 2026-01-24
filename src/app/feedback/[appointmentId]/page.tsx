@@ -1,8 +1,7 @@
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
-import { useAuth, useFirestore, useUser } from '@/firebase';
-import { signInAnonymously } from 'firebase/auth';
+import { useFirestore } from '@/firebase';
 import { doc, getDoc, collection, Timestamp, addDoc, query, where, getDocs, limit } from 'firebase/firestore';
 import type { Appointment, Salon, Staff, Review } from '@/lib/data';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -17,16 +16,14 @@ import { Logo } from '@/components/logo';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 
-type PageStatus = 'authenticating' | 'loading' | 'loaded' | 'invalid' | 'submitted' | 'already-submitted';
+type PageStatus = 'loading' | 'loaded' | 'invalid' | 'submitted' | 'already-submitted';
 
 export default function FeedbackPage({ params }: { params: { appointmentId: string } }) {
   const compositeIdFromParams = params.appointmentId;
   const firestore = useFirestore();
   const { toast } = useToast();
-  const { user, isUserLoading } = useUser();
-  const auth = useAuth();
 
-  const [status, setStatus] = useState<PageStatus>('authenticating');
+  const [status, setStatus] = useState<PageStatus>('loading');
   const [appointment, setAppointment] = useState<Appointment | null>(null);
   const [salon, setSalon] = useState<Salon | null>(null);
   const [staff, setStaff] = useState<Staff | null>(null);
@@ -48,28 +45,6 @@ export default function FeedbackPage({ params }: { params: { appointmentId: stri
   }, [compositeIdFromParams]);
 
   useEffect(() => {
-    const performAnonymousSignIn = async () => {
-      if (!isUserLoading && !user && auth) {
-        try {
-          await signInAnonymously(auth);
-        } catch (e) {
-          console.error("Anonymous sign-in failed", e);
-          setStatus('invalid');
-        }
-      }
-    };
-    performAnonymousSignIn();
-  }, [isUserLoading, user, auth]);
-
-  useEffect(() => {
-    if (isUserLoading) {
-      setStatus('authenticating');
-      return;
-    }
-    if (!user) {
-      // Waiting for anonymous sign-in to complete
-      return;
-    }
     if (!firestore || !salonId || !appointmentId) {
       if (compositeIdFromParams) { 
           setStatus('invalid');
@@ -132,7 +107,7 @@ export default function FeedbackPage({ params }: { params: { appointmentId: stri
     };
 
     fetchData();
-  }, [firestore, salonId, appointmentId, compositeIdFromParams, user, isUserLoading]);
+  }, [firestore, salonId, appointmentId, compositeIdFromParams]);
 
   const getInitials = (name: string) => name ? name.split(' ').map((n) => n[0]).join('') : '';
 
@@ -183,7 +158,7 @@ export default function FeedbackPage({ params }: { params: { appointmentId: stri
     }
   };
   
-  if (status === 'authenticating' || status === 'loading') {
+  if (status === 'loading') {
     return (
       <div className="flex min-h-dvh flex-col items-center justify-center bg-background px-4">
         <Card className="w-full max-w-md">
