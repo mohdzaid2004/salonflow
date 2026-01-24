@@ -15,10 +15,12 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Logo } from '@/components/logo';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { useParams } from 'next/navigation';
 
 type PageStatus = 'loading' | 'loaded' | 'invalid' | 'submitted' | 'already-submitted';
 
-export default function FeedbackPage({ params }: { params: { appointmentId: string } }) {
+export default function FeedbackPage() {
+  const params = useParams();
   const compositeIdFromParams = params.appointmentId;
   const firestore = useFirestore();
   const { toast } = useToast();
@@ -35,7 +37,8 @@ export default function FeedbackPage({ params }: { params: { appointmentId: stri
   const [salonId, appointmentId] = useMemo(() => {
     if (!compositeIdFromParams) return [null, null];
     try {
-      const decodedId = decodeURIComponent(compositeIdFromParams);
+      const id = Array.isArray(compositeIdFromParams) ? compositeIdFromParams[0] : compositeIdFromParams;
+      const decodedId = decodeURIComponent(id);
       const parts = decodedId.split('_');
       return parts.length === 2 ? [parts[0], parts[1]] : [null, null];
     } catch (e) {
@@ -46,20 +49,21 @@ export default function FeedbackPage({ params }: { params: { appointmentId: stri
 
   useEffect(() => {
     // 1. Wait for Firestore to be initialized.
-    // The initial state is 'loading', which is correct.
     if (!firestore) {
-      return;
-    }
-
-    // 2. If the IDs couldn't be parsed from the URL, the link is invalid.
-    if (!salonId || !appointmentId) {
-      setStatus('invalid');
       return;
     }
     
     const fetchData = async () => {
-      // Set status to loading here inside async function to handle re-fetches if needed,
-      // although with this dependency array, it should only run once.
+      // 2. If the IDs couldn't be parsed from the URL, the link is invalid.
+      // We check compositeIdFromParams to ensure we don't prematurely flag as invalid
+      // during the initial render when params might not be available yet.
+      if (!salonId || !appointmentId) {
+        if (compositeIdFromParams) {
+          setStatus('invalid');
+        }
+        return;
+      }
+
       setStatus('loading');
       try {
         const reviewsRef = collection(firestore, `salons/${salonId}/reviews`);
@@ -114,7 +118,7 @@ export default function FeedbackPage({ params }: { params: { appointmentId: stri
     };
 
     fetchData();
-  }, [firestore, salonId, appointmentId]);
+  }, [firestore, salonId, appointmentId, compositeIdFromParams]);
 
   const getInitials = (name: string) => name ? name.split(' ').map((n) => n[0]).join('') : '';
 
