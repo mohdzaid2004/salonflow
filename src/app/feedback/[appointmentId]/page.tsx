@@ -1,7 +1,8 @@
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
-import { useFirestore } from '@/firebase';
+import { useAuth, useFirestore, useUser } from '@/firebase';
+import { signInAnonymously } from 'firebase/auth';
 import { doc, getDoc, collection, Timestamp, addDoc, query, where, getDocs, limit } from 'firebase/firestore';
 import type { Appointment, Salon, Staff, Review } from '@/lib/data';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -16,14 +17,16 @@ import { Logo } from '@/components/logo';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 
-type PageStatus = 'loading' | 'loaded' | 'invalid' | 'submitted' | 'already-submitted';
+type PageStatus = 'authenticating' | 'loading' | 'loaded' | 'invalid' | 'submitted' | 'already-submitted';
 
 export default function FeedbackPage({ params }: { params: { appointmentId: string } }) {
   const compositeIdFromParams = params.appointmentId;
   const firestore = useFirestore();
   const { toast } = useToast();
+  const { user, isUserLoading } = useUser();
+  const auth = useAuth();
 
-  const [status, setStatus] = useState<PageStatus>('loading');
+  const [status, setStatus] = useState<PageStatus>('authenticating');
   const [appointment, setAppointment] = useState<Appointment | null>(null);
   const [salon, setSalon] = useState<Salon | null>(null);
   const [staff, setStaff] = useState<Staff | null>(null);
@@ -32,11 +35,9 @@ export default function FeedbackPage({ params }: { params: { appointmentId: stri
   const [comment, setComment] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Safely extract IDs from the composite key
   const [salonId, appointmentId] = useMemo(() => {
     if (!compositeIdFromParams) return [null, null];
     try {
-      // Decode the parameter in case it's URL-encoded in production.
       const decodedId = decodeURIComponent(compositeIdFromParams);
       const parts = decodedId.split('_');
       return parts.length === 2 ? [parts[0], parts[1]] : [null, null];
@@ -47,6 +48,28 @@ export default function FeedbackPage({ params }: { params: { appointmentId: stri
   }, [compositeIdFromParams]);
 
   useEffect(() => {
+    const performAnonymousSignIn = async () => {
+      if (!isUserLoading && !user && auth) {
+        try {
+          await signInAnonymously(auth);
+        } catch (e) {
+          console.error("Anonymous sign-in failed", e);
+          setStatus('invalid');
+        }
+      }
+    };
+    performAnonymousSignIn();
+  }, [isUserLoading, user, auth]);
+
+  useEffect(() => {
+    if (isUserLoading) {
+      setStatus('authenticating');
+      return;
+    }
+    if (!user) {
+      // Waiting for anonymous sign-in to complete
+      return;
+    }
     if (!firestore || !salonId || !appointmentId) {
       if (compositeIdFromParams) { 
           setStatus('invalid');
@@ -57,7 +80,6 @@ export default function FeedbackPage({ params }: { params: { appointmentId: stri
     const fetchData = async () => {
       setStatus('loading');
       try {
-        // 1. Check if a review already exists for this appointment
         const reviewsRef = collection(firestore, `salons/${salonId}/reviews`);
         const reviewQuery = query(reviewsRef, where('appointmentId', '==', appointmentId), limit(1));
         const reviewSnapshot = await getDocs(reviewQuery);
@@ -67,7 +89,6 @@ export default function FeedbackPage({ params }: { params: { appointmentId: stri
           return;
         }
 
-        // 2. If no review, fetch appointment details
         const appointmentDocRef = doc(firestore, `salons/${salonId}/appointments`, appointmentId);
         const appointmentSnap = await getDoc(appointmentDocRef);
 
@@ -79,7 +100,6 @@ export default function FeedbackPage({ params }: { params: { appointmentId: stri
         const apptData = { id: appointmentSnap.id, ...appointmentSnap.data() } as Appointment;
         setAppointment(apptData);
 
-        // 3. Now fetch salon and staff
         const staffId = apptData.staffId;
         const salonDocId = apptData.salonId;
         
@@ -112,7 +132,7 @@ export default function FeedbackPage({ params }: { params: { appointmentId: stri
     };
 
     fetchData();
-  }, [firestore, salonId, appointmentId, compositeIdFromParams]);
+  }, [firestore, salonId, appointmentId, compositeIdFromParams, user, isUserLoading]);
 
   const getInitials = (name: string) => name ? name.split(' ').map((n) => n[0]).join('') : '';
 
@@ -163,7 +183,7 @@ export default function FeedbackPage({ params }: { params: { appointmentId: stri
     }
   };
   
-  if (status === 'loading') {
+  if (status === 'authenticating' || status === 'loading') {
     return (
       <div className="flex min-h-dvh flex-col items-center justify-center bg-background px-4">
         <Card className="w-full max-w-md">
@@ -171,18 +191,12 @@ export default function FeedbackPage({ params }: { params: { appointmentId: stri
             <Skeleton className="mx-auto h-8 w-48" />
             <Skeleton className="mx-auto mt-2 h-4 w-64" />
           </CardHeader>
-          <CardContent className="space-y-6 text-center">
-            <Skeleton className="mx-auto h-20 w-20 rounded-full" />
-            <div className="flex justify-center space-x-2">
-              {[...Array(5)].map((_, i) => (
-                <Skeleton key={i} className="h-8 w-8" />
-              ))}
-            </div>
-            <Skeleton className="h-24 w-full" />
+          <CardContent className="space-y-4 text-center">
+             <div className='flex justify-center'>
+               <Loader2 className="h-12 w-12 animate-spin text-primary" />
+             </div>
+             <p className='text-muted-foreground'>Loading Feedback Form...</p>
           </CardContent>
-          <CardFooter>
-            <Skeleton className="h-10 w-full" />
-          </CardFooter>
         </Card>
       </div>
     );
