@@ -45,14 +45,21 @@ export default function FeedbackPage({ params }: { params: { appointmentId: stri
   }, [compositeIdFromParams]);
 
   useEffect(() => {
-    if (!firestore || !salonId || !appointmentId) {
-      if (compositeIdFromParams) { 
-          setStatus('invalid');
-      }
+    // 1. Wait for Firestore to be initialized.
+    // The initial state is 'loading', which is correct.
+    if (!firestore) {
       return;
     }
 
+    // 2. If the IDs couldn't be parsed from the URL, the link is invalid.
+    if (!salonId || !appointmentId) {
+      setStatus('invalid');
+      return;
+    }
+    
     const fetchData = async () => {
+      // Set status to loading here inside async function to handle re-fetches if needed,
+      // although with this dependency array, it should only run once.
       setStatus('loading');
       try {
         const reviewsRef = collection(firestore, `salons/${salonId}/reviews`);
@@ -107,7 +114,7 @@ export default function FeedbackPage({ params }: { params: { appointmentId: stri
     };
 
     fetchData();
-  }, [firestore, salonId, appointmentId, compositeIdFromParams]);
+  }, [firestore, salonId, appointmentId]);
 
   const getInitials = (name: string) => name ? name.split(' ').map((n) => n[0]).join('') : '';
 
