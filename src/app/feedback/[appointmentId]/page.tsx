@@ -19,7 +19,7 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 type PageStatus = 'loading' | 'loaded' | 'invalid' | 'submitted' | 'already-submitted';
 
 export default function FeedbackPage({ params }: { params: { appointmentId: string } }) {
-  const { appointmentId: compositeId } = params;
+  const compositeIdFromParams = params.appointmentId;
   const firestore = useFirestore();
   const { toast } = useToast();
 
@@ -34,15 +34,21 @@ export default function FeedbackPage({ params }: { params: { appointmentId: stri
 
   // Safely extract IDs from the composite key
   const [salonId, appointmentId] = useMemo(() => {
-    const id = Array.isArray(compositeId) ? compositeId[0] : compositeId;
-    if (!id) return [null, null];
-    const parts = id.split('_');
-    return parts.length === 2 ? [parts[0], parts[1]] : [null, null];
-  }, [compositeId]);
+    if (!compositeIdFromParams) return [null, null];
+    try {
+      // Decode the parameter in case it's URL-encoded in production.
+      const decodedId = decodeURIComponent(compositeIdFromParams);
+      const parts = decodedId.split('_');
+      return parts.length === 2 ? [parts[0], parts[1]] : [null, null];
+    } catch (e) {
+      console.error("Error decoding feedback ID:", e);
+      return [null, null];
+    }
+  }, [compositeIdFromParams]);
 
   useEffect(() => {
     if (!firestore || !salonId || !appointmentId) {
-      if (compositeId) { 
+      if (compositeIdFromParams) { 
           setStatus('invalid');
       }
       return;
@@ -106,7 +112,7 @@ export default function FeedbackPage({ params }: { params: { appointmentId: stri
     };
 
     fetchData();
-  }, [firestore, salonId, appointmentId, compositeId]);
+  }, [firestore, salonId, appointmentId, compositeIdFromParams]);
 
   const getInitials = (name: string) => name ? name.split(' ').map((n) => n[0]).join('') : '';
 
