@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
-import { useParams } from 'next/navigation';
 import { useFirestore } from '@/firebase';
 import { doc, getDoc, collection, Timestamp, addDoc, query, where, getDocs, limit } from 'firebase/firestore';
 import type { Appointment, Salon, Staff, Review } from '@/lib/data';
@@ -19,8 +18,8 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 
 type PageStatus = 'loading' | 'loaded' | 'invalid' | 'submitted' | 'already-submitted';
 
-export default function FeedbackPage({}) {
-  const { appointmentId: compositeId } = useParams();
+export default function FeedbackPage({ params }: { params: { appointmentId: string } }) {
+  const { appointmentId: compositeId } = params;
   const firestore = useFirestore();
   const { toast } = useToast();
 
