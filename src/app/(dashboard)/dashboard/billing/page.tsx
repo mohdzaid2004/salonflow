@@ -84,7 +84,7 @@ export default function BillingPage({}) {
       maximumFractionDigits: 2,
       minimumFractionDigits: 2,
     }).format(amount || 0);
-    return <><span className="font-arial">₹</span>{formattedAmount}</>;
+    return <>&#8377;{formattedAmount}</>;
   };
   
   const formatDate = (date: unknown) => {
@@ -105,7 +105,18 @@ ${feedbackLink}
     
 We look forward to seeing you again!`;
 
-    const whatsappUrl = `https://wa.me/91${appointment.customerPhone}?text=${encodeURIComponent(message)}`;
+    const encodedMessage = encodeURIComponent(message);
+    const phone = `91${appointment.customerPhone}`;
+
+    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+
+    let whatsappUrl;
+    if (isMobile) {
+      whatsappUrl = `whatsapp://send?phone=${phone}&text=${encodedMessage}`;
+    } else {
+      whatsappUrl = `https://web.whatsapp.com/send?phone=${phone}&text=${encodedMessage}`;
+    }
+
     window.open(whatsappUrl, '_blank');
     toast({ title: "Opening WhatsApp...", description: "Please send the message in the new tab." });
   }
