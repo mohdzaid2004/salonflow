@@ -150,14 +150,7 @@ We look forward to seeing you again!`;
     const encodedMessage = encodeURIComponent(message);
     const phone = `91${appointment.customerPhone}`;
 
-    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-
-    let whatsappUrl;
-    if (isMobile) {
-      whatsappUrl = `whatsapp://send?phone=${phone}&text=${encodedMessage}`;
-    } else {
-      whatsappUrl = `https://web.whatsapp.com/send?phone=${phone}&text=${encodedMessage}`;
-    }
+    const whatsappUrl = `https://api.whatsapp.com/send?phone=${phone}&text=${encodedMessage}`;
 
     window.open(whatsappUrl, '_blank');
   }
