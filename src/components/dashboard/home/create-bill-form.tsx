@@ -147,7 +147,7 @@ ${feedbackLink}
     
 We look forward to seeing you again!`;
 
-    const whatsappUrl = `https://web.whatsapp.com/send?phone=91${appointment.customerPhone}&text=${encodeURIComponent(message)}`;
+    const whatsappUrl = `https://wa.me/91${appointment.customerPhone}?text=${encodeURIComponent(message)}`;
     window.open(whatsappUrl, '_blank');
   }
 
