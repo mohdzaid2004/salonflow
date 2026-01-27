@@ -78,3 +78,13 @@ export type SubscriptionPlan = {
   features: string[];
   isPopular: boolean;
 };
+
+export type InventoryProduct = {
+  id: string;
+  salonId: string;
+  name: string;
+  brand?: string;
+  stockQuantity: number;
+  lowStockThreshold: number;
+  unitPrice: number;
+};

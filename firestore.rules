@@ -157,5 +157,14 @@ service cloud.firestore {
       allow list: if true; // Allow LIST for anyone to check if review exists
       allow get, update, delete: if isSignedIn() && (isOwner(salonId) || isSalonMember(salonId));
     }
+
+    /**
+     * @description Rules for inventory products.
+     * @path /salons/{salonId}/inventory/{productId}
+     * @principle All data within a salon is accessible for read/write to all authenticated members of that salon.
+     */
+    match /salons/{salonId}/inventory/{productId} {
+      allow read, write: if isSignedIn() && (isOwner(salonId) || isSalonMember(salonId));
+    }
   }
 }

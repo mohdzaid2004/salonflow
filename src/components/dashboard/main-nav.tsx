@@ -16,6 +16,7 @@ import {
   LayoutGrid,
   Home,
   CreditCard,
+  Package,
 } from 'lucide-react';
 import type { Salon } from '@/lib/data';
 
@@ -26,6 +27,7 @@ export const MainNavItems = [
   { href: '/dashboard/services', label: 'Services', icon: Scissors, feature: 'core' },
   { href: '/dashboard/staff', label: 'Staff', icon: Users, feature: 'core' },
   { href: '/dashboard/customers', label: 'Customers', icon: BookUser, feature: 'core' },
+  { href: '/dashboard/inventory', label: 'Inventory', icon: Package, feature: 'core' },
   { href: '/dashboard/my-subscription', label: 'Subscription', icon: CreditCard, feature: 'core' },
   { href: '/dashboard/settings', label: 'Settings', icon: Settings, feature: 'core' },
 ];

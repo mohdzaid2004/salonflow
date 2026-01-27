@@ -358,6 +358,50 @@
         "rating",
         "createdAt"
       ]
+    },
+    "InventoryProduct": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "InventoryProduct",
+      "type": "object",
+      "description": "Represents a product in the salon's inventory.",
+      "properties": {
+        "productId": {
+          "type": "string",
+          "description": "Unique identifier for the product."
+        },
+        "salonId": {
+          "type": "string",
+          "description": "Reference to Salon."
+        },
+        "name": {
+          "type": "string",
+          "description": "The name of the product."
+        },
+        "brand": {
+          "type": "string",
+          "description": "The brand of the product."
+        },
+        "stockQuantity": {
+          "type": "number",
+          "description": "The current quantity in stock."
+        },
+        "lowStockThreshold": {
+          "type": "number",
+          "description": "The quantity below which the stock is considered low."
+        },
+        "unitPrice": {
+          "type": "number",
+          "description": "The retail price per unit of the product."
+        }
+      },
+      "required": [
+        "productId",
+        "salonId",
+        "name",
+        "stockQuantity",
+        "lowStockThreshold",
+        "unitPrice"
+      ]
     }
   },
   "auth": {
@@ -464,7 +508,7 @@
           ]
         }
       },
-       {
+      {
         "path": "/salons/{salonId}/reviews/{reviewId}",
         "definition": {
           "entityName": "Review",
@@ -480,6 +524,26 @@
             {
               "name": "reviewId",
               "description": "Unique identifier for the review."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/salons/{salonId}/inventory/{productId}",
+        "definition": {
+          "entityName": "InventoryProduct",
+          "schema": {
+            "$ref": "#/backend/entities/InventoryProduct"
+          },
+          "description": "Represents an inventory product for a salon. Includes denormalized 'salonId' for authorization independence.",
+          "params": [
+            {
+              "name": "salonId",
+              "description": "Unique identifier for the salon."
+            },
+            {
+              "name": "productId",
+              "description": "Unique identifier for the product."
             }
           ]
         }
