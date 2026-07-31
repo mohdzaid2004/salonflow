@@ -4,40 +4,5 @@
   },
   "functions": {
     "source": "functions"
-  },
-  "hosting": {
-    "public": "out",
-    "cleanUrls": true,
-    "ignore": [
-      "firebase.json",
-      "**/.*",
-      "**/node_modules/**"
-    ],
-    "rewrites": [
-      {
-        "source": "/dashboard/customers/:id",
-        "destination": "/dashboard/customers/placeholder.html"
-      },
-      {
-        "source": "/dashboard/staff/:id",
-        "destination": "/dashboard/staff/placeholder.html"
-      },
-      {
-        "source": "/feedback/:appointmentId",
-        "destination": "/feedback/placeholder.html"
-      },
-      {
-        "source": "/invoice/:invoiceId",
-        "destination": "/invoice/placeholder.html"
-      },
-      {
-        "source": "/api/send-whatsapp",
-        "function": "sendWhatsApp"
-      },
-      {
-        "source": "**",
-        "destination": "/index.html"
-      }
-    ]
   }
 }

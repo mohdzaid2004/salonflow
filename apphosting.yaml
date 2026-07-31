@@ -5,3 +5,9 @@ runConfig:
   # Increase this value if you'd like to automatically spin up
   # more instances in response to increased traffic.
   maxInstances: 1
+
+# Secrets/environment variable injection at runtime
+env:
+  - secret: TWILIO_ACCOUNT_SID
+  - secret: TWILIO_AUTH_TOKEN
+  - secret: TWILIO_WHATSAPP_NUMBER
