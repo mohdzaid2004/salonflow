@@ -1,9 +1,9 @@
 export const firebaseConfig = {
-  apiKey: "AIzaSyAVotil5BLHAnBmuqJ3Yh18A0LvXRNuC5M",
-  authDomain: "salonflow-37a6b.firebaseapp.com",
-  projectId: "salonflow-37a6b",
-  storageBucket: "salonflow-37a6b.firebasestorage.app",
-  messagingSenderId: "460866423904",
-  appId: "1:460866423904:web:b14fc5182c916a6641c705",
-  measurementId: "G-5Z7QBXHFT8"
+  apiKey: "AIzaSyCVy-H-vO19uK1f92Jp9n2Gf9gT9m9m1",
+  authDomain: "salonindia-74cbb.firebaseapp.com",
+  projectId: "salonindia-74cbb",
+  storageBucket: "salonindia-74cbb.firebasestorage.app",
+  messagingSenderId: "160983087596",
+  appId: "1:160983087596:web:6f0c60e0a58a74ec41c705",
+  measurementId: "G-D2L19P9J2E"
 };
