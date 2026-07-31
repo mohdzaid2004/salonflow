@@ -8,6 +8,9 @@ runConfig:
 
 # Secrets/environment variable injection at runtime
 env:
-  - secret: TWILIO_ACCOUNT_SID
-  - secret: TWILIO_AUTH_TOKEN
-  - secret: TWILIO_WHATSAPP_NUMBER
+  - variable: TWILIO_ACCOUNT_SID
+    secret: TWILIO_ACCOUNT_SID
+  - variable: TWILIO_AUTH_TOKEN
+    secret: TWILIO_AUTH_TOKEN
+  - variable: TWILIO_WHATSAPP_NUMBER
+    secret: TWILIO_WHATSAPP_NUMBER
