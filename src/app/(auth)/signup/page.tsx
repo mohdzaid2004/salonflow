@@ -42,6 +42,22 @@ const signupFormSchema = z.object({
 
 type SignupFormValues = z.infer<typeof signupFormSchema>;
 
+const timeoutPromise = <T,>(promise: Promise<T>, ms: number, errorMessage: string): Promise<T> => {
+  return new Promise<T>((resolve, reject) => {
+    const timer = setTimeout(() => reject(new Error(errorMessage)), ms);
+    promise.then(
+      (res) => {
+        clearTimeout(timer);
+        resolve(res);
+      },
+      (err) => {
+        clearTimeout(timer);
+        reject(err);
+      }
+    );
+  });
+};
+
 export default function SignupPage({}) {
   const auth = useAuth();
   const firestore = useFirestore();
@@ -83,35 +99,43 @@ export default function SignupPage({}) {
 
           // 1. Create the user's own profile document. This is required for security rules.
           const userRef = doc(firestore, `salons/${salonId}/users`, user.uid);
-          await setDoc(userRef, {
-            name: 'Owner',
-            role: 'owner',
-            email: user.email,
-            salonId: salonId,
-          });
+          await timeoutPromise(
+            setDoc(userRef, {
+              name: 'Owner',
+              role: 'owner',
+              email: user.email,
+              salonId: salonId,
+            }),
+            8000,
+            "Database write timeout. Please verify that Cloud Firestore is created and billing (Blaze plan) is enabled in your Firebase Console."
+          );
 
           // 2. Create the salon document.
           const salonRef = doc(firestore, 'salons', salonId);
-          await setDoc(salonRef, {
-            salonId: salonId,
-            name: data.salonName,
-            ownerId: user.uid,
-            appointmentsEnabled: true,
-            loyaltyProgramEnabled: true,
-            loyaltyPointsRatio: 10,
-            address: '',
-            city: '',
-            state: '',
-            phone: '',
-            logoUrl: '',
-            languageDefault: 'en',
-            timezone: 'IST',
-            subscriptionPlanId: 'starter',
-            billingStatus: 'trialing',
-            businessHours: JSON.stringify({}),
-            trialEndsAt: Timestamp.fromDate(trialEndsAt),
-            themeColor: '275 100% 25.3%',
-          });
+          await timeoutPromise(
+            setDoc(salonRef, {
+              salonId: salonId,
+              name: data.salonName,
+              ownerId: user.uid,
+              appointmentsEnabled: true,
+              loyaltyProgramEnabled: true,
+              loyaltyPointsRatio: 10,
+              address: '',
+              city: '',
+              state: '',
+              phone: '',
+              logoUrl: '',
+              languageDefault: 'en',
+              timezone: 'IST',
+              subscriptionPlanId: 'starter',
+              billingStatus: 'trialing',
+              businessHours: JSON.stringify({}),
+              trialEndsAt: Timestamp.fromDate(trialEndsAt),
+              themeColor: '275 100% 25.3%',
+            }),
+            8000,
+            "Database write timeout. Please verify that Cloud Firestore is created and billing (Blaze plan) is enabled in your Firebase Console."
+          );
 
           // 3. Update the user's auth profile.
           await updateProfile(user, { displayName: "Owner" });
@@ -124,12 +148,18 @@ export default function SignupPage({}) {
           // 4. Redirect to the dashboard.
           router.push('/dashboard/home');
 
-        } catch (setupError) {
+        } catch (setupError: any) {
           console.error("Error setting up salon data:", setupError);
+          let desc = "Your account was created, but we couldn't set up your salon. Please contact support.";
+          if (setupError.message && (setupError.message.includes("timeout") || setupError.message.includes("Firebase"))) {
+            desc = setupError.message;
+          } else if (setupError.code === "permission-denied" || (setupError.message && setupError.message.includes("permission-denied"))) {
+            desc = "Database write permission denied. Please ensure your Cloud Firestore API is enabled and database is initialized.";
+          }
           toast({
             variant: 'destructive',
             title: 'Setup Failed',
-            description: "Your account was created, but we couldn't set up your salon. Please contact support.",
+            description: desc,
           });
         }
       })

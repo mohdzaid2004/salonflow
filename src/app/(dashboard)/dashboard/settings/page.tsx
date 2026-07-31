@@ -80,15 +80,20 @@ export default function SettingsPage({}) {
     }
   });
 
-  const handleToggleFeature = (feature: 'appointmentsEnabled' | 'loyaltyProgramEnabled', enabled: boolean) => {
+  const handleToggleFeature = (feature: 'appointmentsEnabled' | 'loyaltyProgramEnabled' | 'automatedWhatsappEnabled', enabled: boolean) => {
     if (!salonDocRef) return;
     startTransition(async () => {
       try {
         await updateDoc(salonDocRef, { [feature]: enabled });
-        const featureName = feature === 'appointmentsEnabled' ? 'Appointments' : 'Loyalty Program';
+        const featureNames = {
+          appointmentsEnabled: 'Appointments',
+          loyaltyProgramEnabled: 'Loyalty Program',
+          automatedWhatsappEnabled: 'Automated WhatsApp'
+        };
+        const featureName = featureNames[feature];
         toast({
           title: 'Settings updated',
-          description: `${featureName} have been ${enabled ? 'enabled' : 'disabled'}.`,
+          description: `${featureName} has been ${enabled ? 'enabled' : 'disabled'}.`,
         });
       } catch (error) {
         toast({
@@ -238,6 +243,23 @@ export default function SettingsPage({}) {
                 <Label htmlFor="loyalty-toggle">
                   Enable Loyalty Program
                 </Label>
+              </div>
+              <Separator />
+              <div className="flex flex-col space-y-1">
+                <div className="flex items-center space-x-2">
+                  <Switch
+                    id="whatsapp-toggle"
+                    checked={salon?.automatedWhatsappEnabled}
+                    onCheckedChange={(checked) => handleToggleFeature('automatedWhatsappEnabled', checked)}
+                    disabled={isPending}
+                  />
+                  <Label htmlFor="whatsapp-toggle">
+                    Enable Automated Twilio WhatsApp Notifications
+                  </Label>
+                </div>
+                <p className="text-xs text-muted-foreground pl-12 mt-1">
+                  When enabled, billing receipts and feedback links are automatically sent via your configured Twilio WhatsApp number on checkout. If disabled, or if Twilio is not configured, the app opens a manual WhatsApp Web dispatch link.
+                </p>
               </div>
             </div>
           )}

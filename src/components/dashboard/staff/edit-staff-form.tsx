@@ -24,9 +24,18 @@ import {
 import { doc } from 'firebase/firestore';
 import { Textarea } from '@/components/ui/textarea';
 import type { Staff } from '@/lib/data';
+import { PREDEFINED_ROLES } from '@/lib/data';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 
 const editStaffFormSchema = z.object({
   name: z.string().min(1, 'Staff name is required.'),
+  role: z.string().optional(),
   aadharNumber: z.union([z.string().length(12, { message: "Aadhar number must be 12 digits." }), z.literal("")]).optional(),
   phone: z.union([z.string().length(10, { message: "Phone number must be 10 digits." }), z.literal("")]).optional(),
   address: z.string().optional(),
@@ -55,6 +64,7 @@ export function EditStaffForm({
     resolver: zodResolver(editStaffFormSchema),
     defaultValues: {
       name: staff.name || '',
+      role: staff.role || '',
       aadharNumber: staff.aadharNumber || '',
       phone: staff.phone || '',
       address: staff.address || '',
@@ -108,6 +118,30 @@ export function EditStaffForm({
                 <FormControl>
                   <Input placeholder="e.g., Priya Sharma" {...field} />
                 </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="role"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Role</FormLabel>
+                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select a role" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    {PREDEFINED_ROLES.map((role) => (
+                      <SelectItem key={role} value={role}>
+                        {role}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
                 <FormMessage />
               </FormItem>
             )}

@@ -20,7 +20,7 @@ import { HeaderActionsProvider } from '@/components/dashboard/header-actions-con
 import { PageHeader } from '@/components/page-header';
 import { Loader2 } from 'lucide-react';
 import { HeaderActions } from '@/components/dashboard/header-actions';
-import { doc } from 'firebase/firestore';
+import { doc, setDoc, Timestamp } from 'firebase/firestore';
 import type { Salon } from '@/lib/data';
 import { SubscriptionBanner } from '@/components/dashboard/subscription-banner';
 
@@ -55,6 +55,59 @@ export default function DashboardLayout({
 
   // Fetch the salon document. The dashboard will wait until this is loaded.
   const { data: salon, isLoading: isSalonLoading } = useDoc<Salon>(salonDocRef);
+
+  // Effect to automatically initialize missing salon data for half-created accounts.
+  useEffect(() => {
+    if (!isSalonLoading && user && !salon && firestore) {
+      console.log("Salon document missing. Re-initializing salon and user profile...");
+      
+      const initializeMissingSalon = async () => {
+        try {
+          const salonId = user.uid;
+          const trialEndsAt = new Date();
+          trialEndsAt.setDate(trialEndsAt.getDate() + 15);
+
+          // 1. Create the user profile doc
+          const userRef = doc(firestore, `salons/${salonId}/users`, user.uid);
+          await setDoc(userRef, {
+            name: user.displayName || 'Owner',
+            role: 'owner',
+            email: user.email,
+            salonId: salonId,
+          });
+
+          // 2. Create the salon doc
+          const salonRef = doc(firestore, 'salons', salonId);
+          await setDoc(salonRef, {
+            salonId: salonId,
+            name: 'My Salon',
+            ownerId: user.uid,
+            appointmentsEnabled: true,
+            loyaltyProgramEnabled: true,
+            loyaltyPointsRatio: 10,
+            address: '',
+            city: '',
+            state: '',
+            phone: '',
+            logoUrl: '',
+            languageDefault: 'en',
+            timezone: 'IST',
+            subscriptionPlanId: 'starter',
+            billingStatus: 'trialing',
+            businessHours: JSON.stringify({}),
+            trialEndsAt: Timestamp.fromDate(trialEndsAt),
+            themeColor: '275 100% 25.3%',
+          });
+          
+          console.log("Salon data successfully repaired!");
+        } catch (err) {
+          console.error("Failed to auto-repair salon data:", err);
+        }
+      };
+      
+      initializeMissingSalon();
+    }
+  }, [salon, isSalonLoading, user, firestore]);
 
   // Effect to manage theme application without causing re-render loops.
   useEffect(() => {

@@ -24,8 +24,18 @@ import {
 import { collection } from 'firebase/firestore';
 import { Textarea } from '@/components/ui/textarea';
 
+import { PREDEFINED_ROLES } from '@/lib/data';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+
 const addStaffFormSchema = z.object({
   name: z.string().min(1, 'Staff name is required.'),
+  role: z.string().optional(),
   aadharNumber: z.union([z.string().length(12, { message: "Aadhar number must be 12 digits." }), z.literal("")]).optional(),
   phone: z.union([z.string().length(10, { message: "Phone number must be 10 digits." }), z.literal("")]).optional(),
   address: z.string().optional(),
@@ -53,6 +63,7 @@ export function AddStaffForm({
     resolver: zodResolver(addStaffFormSchema),
     defaultValues: {
       name: '',
+      role: '',
       aadharNumber: '',
       phone: '',
       address: '',
@@ -112,6 +123,30 @@ export function AddStaffForm({
                 <FormControl>
                   <Input placeholder="e.g., Priya Sharma" {...field} />
                 </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="role"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Role</FormLabel>
+                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select a role" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    {PREDEFINED_ROLES.map((role) => (
+                      <SelectItem key={role} value={role}>
+                        {role}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
                 <FormMessage />
               </FormItem>
             )}

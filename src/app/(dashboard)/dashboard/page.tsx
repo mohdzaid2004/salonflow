@@ -115,6 +115,8 @@ export default function DashboardPage({}) {
     services?.find((s) => s.id === id)?.name || '...';
   const getStaffName = (id: string) =>
     staff?.find((s) => s.id === id)?.name || '...';
+  const getStaffRole = (id: string) =>
+    staff?.find((s) => s.id === id)?.role || '';
 
   return (
     <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
@@ -156,7 +158,12 @@ export default function DashboardPage({}) {
                         {appt.serviceIds.map(getServiceName).join(', ')}
                       </p>
                     </div>
-                    <p className="text-sm">{getStaffName(appt.staffId)}</p>
+                    <div className="text-right">
+                      <p className="text-sm font-medium">{getStaffName(appt.staffId)}</p>
+                      {getStaffRole(appt.staffId) && (
+                        <p className="text-xs text-muted-foreground">{getStaffRole(appt.staffId)}</p>
+                      )}
+                    </div>
                   </div>
                 ))
               ) : (

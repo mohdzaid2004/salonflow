@@ -45,6 +45,7 @@ export default function LoginPage({}) {
   const router = useRouter();
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [authTimeout, setAuthTimeout] = useState(false);
 
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(loginFormSchema),
@@ -53,6 +54,14 @@ export default function LoginPage({}) {
       password: '',
     },
   });
+
+  // Fallback timer in case Firebase auth takes too long to load on client side
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setAuthTimeout(true);
+    }, 2500);
+    return () => clearTimeout(timer);
+  }, []);
 
   // Effect to redirect if user is logged in
   useEffect(() => {
@@ -95,8 +104,10 @@ export default function LoginPage({}) {
       });
   };
 
+  const showLoading = isUserLoading && !authTimeout;
+
   // Render a loading state while checking for user
-  if (isUserLoading || user) {
+  if (showLoading || user) {
     return (
       <div className="flex min-h-screen items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin" />

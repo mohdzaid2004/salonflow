@@ -134,7 +134,7 @@ export function CreateBillForm({
   }, [serviceTotal, watchRedeemPoints, form]);
   
 
-  const sendWhatsAppMessage = (appointment: Appointment) => {
+  const sendWhatsAppMessage = async (appointment: Appointment) => {
     if (!salonId) return;
     const staffName = staff.find(s => s.id === appointment.staffId)?.name || 'our staff';
     const feedbackId = `${salonId}_${appointment.id}`;
@@ -147,11 +147,48 @@ ${feedbackLink}
     
 We look forward to seeing you again!`;
 
-    const encodedMessage = encodeURIComponent(message);
     const phone = `91${appointment.customerPhone}`;
 
-    const whatsappUrl = `https://api.whatsapp.com/send?phone=${phone}&text=${encodedMessage}`;
+    // If automated Twilio WhatsApp notifications are enabled, attempt background send
+    if (salon?.automatedWhatsappEnabled) {
+      try {
+        toast({
+          title: "Sending notification...",
+          description: "Sending automated WhatsApp notification via Twilio in the background.",
+        });
 
+        const response = await fetch('/api/send-whatsapp', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ phone, message }),
+        });
+
+        const resData = await response.json();
+
+        if (response.ok && resData.success) {
+          toast({
+            title: "Notification Sent",
+            description: `Automated WhatsApp notification successfully sent to ${appointment.customerName}!`,
+          });
+          return; // Successfully sent, no need for fallback
+        } else {
+          throw new Error(resData.error || 'Server responded with failure');
+        }
+      } catch (err: any) {
+        console.error("Twilio background send failed, falling back to manual link:", err);
+        toast({
+          variant: "destructive",
+          title: "Twilio Dispatch Failed",
+          description: `${err?.message || "Could not send automated message"}. Falling back to manual WhatsApp link.`,
+        });
+      }
+    }
+
+    // Fallback: Manual WhatsApp Web redirect link
+    const encodedMessage = encodeURIComponent(message);
+    const whatsappUrl = `https://api.whatsapp.com/send?phone=${phone}&text=${encodedMessage}`;
     window.open(whatsappUrl, '_blank');
   }
 

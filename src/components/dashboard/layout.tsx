@@ -1,5 +1,6 @@
 'use client';
 
+import { useMemo } from 'react';
 import { MainNav } from '@/components/dashboard/main-nav';
 import { UserNav } from '@/components/dashboard/user-nav';
 import { Logo } from '@/components/logo';
@@ -13,7 +14,7 @@ import {
   SidebarFooter,
 } from '@/components/ui/sidebar';
 import { Separator } from '@/components/ui/separator';
-import { useDoc, useFirestore, useUser, useMemoFirebase } from '@/firebase';
+import { useDoc, useFirestore, useUser } from '@/firebase';
 import { doc } from 'firebase/firestore';
 import type { Salon } from '@/lib/data';
 import { Skeleton } from '../ui/skeleton';
@@ -31,7 +32,7 @@ export default function DashboardLayout({
 
   const salonId = user?.uid;
 
-  const salonDocRef = useMemoFirebase(() => {
+  const salonDocRef = useMemo(() => {
     if (!firestore || !salonId) return null;
     return doc(firestore, 'salons', salonId);
   }, [firestore, salonId]);
@@ -65,7 +66,7 @@ export default function DashboardLayout({
             </div>
           </SidebarHeader>
           <SidebarContent className="p-2">
-            <MainNav />
+            <MainNav salon={salon} />
           </SidebarContent>
           <SidebarFooter>
             <Separator className="my-2" />

@@ -1,6 +1,6 @@
 'use client';
 
-import { useTransition } from 'react';
+import { useTransition, useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -26,17 +26,19 @@ import { useToast } from '@/hooks/use-toast';
 import {
   useFirestore,
   useUser,
+  useDoc,
   addDocumentNonBlocking,
 } from '@/firebase';
 import {
   collection,
+  doc,
   Timestamp,
   query,
   where,
   getDocs,
   limit,
 } from 'firebase/firestore';
-import type { Service, Staff } from '@/lib/data';
+import type { Service, Staff, Salon } from '@/lib/data';
 import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
 import { CalendarIcon } from 'lucide-react';
 import { format } from 'date-fns';
@@ -70,6 +72,13 @@ export function CustomerCheckinForm({
   const firestore = useFirestore();
   const { user } = useUser();
   const salonId = user?.uid;
+
+  const salonDocRef = useMemo(() => {
+    if (!firestore || !salonId) return null;
+    return doc(firestore, 'salons', salonId);
+  }, [firestore, salonId]);
+
+  const { data: salon } = useDoc<Salon>(salonDocRef);
 
   const form = useForm<CheckinFormValues>({
     resolver: zodResolver(checkinFormSchema),
@@ -116,6 +125,53 @@ export function CustomerCheckinForm({
       
       const appointmentsRef = collection(firestore, `salons/${salonId}/appointments`);
       addDocumentNonBlocking(appointmentsRef, appointmentData);
+
+      // Trigger Twilio WhatsApp notification automatically if enabled in settings
+      if (salon?.automatedWhatsappEnabled) {
+        const appointmentDateStr = format(data.date, "dd-MM-yyyy");
+        const appointmentTimeStr = format(data.date, "hh:mm a");
+        const serviceNames = data.serviceIds
+          .map(id => services.find(s => s.id === id)?.name)
+          .filter(Boolean)
+          .join(', ');
+
+        const isToday = format(data.date, "yyyy-MM-dd") === format(new Date(), "yyyy-MM-dd");
+
+        let whatsappMessage = '';
+        if (isToday) {
+          whatsappMessage = `Hi ${data.customerName}
+
+✅ Your check-in has been confirmed.
+
+Please wait while our staff prepares for your appointment.`;
+        } else {
+          whatsappMessage = `Hi ${data.customerName} 👋
+
+Your appointment has been confirmed.
+
+📅 Date: ${appointmentDateStr}
+🕒 Time: ${appointmentTimeStr}
+💇 Service: ${serviceNames}
+
+Thank you for choosing Salon Flow ❤️`;
+        }
+
+        const phone = `91${data.customerPhone}`;
+
+        fetch('/api/send-whatsapp', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ phone, message: whatsappMessage }),
+        }).then(response => {
+          if (!response.ok) {
+            console.error("Twilio check-in WhatsApp dispatch failed:", response.statusText);
+          }
+        }).catch(err => {
+          console.error("Twilio check-in WhatsApp dispatch error:", err);
+        });
+      }
 
       toast({
         title: 'Success!',

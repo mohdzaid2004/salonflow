@@ -180,6 +180,9 @@ export default function StaffPage({}) {
           </div>
         </TableCell>
         <TableCell>
+            <Skeleton className="h-4 w-20" />
+        </TableCell>
+        <TableCell>
             <Skeleton className="h-4 w-24" />
         </TableCell>
         <TableCell>
@@ -290,6 +293,7 @@ export default function StaffPage({}) {
             <TableHeader>
               <TableRow>
                 <TableHead>Name</TableHead>
+                <TableHead>Role</TableHead>
                 <TableHead>Avg. Rating</TableHead>
                 <TableHead>
                   <span className="sr-only">Actions</span>
@@ -311,6 +315,9 @@ export default function StaffPage({}) {
                         </Avatar>
                         <span className="font-medium group-hover:underline">{staffMember.name}</span>
                       </Link>
+                    </TableCell>
+                    <TableCell>
+                      <span className="text-sm font-medium text-muted-foreground">{staffMember.role || 'N/A'}</span>
                     </TableCell>
                     <TableCell>
                         {staffMember.reviewCount > 0 ? (
@@ -357,7 +364,7 @@ export default function StaffPage({}) {
               ) : (
                 <TableRow>
                   <TableCell
-                    colSpan={3}
+                    colSpan={4}
                     className="h-24 text-center text-muted-foreground"
                   >
                     No staff found. Click "Add Staff" to get started.

@@ -13,6 +13,7 @@ export type Salon = {
   billingStatus?: 'trialing' | 'active' | 'past_due' | 'canceled';
   trialEndsAt?: unknown; // Firebase Timestamp
   subscriptionPlanId?: string;
+  automatedWhatsappEnabled?: boolean;
 };
 
 export type Service = {
@@ -28,6 +29,7 @@ export type Staff = {
   phone: string;
   address: string;
   dob: string;
+  role?: string;
 };
 
 export type Customer = {
@@ -88,3 +90,20 @@ export type InventoryProduct = {
   lowStockThreshold: number;
   unitPrice: number;
 };
+
+export const PREDEFINED_ROLES = [
+  'Salon Manager',
+  'Receptionist',
+  'Senior Hair Stylist',
+  'Junior Hair Stylist',
+  'Barber',
+  'Hair Color Specialist',
+  'Beauty Therapist',
+  'Makeup Artist',
+  'Nail Technician',
+  'Facial Specialist',
+  'Massage Therapist',
+  'Cleaner / Housekeeping',
+  'Cashier',
+  'Trainee'
+] as const;
