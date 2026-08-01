@@ -85,6 +85,9 @@ export default function LoginPage({}) {
             case 'auth/invalid-email':
               errorMessage = 'Please enter a valid email address.';
               break;
+            case 'auth/operation-not-allowed':
+              errorMessage = 'Email/Password authentication is disabled in your Firebase Console. Please enable it in Authentication > Sign-in method.';
+              break;
           }
           toast({
             variant: 'destructive',
