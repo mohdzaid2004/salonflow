@@ -119,6 +119,7 @@ export default function SignupPage({}) {
               ownerId: user.uid,
               appointmentsEnabled: true,
               loyaltyProgramEnabled: true,
+              automatedWhatsappEnabled: true,
               loyaltyPointsRatio: 10,
               address: '',
               city: '',
