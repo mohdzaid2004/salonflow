@@ -195,7 +195,10 @@ export async function POST(req: Request) {
         pdfUrl: downloadUrl,
         feedbackUrl,
         paymentMethod: appointment.paymentMethod,
-        currentPoints: customer.loyaltyPoints || 0
+        currentPoints: customer.loyaltyPoints || 0,
+        services,
+        salonAddress: salon.address || '',
+        salonPhone: salon.phone || ''
       });
 
       if (notifyResult.success) {

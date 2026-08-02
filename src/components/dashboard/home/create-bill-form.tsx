@@ -134,59 +134,58 @@ export function CreateBillForm({
   }, [serviceTotal, watchRedeemPoints, form]);
   
 
-  const sendWhatsAppMessage = async (appointment: Appointment) => {
+  const sendWhatsAppMessage = async (appointment: Appointment, invoiceNumber: string, invoiceUrl: string) => {
     if (!salonId) return;
-    const staffName = staff.find(s => s.id === appointment.staffId)?.name || 'our staff';
+
+    // Map serviceIds to service names and prices
+    const selectedServices = (appointment.serviceIds || []).map(id => {
+      const s = services.find(srv => srv.id === id);
+      return s ? `- ${s.name}: ₹${s.price}` : null;
+    }).filter(Boolean);
+    const serviceList = selectedServices.length > 0 ? selectedServices.join('\n') : '- Service(s)';
+
+    const paymentDate = new Date().toLocaleDateString('en-IN', { day: '2-digit', month: '2-digit', year: 'numeric' }).replace(/\//g, '-');
+    const paymentTime = new Date().toLocaleTimeString('en-IN', { hour: 'numeric', minute: '2-digit', hour12: true });
+
     const feedbackId = `${salonId}_${appointment.id}`;
     const feedbackLink = `${window.location.origin}/feedback/${feedbackId}`;
-    
-    const message = `Hi ${appointment.customerName}, thanks for visiting ${salon?.name || 'our salon'}! Your bill for today is ₹${appointment.amountPaid}.
-    
-We'd love to hear your feedback on your service with ${staffName}. Please take a moment to leave a review:
-${feedbackLink}
-    
-We look forward to seeing you again!`;
+
+    const loyaltyPercentage = salon?.loyaltyPointsRatio || 5;
+    const pointsEarned = Math.floor(appointment.amountPaid * (loyaltyPercentage / 100));
+    const currentPoints = (customer.loyaltyPoints || 0) + pointsEarned - (appointment.pointsRedeemed || 0);
+
+    const message = `💇 Thank You for Visiting ${salon?.name || 'our salon'}!\n\n` +
+      `Hi ${appointment.customerName},\n\n` +
+      `Your payment has been received successfully. 🎉\n\n` +
+      `━━━━━━━━━━━━━━━━━━\n` +
+      `🧾 Invoice Details\n` +
+      `━━━━━━━━━━━━━━━━━━\n` +
+      `Invoice No : ${invoiceNumber}\n` +
+      `Date       : ${paymentDate}\n` +
+      `Time       : ${paymentTime}\n\n` +
+      `💇 Service(s):\n` +
+      `${serviceList}\n\n` +
+      `💰 Total Amount : ₹${appointment.amountPaid}\n` +
+      `💳 Payment Mode : ${appointment.paymentMethod}\n\n` +
+      `🎁 Loyalty Points Earned : ${pointsEarned}\n` +
+      `⭐ Current Balance : ${currentPoints} Points\n\n` +
+      `📎 Your PDF Invoice is attached to this message.\n` +
+      `${invoiceUrl ? `👉 View / Download PDF: ${invoiceUrl}\n` : ''}\n` +
+      `━━━━━━━━━━━━━━━━━━\n` +
+      `⭐ Rate Your Experience\n` +
+      `━━━━━━━━━━━━━━━━━━\n\n` +
+      `We hope you loved your visit!\n\n` +
+      `Please take 30 seconds to rate your experience.\n\n` +
+      `⭐⭐⭐⭐⭐\n\n` +
+      `👉 ${feedbackLink}\n\n` +
+      `Your feedback helps us improve our services and serve you better.\n\n` +
+      `━━━━━━━━━━━━━━━━━━\n\n` +
+      `Thank you for choosing ${salon?.name || 'our salon'} ❤️\n\n` +
+      `We look forward to welcoming you again.\n\n` +
+      `📍 ${salon?.address || ''}\n` +
+      `📞 ${salon?.phone || ''}`;
 
     const phone = `91${appointment.customerPhone}`;
-
-    // If automated Twilio WhatsApp notifications are enabled, attempt background send
-    if (salon?.automatedWhatsappEnabled) {
-      try {
-        toast({
-          title: "Sending notification...",
-          description: "Sending automated WhatsApp notification via Twilio in the background.",
-        });
-
-        const response = await fetch('/api/send-whatsapp', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ phone, message }),
-        });
-
-        const resData = await response.json();
-
-        if (response.ok && resData.success) {
-          toast({
-            title: "Notification Sent",
-            description: `Automated WhatsApp notification successfully sent to ${appointment.customerName}!`,
-          });
-          return; // Successfully sent, no need for fallback
-        } else {
-          throw new Error(resData.error || 'Server responded with failure');
-        }
-      } catch (err: any) {
-        console.error("Twilio background send failed, falling back to manual link:", err);
-        toast({
-          variant: "destructive",
-          title: "Twilio Dispatch Failed",
-          description: `${err?.message || "Could not send automated message"}. Falling back to manual WhatsApp link.`,
-        });
-      }
-    }
-
-    // Fallback: Manual WhatsApp Web redirect link
     const encodedMessage = encodeURIComponent(message);
     const whatsappUrl = `https://api.whatsapp.com/send?phone=${phone}&text=${encodedMessage}`;
     window.open(whatsappUrl, '_blank');
@@ -248,6 +247,8 @@ We look forward to seeing you again!`;
 
       onBillCreated(newAppointment);
 
+      let invoiceNumber = `INV-${new Date().getFullYear()}${String(new Date().getMonth() + 1).padStart(2, '0')}${String(new Date().getDate()).padStart(2, '0')}-${docRef.id.slice(-6).toUpperCase()}`;
+      let invoiceUrl = '';
       try {
         // Await the backend invoicing pipeline to prevent browser from aborting the request on modal close
         const res = await fetch('/api/billing/invoice', {
@@ -261,7 +262,13 @@ We look forward to seeing you again!`;
             sendWhatsApp: data.sendWhatsApp && salon?.automatedWhatsappEnabled
           })
         });
-        if (!res.ok) {
+        if (res.ok) {
+          const resData = await res.json();
+          if (resData.success) {
+            invoiceNumber = resData.invoiceNumber;
+            invoiceUrl = resData.invoiceUrl;
+          }
+        } else {
           console.error('[Billing Checkout] Invoicing pipeline error:', res.statusText);
         }
       } catch (err) {
@@ -270,7 +277,7 @@ We look forward to seeing you again!`;
 
       // Trigger manual fallback if sendWhatsApp was selected but Twilio automated toggle is off
       if (data.sendWhatsApp && !salon?.automatedWhatsappEnabled) {
-        sendWhatsAppMessage(newAppointment);
+        sendWhatsAppMessage(newAppointment, invoiceNumber, invoiceUrl);
       }
 
       setOpen(false);
