@@ -7,6 +7,8 @@ import { sendWhatsAppInvoiceNotification } from '@/services/billing/invoiceNotif
 import { FieldPath } from 'firebase-admin/firestore';
 import type { Appointment, Salon, Customer, Staff, Service } from '@/lib/data';
 
+export const dynamic = 'force-dynamic';
+
 export async function GET() {
   const db = getAdminDb();
   const salonId = 'n0U824dE1mPzDqgA8Z';
