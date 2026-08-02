@@ -53,10 +53,19 @@ export async function POST(req: Request) {
 
     const db = getAdminDb();
 
-    // 1. Fetch Appointment data using Admin SDK
+    // 1. Fetch Appointment data using Admin SDK (with retry logic to handle replication lag)
+    let apptSnap = null;
     const apptRef = db.doc(`salons/${salonId}/appointments/${appointmentId}`);
-    const apptSnap = await apptRef.get();
-    if (!apptSnap.exists) {
+    for (let attempt = 1; attempt <= 5; attempt++) {
+      apptSnap = await apptRef.get();
+      if (apptSnap.exists) {
+        break;
+      }
+      // Wait 1 second before retrying
+      await new Promise(resolve => setTimeout(resolve, 1000));
+    }
+
+    if (!apptSnap || !apptSnap.exists) {
       return NextResponse.json({ success: false, error: 'Appointment not found.' }, { status: 404 });
     }
     const appointment = { id: apptSnap.id, ...apptSnap.data() } as Appointment;
@@ -85,13 +94,36 @@ export async function POST(req: Request) {
       staffRef.get()
     ]);
 
-    if (!salonSnap.exists || !customerSnap.exists || !staffSnap.exists) {
-      return NextResponse.json({ success: false, error: 'Salon, customer, or staff data missing.' }, { status: 400 });
+    if (!salonSnap.exists) {
+      return NextResponse.json({ success: false, error: 'Salon data missing.' }, { status: 400 });
     }
 
     const salon = { id: salonSnap.id, ...salonSnap.data() } as Salon;
-    const customer = { id: customerSnap.id, ...customerSnap.data() } as Customer;
-    const staff = { id: staffSnap.id, ...staffSnap.data() } as Staff;
+
+    let customer: Customer;
+    if (customerSnap.exists) {
+      customer = { id: customerSnap.id, ...customerSnap.data() } as Customer;
+    } else {
+      customer = {
+        id: appointment.customerId || 'unknown',
+        name: appointment.customerName || 'Customer',
+        phone: appointment.customerPhone || '9108200414',
+        email: '',
+        visitHistory: []
+      } as Customer;
+    }
+
+    let staff: Staff;
+    if (staffSnap.exists) {
+      staff = { id: staffSnap.id, ...staffSnap.data() } as Staff;
+    } else {
+      staff = {
+        id: appointment.staffId || 'unknown',
+        name: appointment.staffName || 'Staff Member',
+        role: 'stylist',
+        status: 'active'
+      } as Staff;
+    }
 
     // 4. Fetch Services detailed list using Admin SDK
     let services: Service[] = [];
@@ -99,6 +131,8 @@ export async function POST(req: Request) {
       const servicesRef = db.collection(`salons/${salonId}/services`);
       const servicesSnap = await servicesRef.where(FieldPath.documentId(), 'in', appointment.serviceIds).get();
       services = servicesSnap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Service));
+    } else if ((appointment as any).services && (appointment as any).services.length > 0) {
+      services = (appointment as any).services;
     }
 
     // 5. Generate sequential invoice number
