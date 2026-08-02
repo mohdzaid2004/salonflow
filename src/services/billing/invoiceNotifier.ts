@@ -1,5 +1,4 @@
-import { getTwilioClient, getTwilioConfig } from '../whatsapp/client';
-import { formatWhatsAppNumber } from '../whatsapp/utils';
+import { getTwilioClient, getTwilioConfig, formatWhatsAppNumber } from './config';
 
 export interface WhatsAppNotificationPayload {
   salonId: string;

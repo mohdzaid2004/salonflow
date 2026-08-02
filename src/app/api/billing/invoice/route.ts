@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { getDb } from '@/services/whatsapp/client';
+import { getDb } from '@/services/billing/config';
 import { doc, getDoc, collection, query, where, getDocs, limit } from 'firebase/firestore';
 import { generateSequentialInvoiceNumber, saveInvoiceMetadata } from '@/services/billing/invoiceStore';
 import { generateInvoicePDF } from '@/services/billing/invoiceGenerator';
