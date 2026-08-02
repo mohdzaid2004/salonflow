@@ -1,10 +1,10 @@
 import { NextResponse } from 'next/server';
-import { getDb } from '@/services/billing/config';
-import { doc, getDoc, collection, query, where, getDocs, limit } from 'firebase/firestore';
+import { getAdminDb } from '@/services/billing/config';
 import { generateSequentialInvoiceNumber, saveInvoiceMetadata } from '@/services/billing/invoiceStore';
 import { generateInvoicePDF } from '@/services/billing/invoiceGenerator';
 import { uploadInvoicePDF } from '@/services/billing/invoiceUploader';
 import { sendWhatsAppInvoiceNotification } from '@/services/billing/invoiceNotifier';
+import { FieldPath } from 'firebase-admin/firestore';
 import type { Appointment, Salon, Customer, Staff, Service } from '@/lib/data';
 
 /**
@@ -24,41 +24,41 @@ export async function POST(req: Request) {
       );
     }
 
-    const db = getDb();
+    const db = getAdminDb();
 
-    // 1. Fetch Appointment data
-    const apptRef = doc(db, `salons/${salonId}/appointments`, appointmentId);
-    const apptSnap = await getDoc(apptRef);
-    if (!apptSnap.exists()) {
+    // 1. Fetch Appointment data using Admin SDK
+    const apptRef = db.doc(`salons/${salonId}/appointments/${appointmentId}`);
+    const apptSnap = await apptRef.get();
+    if (!apptSnap.exists) {
       return NextResponse.json({ success: false, error: 'Appointment not found.' }, { status: 404 });
     }
     const appointment = { id: apptSnap.id, ...apptSnap.data() } as Appointment;
 
     // 2. Check if invoice already exists to prevent duplicate generation
-    const existingInvoiceRef = doc(db, `salons/${salonId}/invoices`, appointmentId);
-    const existingSnap = await getDoc(existingInvoiceRef);
-    if (existingSnap.exists()) {
+    const existingInvoiceRef = db.doc(`salons/${salonId}/invoices/${appointmentId}`);
+    const existingSnap = await existingInvoiceRef.get();
+    if (existingSnap.exists) {
       const data = existingSnap.data();
       return NextResponse.json({ 
         success: true, 
         message: 'Invoice already exists.', 
-        invoiceNumber: data.invoiceNumber,
-        invoiceUrl: data.invoiceUrl 
+        invoiceNumber: data?.invoiceNumber,
+        invoiceUrl: data?.invoiceUrl 
       });
     }
 
-    // 3. Fetch related Salon, Customer, Staff details
-    const salonRef = doc(db, 'salons', salonId);
-    const customerRef = doc(db, `salons/${salonId}/customers`, appointment.customerId);
-    const staffRef = doc(db, `salons/${salonId}/staff`, appointment.staffId);
+    // 3. Fetch related Salon, Customer, Staff details using Admin SDK
+    const salonRef = db.doc(`salons/${salonId}`);
+    const customerRef = db.doc(`salons/${salonId}/customers/${appointment.customerId}`);
+    const staffRef = db.doc(`salons/${salonId}/staff/${appointment.staffId}`);
 
     const [salonSnap, customerSnap, staffSnap] = await Promise.all([
-      getDoc(salonRef),
-      getDoc(customerRef),
-      getDoc(staffRef)
+      salonRef.get(),
+      customerRef.get(),
+      staffRef.get()
     ]);
 
-    if (!salonSnap.exists() || !customerSnap.exists() || !staffSnap.exists()) {
+    if (!salonSnap.exists || !customerSnap.exists || !staffSnap.exists) {
       return NextResponse.json({ success: false, error: 'Salon, customer, or staff data missing.' }, { status: 400 });
     }
 
@@ -66,14 +66,11 @@ export async function POST(req: Request) {
     const customer = { id: customerSnap.id, ...customerSnap.data() } as Customer;
     const staff = { id: staffSnap.id, ...staffSnap.data() } as Staff;
 
-    // 4. Fetch Services detailed list
+    // 4. Fetch Services detailed list using Admin SDK
     let services: Service[] = [];
     if (appointment.serviceIds && appointment.serviceIds.length > 0) {
-      const servicesQuery = query(
-        collection(db, `salons/${salonId}/services`),
-        where('__name__', 'in', appointment.serviceIds)
-      );
-      const servicesSnap = await getDocs(servicesQuery);
+      const servicesRef = db.collection(`salons/${salonId}/services`);
+      const servicesSnap = await servicesRef.where(FieldPath.documentId(), 'in', appointment.serviceIds).get();
       services = servicesSnap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Service));
     }
 
@@ -90,7 +87,7 @@ export async function POST(req: Request) {
       services
     });
 
-    // 7. Upload PDF to Firebase Storage
+    // 7. Upload PDF to Firebase Storage (returns public download URL)
     const { downloadUrl, storagePath } = await uploadInvoicePDF(salonId, invoiceNumber, pdfBuffer);
 
     // 8. Calculations (inclusive 18% GST)
@@ -102,7 +99,7 @@ export async function POST(req: Request) {
     const loyaltyRatio = salon.loyaltyPointsRatio || 5;
     const pointsEarned = Math.floor(grandTotal * (loyaltyRatio / 100));
 
-    // 9. Save Metadata to Firestore
+    // 9. Save Metadata to Firestore using Admin SDK
     await saveInvoiceMetadata(salonId, {
       id: appointmentId,
       invoiceNumber,
@@ -140,11 +137,8 @@ export async function POST(req: Request) {
 
       if (notifyResult.success) {
         whatsappStatus = 'sent';
-        // Update whatsappStatus in Firestore
-        const db = getDb();
-        const docRef = doc(db, `salons/${salonId}/invoices`, appointmentId);
-        const { updateDoc } = await import('firebase/firestore');
-        await updateDoc(docRef, { whatsappStatus: 'sent' });
+        // Update whatsappStatus in Firestore using Admin SDK
+        await existingInvoiceRef.update({ whatsappStatus: 'sent' });
       }
     }
 

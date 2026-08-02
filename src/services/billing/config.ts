@@ -1,14 +1,27 @@
-import { initializeApp, getApps, getApp } from 'firebase/app';
-import { getFirestore, doc, getDoc } from 'firebase/firestore';
-import { firebaseConfig } from '@/firebase/config';
+import { getApps, initializeApp, getApp } from 'firebase-admin/app';
+import { getFirestore } from 'firebase-admin/firestore';
+import { getStorage } from 'firebase-admin/storage';
 import twilio from 'twilio';
 
-// Initialize server-side Firestore
-export function getDb() {
+// Initialize modular Firebase Admin SDK
+export function getAdminApp() {
   if (getApps().length === 0) {
-    return getFirestore(initializeApp(firebaseConfig));
+    return initializeApp({
+      projectId: 'salonindia-74cbb',
+      storageBucket: 'salonindia-74cbb.firebasestorage.app'
+    });
   }
-  return getFirestore(getApp());
+  return getApp();
+}
+
+export function getAdminDb() {
+  getAdminApp();
+  return getFirestore();
+}
+
+export function getAdminStorageBucket() {
+  getAdminApp();
+  return getStorage().bucket();
 }
 
 export interface TwilioConfig {
@@ -23,8 +36,8 @@ export interface TwilioConfig {
  * Falls back to environment variables if dashboard settings are missing.
  */
 export async function getTwilioConfig(salonId: string): Promise<TwilioConfig> {
-  const db = getDb();
-  const salonRef = doc(db, 'salons', salonId);
+  const db = getAdminDb();
+  const salonRef = db.doc(`salons/${salonId}`);
   
   let accountSid = process.env.TWILIO_ACCOUNT_SID || '';
   let authToken = process.env.TWILIO_AUTH_TOKEN || '';
@@ -32,14 +45,16 @@ export async function getTwilioConfig(salonId: string): Promise<TwilioConfig> {
   let automatedWhatsappEnabled = false;
 
   try {
-    const snap = await getDoc(salonRef);
-    if (snap.exists()) {
+    const snap = await salonRef.get();
+    if (snap.exists) {
       const data = snap.data();
-      if (data.twilioAccountSid) accountSid = data.twilioAccountSid;
-      if (data.twilioAuthToken) authToken = data.twilioAuthToken;
-      if (data.twilioWhatsappNumber) whatsappNumber = data.twilioWhatsappNumber;
-      if (data.automatedWhatsappEnabled !== undefined) {
-        automatedWhatsappEnabled = data.automatedWhatsappEnabled;
+      if (data) {
+        if (data.twilioAccountSid) accountSid = data.twilioAccountSid;
+        if (data.twilioAuthToken) authToken = data.twilioAuthToken;
+        if (data.twilioWhatsappNumber) whatsappNumber = data.twilioWhatsappNumber;
+        if (data.automatedWhatsappEnabled !== undefined) {
+          automatedWhatsappEnabled = data.automatedWhatsappEnabled;
+        }
       }
     }
   } catch (error) {

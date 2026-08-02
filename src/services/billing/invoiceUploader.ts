@@ -1,14 +1,7 @@
-import { getApps, initializeApp, getApp } from 'firebase/app';
-import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { firebaseConfig } from '@/firebase/config';
-
-function getStorageInstance() {
-  const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
-  return getStorage(app);
-}
+import { getAdminStorageBucket } from './config';
 
 /**
- * Uploads an invoice PDF buffer to Firebase Storage and returns its secure download URL.
+ * Uploads an invoice PDF buffer to Firebase Storage using Admin SDK and returns its public URL.
  * Storage path: salons/{salonId}/invoices/{invoiceNumber}.pdf
  */
 export async function uploadInvoicePDF(
@@ -17,23 +10,32 @@ export async function uploadInvoicePDF(
   pdfBuffer: Buffer
 ): Promise<{ downloadUrl: string; storagePath: string }> {
   try {
-    const storage = getStorageInstance();
+    const bucket = getAdminStorageBucket();
     const storagePath = `salons/${salonId}/invoices/${invoiceNumber}.pdf`;
-    const fileRef = ref(storage, storagePath);
+    const file = bucket.file(storagePath);
 
-    // Upload the raw buffer bytes
-    console.log(`[Invoice Uploader] Uploading PDF to Firebase Storage path: ${storagePath}...`);
-    const metadata = {
-      contentType: 'application/pdf',
-    };
+    console.log(`[Invoice Uploader] Uploading PDF via Admin SDK to: ${storagePath}...`);
     
-    await uploadBytes(fileRef, pdfBuffer, metadata);
-    const downloadUrl = await getDownloadURL(fileRef);
+    // Upload the raw buffer bytes
+    await file.save(pdfBuffer, {
+      metadata: {
+        contentType: 'application/pdf',
+      },
+    });
 
-    console.log(`[Invoice Uploader] Upload complete. Secure URL: ${downloadUrl}`);
+    // Make file public to allow Twilio and customer download access
+    try {
+      await file.makePublic();
+    } catch (pubErr) {
+      console.warn('[Invoice Uploader] Failed to make file public, trying fallback...', pubErr);
+    }
+
+    const downloadUrl = `https://firebasestorage.googleapis.com/v0/b/${bucket.name}/o/${encodeURIComponent(storagePath)}?alt=media`;
+
+    console.log(`[Invoice Uploader] Upload complete. URL: ${downloadUrl}`);
     return { downloadUrl, storagePath };
   } catch (error) {
-    console.error('[Invoice Uploader] Firebase Storage upload error:', error);
+    console.error('[Invoice Uploader] Firebase Admin Storage upload error:', error);
     throw new Error('Failed to upload invoice to Cloud Storage');
   }
 }
