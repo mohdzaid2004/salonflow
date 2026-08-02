@@ -258,7 +258,7 @@ We look forward to seeing you again!`;
           body: JSON.stringify({
             salonId,
             appointmentId: docRef.id,
-            sendWhatsApp: data.sendWhatsApp
+            sendWhatsApp: data.sendWhatsApp && salon?.automatedWhatsappEnabled
           })
         });
         if (!res.ok) {
@@ -266,6 +266,11 @@ We look forward to seeing you again!`;
         }
       } catch (err) {
         console.error('[Billing Checkout] Invoicing pipeline fetch error:', err);
+      }
+
+      // Trigger manual fallback if sendWhatsApp was selected but Twilio automated toggle is off
+      if (data.sendWhatsApp && !salon?.automatedWhatsappEnabled) {
+        sendWhatsAppMessage(newAppointment);
       }
 
       setOpen(false);
