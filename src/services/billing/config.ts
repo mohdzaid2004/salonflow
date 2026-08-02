@@ -21,7 +21,7 @@ export function getAdminDb() {
 
 export function getAdminStorageBucket() {
   getAdminApp();
-  return getStorage().bucket();
+  return getStorage().bucket('salonindia-74cbb.firebasestorage.app');
 }
 
 export interface TwilioConfig {
