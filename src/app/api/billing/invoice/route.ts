@@ -8,7 +8,12 @@ import { FieldPath } from 'firebase-admin/firestore';
 import type { Appointment, Salon, Customer, Staff, Service } from '@/lib/data';
 
 export async function GET() {
-  return NextResponse.json({ status: 'active', message: 'SalonFlow Invoicing API is operational.' });
+  const db = getAdminDb();
+  return NextResponse.json({ 
+    status: 'active', 
+    message: 'SalonFlow Invoicing API is operational.',
+    projectId: db.projectId || 'unknown'
+  });
 }
 
 /**
