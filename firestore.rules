@@ -159,6 +159,16 @@ service cloud.firestore {
     }
 
     /**
+     * @description Rules for invoices within a salon.
+     * @path /salons/{salonId}/invoices/{invoiceId}
+     * @principle All data within a salon is accessible for read/write to all authenticated members of that salon.
+     */
+    match /salons/{salonId}/invoices/{invoiceId} {
+      allow get: if true; // Allow GET for invoice verification QR code/link
+      allow list, write: if isSignedIn() && (isOwner(salonId) || isSalonMember(salonId));
+    }
+
+    /**
      * @description Rules for inventory products.
      * @path /salons/{salonId}/inventory/{productId}
      * @principle All data within a salon is accessible for read/write to all authenticated members of that salon.
