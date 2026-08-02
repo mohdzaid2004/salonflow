@@ -12,19 +12,14 @@ export const dynamic = 'force-dynamic';
 export async function GET() {
   const db = getAdminDb();
   const salonId = 'n0U824dE1mPzDqgA8Z';
-  const appointmentId = 'T8kU94dE1mPzDqgA2Y';
   
-  let exists = false;
-  let docData = null;
+  let docs: string[] = [];
   let errorMsg = null;
   
   try {
-    const apptRef = db.doc(`salons/${salonId}/appointments/${appointmentId}`);
-    const apptSnap = await apptRef.get();
-    exists = apptSnap.exists;
-    if (exists) {
-      docData = apptSnap.data();
-    }
+    const colRef = db.collection(`salons/${salonId}/appointments`);
+    const snap = await colRef.get();
+    docs = snap.docs.map(doc => doc.id);
   } catch (err: any) {
     errorMsg = err.message;
   }
@@ -33,9 +28,8 @@ export async function GET() {
     status: 'active', 
     message: 'SalonFlow Invoicing API is operational.',
     projectId: db.projectId || 'unknown',
-    docPath: `salons/${salonId}/appointments/${appointmentId}`,
-    docExists: exists,
-    docData,
+    appointmentsCount: docs.length,
+    appointmentIds: docs,
     error: errorMsg
   });
 }
