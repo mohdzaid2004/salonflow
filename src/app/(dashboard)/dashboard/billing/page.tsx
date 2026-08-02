@@ -99,20 +99,36 @@ export default function BillingPage() {
         const staffName = staffMap.get(appt.staffId)?.toLowerCase() || '';
         const staffMatch = staffSearch ? staffName.includes(staffSearch.toLowerCase()) : true;
         return customerMatch && staffMatch;
-    }).sort((a,b) => (b.date as Timestamp).toMillis() - (a.date as Timestamp).toMillis());
+    }).sort((a, b) => {
+      const aTime = a.date instanceof Timestamp ? a.date.toMillis() : (a.date ? new Date(a.date as any).getTime() : 0);
+      const bTime = b.date instanceof Timestamp ? b.date.toMillis() : (b.date ? new Date(b.date as any).getTime() : 0);
+      return bTime - aTime;
+    });
   }, [appointments, customerSearch, staffSearch, staffMap]);
 
   const formatCurrency = (amount: number) => {
+    const cleanAmount = isNaN(amount) || amount === undefined ? 0 : amount;
     const formattedAmount = new Intl.NumberFormat('en-IN', {
       maximumFractionDigits: 2,
       minimumFractionDigits: 2,
-    }).format(amount || 0);
+    }).format(cleanAmount || 0);
     return <>&#8377;{formattedAmount}</>;
   };
   
   const formatDate = (date: unknown) => {
     if (!date) return '';
-    return format((date as Timestamp).toDate(), 'PP, p');
+    if (date instanceof Timestamp) {
+      return format(date.toDate(), 'PP, p');
+    }
+    try {
+      const d = new Date(date as any);
+      if (!isNaN(d.getTime())) {
+        return format(d, 'PP, p');
+      }
+    } catch (e) {
+      // ignore
+    }
+    return 'N/A';
   };
 
   // ----------------------------------------------------
@@ -253,7 +269,7 @@ export default function BillingPage() {
       const invoice = invoiceMap.get(appt.id);
       return {
         'Invoice Number': invoice?.invoiceNumber || `INV-${appt.id.slice(0,6).toUpperCase()}`,
-        'Date': format((appt.date as Timestamp).toDate(), 'dd-MM-yyyy hh:mm a'),
+        'Date': appt.date instanceof Timestamp ? format(appt.date.toDate(), 'dd-MM-yyyy hh:mm a') : (appt.date ? format(new Date(appt.date as any), 'dd-MM-yyyy hh:mm a') : ''),
         'Customer Name': appt.customerName,
         'Customer Phone': appt.customerPhone,
         'Served By Staff': staffMap.get(appt.staffId) || 'N/A',
