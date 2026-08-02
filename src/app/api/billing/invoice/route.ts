@@ -27,7 +27,7 @@ export async function GET() {
   return NextResponse.json({ 
     status: 'active', 
     message: 'SalonFlow Invoicing API is operational.',
-    projectId: db.projectId || 'unknown',
+    projectId: (db as any).projectId || 'unknown',
     appointmentsCount: docs.length,
     appointmentIds: docs,
     error: errorMsg
@@ -106,11 +106,11 @@ export async function POST(req: Request) {
     } else {
       customer = {
         id: appointment.customerId || 'unknown',
+        salonId,
         name: appointment.customerName || 'Customer',
         phone: appointment.customerPhone || '9108200414',
-        email: '',
         visitHistory: []
-      } as Customer;
+      } as unknown as Customer;
     }
 
     let staff: Staff;
@@ -119,10 +119,10 @@ export async function POST(req: Request) {
     } else {
       staff = {
         id: appointment.staffId || 'unknown',
-        name: appointment.staffName || 'Staff Member',
+        name: (appointment as any).staffName || 'Staff Member',
         role: 'stylist',
         status: 'active'
-      } as Staff;
+      } as unknown as Staff;
     }
 
     // 4. Fetch Services detailed list using Admin SDK
