@@ -247,9 +247,31 @@ We look forward to seeing you again!`;
       }
 
       onBillCreated(newAppointment);
-      if (data.sendWhatsApp) {
+
+      // Trigger background PDF generation, Storage upload, metadata save, and WhatsApp notification dispatch
+      fetch('/api/billing/invoice', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          salonId,
+          appointmentId: docRef.id,
+          sendWhatsApp: data.sendWhatsApp
+        })
+      }).then(res => {
+        if (!res.ok) {
+          console.error('[Billing Checkout] Background invoicing pipeline error:', res.statusText);
+        }
+      }).catch(err => {
+        console.error('[Billing Checkout] Background invoicing pipeline fetch error:', err);
+      });
+
+      // Trigger manual fallback if sendWhatsApp was selected but Twilio automated toggle is off
+      if (data.sendWhatsApp && !salon?.automatedWhatsappEnabled) {
         sendWhatsAppMessage(newAppointment);
       }
+
       setOpen(false);
     });
   }

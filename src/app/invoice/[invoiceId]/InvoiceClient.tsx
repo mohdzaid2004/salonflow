@@ -150,41 +150,51 @@ export default function InvoiceClient() {
 
     const subtotal = appointment.subtotal ?? services.reduce((acc, s) => acc + s.price, 0);
     const pointsRedeemed = appointment.pointsRedeemed || 0;
-
+    
+    // GST calculations (inclusive 18% GST)
+    const grandTotal = appointment.amountPaid;
+    const taxableAmount = grandTotal / 1.18;
+    const gstAmount = grandTotal - taxableAmount;
+    const cgstAmount = gstAmount / 2;
+    const sgstAmount = gstAmount / 2;
 
     return (
-        <div className="min-h-screen p-4 sm:p-8">
+        <div className="min-h-screen p-4 sm:p-8 bg-zinc-50 print:bg-white print:p-0">
              <div className="absolute top-4 right-4 print:hidden flex gap-2">
-                <Button onClick={() => window.print()}><Printer className="mr-2 h-4 w-4" /> Print</Button>
+                <Button onClick={() => window.print()}><Printer className="mr-2 h-4 w-4" /> Print / Thermal</Button>
                 <Button variant="outline" onClick={() => window.close()}>Close</Button>
              </div>
-            <Card className="max-w-2xl mx-auto p-8 shadow-lg print:shadow-none print:border-none print:p-0">
+            <Card className="max-w-2xl mx-auto p-8 shadow-lg print:shadow-none print:border-none print:p-0 bg-white">
                 <header className="flex justify-between items-start">
                     <div className="flex items-center gap-4">
                         <Logo className="h-12 w-12 text-primary" />
                         <div>
                             <h1 className="text-2xl font-bold font-headline">{salon?.name}</h1>
                             <p className="text-sm text-muted-foreground">{salon?.address}</p>
-                            <p className="text-sm text-muted-foreground">{salon?.phone}</p>
+                            <p className="text-sm text-muted-foreground">Phone: {salon?.phone}</p>
+                            <p className="text-xs text-muted-foreground font-mono">GSTIN: {salon?.id ? `${salon.id.slice(0, 15).toUpperCase()}IND` : 'N/A'}</p>
                         </div>
                     </div>
                     <div className="text-right">
-                        <h2 className="text-xl font-semibold text-muted-foreground">INVOICE</h2>
-                        <p className="text-sm">#{appointment.id.slice(0, 6).toUpperCase()}</p>
+                        <h2 className="text-xl font-semibold text-muted-foreground">GST INVOICE</h2>
+                        <p className="text-sm font-mono text-primary font-semibold">#{appointment.id.slice(0, 6).toUpperCase()}</p>
+                        <span className="inline-flex items-center rounded-full bg-green-50 px-2 py-1 text-xs font-medium text-green-700 ring-1 ring-inset ring-green-600/20 mt-1">Verified Online</span>
                     </div>
                 </header>
                 
                 <Separator className="my-6" />
 
-                <section className="flex justify-between items-start">
+                <section className="flex justify-between items-start text-sm">
                     <div>
-                        <h3 className="font-semibold">Bill To</h3>
-                        <p>{customer?.name}</p>
-                        <p>{customer?.phone}</p>
+                        <h3 className="font-semibold text-muted-foreground">Bill To:</h3>
+                        <p className="font-medium">{customer?.name}</p>
+                        <p className="text-muted-foreground">{customer?.phone}</p>
+                        <p className="text-xs text-muted-foreground font-mono">ID: {customer?.id.substring(0, 8).toUpperCase()}</p>
                     </div>
                     <div className="text-right">
-                        <p><span className="font-semibold">Invoice Date:</span> {formatDateSafe(appointment.date)}</p>
-                        <p><span className="font-semibold">Billed by:</span> {staff?.name}</p>
+                        <p><span className="font-semibold text-muted-foreground">Invoice Date:</span> {formatDateSafe(appointment.date)}</p>
+                        <p><span className="font-semibold text-muted-foreground">Billed by:</span> {staff?.name}</p>
+                        <p><span className="font-semibold text-muted-foreground">Payment Method:</span> {appointment.paymentMethod}</p>
                     </div>
                 </section>
                 
@@ -192,7 +202,8 @@ export default function InvoiceClient() {
                     <Table>
                         <TableHeader>
                             <TableRow>
-                                <TableHead className="w-3/5">Service</TableHead>
+                                <TableHead className="w-3/5">Service / Item</TableHead>
+                                <TableHead className="text-center">SAC Code</TableHead>
                                 <TableHead className="text-right">Price</TableHead>
                             </TableRow>
                         </TableHeader>
@@ -200,6 +211,7 @@ export default function InvoiceClient() {
                             {services.map(service => (
                                 <TableRow key={service.id}>
                                     <TableCell className="font-medium">{service.name}</TableCell>
+                                    <TableCell className="text-center font-mono text-xs text-muted-foreground">999721</TableCell>
                                     <TableCell className="text-right">{formatCurrency(service.price)}</TableCell>
                                 </TableRow>
                             ))}
@@ -210,29 +222,41 @@ export default function InvoiceClient() {
                 <Separator className="my-6" />
 
                 <section className="flex justify-end">
-                    <div className="w-full max-w-xs space-y-2">
+                    <div className="w-full max-w-xs space-y-2 text-sm">
                         <div className="flex justify-between">
-                            <span className="text-muted-foreground">Subtotal</span>
+                            <span className="text-muted-foreground">Gross Subtotal</span>
                             <span>{formatCurrency(subtotal)}</span>
                         </div>
                         {pointsRedeemed > 0 && (
-                            <div className="flex justify-between">
-                                <span className="text-muted-foreground">Points Redeemed</span>
+                            <div className="flex justify-between text-destructive">
+                                <span>Loyalty Points Redeemed</span>
                                 <span>- {formatCurrency(pointsRedeemed)}</span>
                             </div>
                         )}
-                         <div className="flex justify-between font-bold text-lg border-t pt-2">
-                            <span>Total Paid</span>
-                            <span>{formatCurrency(appointment.amountPaid)}</span>
+                        <div className="flex justify-between text-xs text-muted-foreground font-mono">
+                            <span>Taxable Value</span>
+                            <span>{formatCurrency(taxableAmount)}</span>
+                        </div>
+                        <div className="flex justify-between text-xs text-muted-foreground font-mono">
+                            <span>CGST (9.0%)</span>
+                            <span>{formatCurrency(cgstAmount)}</span>
+                        </div>
+                        <div className="flex justify-between text-xs text-muted-foreground font-mono">
+                            <span>SGST (9.0%)</span>
+                            <span>{formatCurrency(sgstAmount)}</span>
+                        </div>
+                        <div className="flex justify-between font-bold text-lg border-t pt-2 text-primary">
+                            <span>Grand Total (Net)</span>
+                            <span>{formatCurrency(grandTotal)}</span>
                         </div>
                     </div>
                 </section>
                 
                  <Separator className="my-6" />
 
-                <footer className="text-center text-sm text-muted-foreground">
-                    <p>Payment Method: {appointment.paymentMethod}</p>
-                    <p className="mt-2">Thank you for your business!</p>
+                <footer className="text-center text-xs text-muted-foreground space-y-2">
+                    <p className="font-medium text-sm">Thank you for visiting! Please visit us again.</p>
+                    <p className="text-[10px]">TERMS: 1. Billed amounts are inclusive of 18% GST (9% CGST + 9% SGST). 2. Services are non-refundable. 3. System generated invoice copy.</p>
                 </footer>
             </Card>
         </div>

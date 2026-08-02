@@ -67,13 +67,14 @@ export function formatWhatsAppNumber(phoneNumber) {
 }
 
 /**
- * Sends a WhatsApp message using the Twilio WhatsApp API.
+ * Sends a WhatsApp message using the Twilio WhatsApp API, supporting optional media attachments.
  * 
  * @param {string} phoneNumber - The destination phone number (e.g., 9876543210)
  * @param {string} message - The text content of the message
+ * @param {string} [mediaUrl] - Optional URL to a media file (like a PDF) to attach
  * @returns {Promise<{success: boolean, messageSid?: string, error?: string}>} Responding status object
  */
-export async function sendWhatsAppMessage(phoneNumber, message) {
+export async function sendWhatsAppMessage(phoneNumber, message, mediaUrl = null) {
   // 1. Validate the inputs
   if (!phoneNumber || !message) {
     return { success: false, error: 'Phone number and message body are required.' };
@@ -99,14 +100,20 @@ export async function sendWhatsAppMessage(phoneNumber, message) {
       formattedFrom = `whatsapp:${formattedFrom.startsWith('+') ? '' : '+'}${formattedFrom}`;
     }
 
-    console.log(`[TwilioService] Sending WhatsApp message to ${formattedTo} from ${formattedFrom}...`);
+    console.log(`[TwilioService] Sending WhatsApp message to ${formattedTo} from ${formattedFrom} with media: ${mediaUrl || 'none'}...`);
 
-    // 4. Send the message via Twilio SDK
-    const response = await client.messages.create({
+    const messageParams = {
       body: message,
       to: formattedTo,
       from: formattedFrom,
-    });
+    };
+
+    if (mediaUrl) {
+      messageParams.mediaUrl = [mediaUrl];
+    }
+
+    // 4. Send the message via Twilio SDK
+    const response = await client.messages.create(messageParams);
 
     // 5. Log the Message SID
     console.log(`[TwilioService] Message sent successfully. SID: ${response.sid}`);
