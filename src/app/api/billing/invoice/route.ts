@@ -11,15 +11,22 @@ export const dynamic = 'force-dynamic';
 
 export async function GET() {
   const db = getAdminDb();
-  const salonId = 'n0U824dE1mPzDqgA8Z';
-  
-  let docs: string[] = [];
+  let salonsList: any[] = [];
   let errorMsg = null;
   
   try {
-    const colRef = db.collection(`salons/${salonId}/appointments`);
-    const snap = await colRef.get();
-    docs = snap.docs.map(doc => doc.id);
+    const snap = await db.collection('salons').get();
+    salonsList = snap.docs.map(doc => {
+      const data = doc.data();
+      return {
+        id: doc.id,
+        name: data.name,
+        twilioAccountSid: data.twilioAccountSid ? 'configured' : 'empty',
+        twilioAuthToken: data.twilioAuthToken ? 'configured' : 'empty',
+        twilioWhatsappNumber: data.twilioWhatsappNumber || 'empty',
+        automatedWhatsappEnabled: data.automatedWhatsappEnabled || false
+      };
+    });
   } catch (err: any) {
     errorMsg = err.message;
   }
@@ -28,8 +35,7 @@ export async function GET() {
     status: 'active', 
     message: 'SalonFlow Invoicing API is operational.',
     projectId: (db as any).projectId || 'unknown',
-    appointmentsCount: docs.length,
-    appointmentIds: docs,
+    salons: salonsList,
     error: errorMsg
   });
 }
