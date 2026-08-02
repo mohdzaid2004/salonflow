@@ -124,7 +124,7 @@ export async function POST(req: Request) {
 
     // 10. Centralized WhatsApp notification dispatch if requested
     let whatsappStatus: 'sent' | 'failed' = 'failed';
-    if (sendWhatsApp && salon.automatedWhatsappEnabled) {
+    if (sendWhatsApp) {
       const feedbackUrl = `${req.headers.get('origin') || `https://${req.headers.get('host')}`}/feedback/${salonId}_${appointmentId}`;
       const notifyResult = await sendWhatsAppInvoiceNotification({
         salonId,

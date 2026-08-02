@@ -267,11 +267,6 @@ We look forward to seeing you again!`;
         console.error('[Billing Checkout] Background invoicing pipeline fetch error:', err);
       });
 
-      // Trigger manual fallback if sendWhatsApp was selected but Twilio automated toggle is off
-      if (data.sendWhatsApp && !salon?.automatedWhatsappEnabled) {
-        sendWhatsAppMessage(newAppointment);
-      }
-
       setOpen(false);
     });
   }
