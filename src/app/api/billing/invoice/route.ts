@@ -132,7 +132,9 @@ export async function POST(req: Request) {
         grandTotal,
         pointsEarned,
         pdfUrl: downloadUrl,
-        feedbackUrl
+        feedbackUrl,
+        paymentMethod: appointment.paymentMethod,
+        currentPoints: customer.loyaltyPoints || 0
       });
 
       if (notifyResult.success) {
