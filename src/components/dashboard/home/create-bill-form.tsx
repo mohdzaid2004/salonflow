@@ -248,24 +248,25 @@ We look forward to seeing you again!`;
 
       onBillCreated(newAppointment);
 
-      // Trigger background PDF generation, Storage upload, metadata save, and WhatsApp notification dispatch
-      fetch('/api/billing/invoice', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          salonId,
-          appointmentId: docRef.id,
-          sendWhatsApp: data.sendWhatsApp
-        })
-      }).then(res => {
+      try {
+        // Await the backend invoicing pipeline to prevent browser from aborting the request on modal close
+        const res = await fetch('/api/billing/invoice', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            salonId,
+            appointmentId: docRef.id,
+            sendWhatsApp: data.sendWhatsApp
+          })
+        });
         if (!res.ok) {
-          console.error('[Billing Checkout] Background invoicing pipeline error:', res.statusText);
+          console.error('[Billing Checkout] Invoicing pipeline error:', res.statusText);
         }
-      }).catch(err => {
-        console.error('[Billing Checkout] Background invoicing pipeline fetch error:', err);
-      });
+      } catch (err) {
+        console.error('[Billing Checkout] Invoicing pipeline fetch error:', err);
+      }
 
       setOpen(false);
     });
