@@ -35,6 +35,8 @@ export async function GET() {
     status: 'active', 
     message: 'SalonFlow Invoicing API is operational.',
     projectId: (db as any).projectId || 'unknown',
+    twilioAccountSidPrefix: process.env.TWILIO_ACCOUNT_SID ? process.env.TWILIO_ACCOUNT_SID.slice(0, 10) + '...' : 'undefined',
+    twilioWhatsappNumber: process.env.TWILIO_WHATSAPP_NUMBER || 'undefined',
     salons: salonsList,
     error: errorMsg
   });
