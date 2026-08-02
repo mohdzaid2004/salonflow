@@ -7,6 +7,10 @@ import { sendWhatsAppInvoiceNotification } from '@/services/billing/invoiceNotif
 import { FieldPath } from 'firebase-admin/firestore';
 import type { Appointment, Salon, Customer, Staff, Service } from '@/lib/data';
 
+export async function GET() {
+  return NextResponse.json({ status: 'active', message: 'SalonFlow Invoicing API is operational.' });
+}
+
 /**
  * Enterprise Invoicing Pipeline API.
  * POST /api/billing/invoice
