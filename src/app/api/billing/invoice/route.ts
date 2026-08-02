@@ -9,10 +9,32 @@ import type { Appointment, Salon, Customer, Staff, Service } from '@/lib/data';
 
 export async function GET() {
   const db = getAdminDb();
+  const salonId = 'n0U824dE1mPzDqgA8Z';
+  const appointmentId = 'T8kU94dE1mPzDqgA2Y';
+  
+  let exists = false;
+  let docData = null;
+  let errorMsg = null;
+  
+  try {
+    const apptRef = db.doc(`salons/${salonId}/appointments/${appointmentId}`);
+    const apptSnap = await apptRef.get();
+    exists = apptSnap.exists;
+    if (exists) {
+      docData = apptSnap.data();
+    }
+  } catch (err: any) {
+    errorMsg = err.message;
+  }
+
   return NextResponse.json({ 
     status: 'active', 
     message: 'SalonFlow Invoicing API is operational.',
-    projectId: db.projectId || 'unknown'
+    projectId: db.projectId || 'unknown',
+    docPath: `salons/${salonId}/appointments/${appointmentId}`,
+    docExists: exists,
+    docData,
+    error: errorMsg
   });
 }
 
