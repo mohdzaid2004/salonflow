@@ -38,16 +38,40 @@ export async function generateInvoicePDF(details: InvoiceDetails): Promise<Buffe
   doc.setFillColor(primaryColor[0], primaryColor[1], primaryColor[2]);
   doc.rect(0, 0, pageWidth, 40, 'F');
 
+  // Draw Logo (scissors/comb SVG approximation in white)
+  const logoX = 15;
+  const logoY = 12;
+  const scale = 0.5; // Scale down 24x24 to 12mm x 12mm
+  
+  doc.setDrawColor(255, 255, 255); // White logo lines
+  doc.setLineWidth(0.5);
+  
+  // Draw the SVG paths from components/logo.tsx
+  doc.line(3 * scale + logoX, 12 * scale + logoY, 9 * scale + logoX, 18 * scale + logoY);
+  doc.line(3 * scale + logoX, 6 * scale + logoY, 9 * scale + logoX, 12 * scale + logoY);
+  doc.line(12 * scale + logoX, 3 * scale + logoY, 12 * scale + logoX, 21 * scale + logoY);
+  
+  // Loops approximation for handles
+  doc.line(13.5 * scale + logoX, 5.5 * scale + logoY, 13.5 * scale + logoX, 2 * scale + logoY);
+  doc.line(13.5 * scale + logoX, 2 * scale + logoY, 18.5 * scale + logoX, 2 * scale + logoY);
+  doc.line(18.5 * scale + logoX, 2 * scale + logoY, 18.5 * scale + logoX, 5.5 * scale + logoY);
+  doc.line(18.5 * scale + logoX, 5.5 * scale + logoY, 15.5 * scale + logoX, 5.5 * scale + logoY);
+  
+  doc.line(16 * scale + logoX, 11.5 * scale + logoY, 16 * scale + logoX, 8 * scale + logoY);
+  doc.line(16 * scale + logoX, 8 * scale + logoY, 21 * scale + logoX, 8 * scale + logoY);
+  doc.line(21 * scale + logoX, 8 * scale + logoY, 21 * scale + logoX, 11.5 * scale + logoY);
+  doc.line(21 * scale + logoX, 11.5 * scale + logoY, 18 * scale + logoX, 11.5 * scale + logoY);
+
   doc.setTextColor(255, 255, 255);
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(22);
-  doc.text(salon.name || 'Royal Salon', 15, 18);
+  doc.text(salon.name || 'Royal Salon', 30, 18);
 
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(9);
-  doc.text(salon.address || 'Salon Complete Address', 15, 25);
-  doc.text(`Phone: ${salon.phone || 'N/A'} | Email: support@salonflow.in`, 15, 30);
-  doc.text(`GSTIN: ${salon.id.slice(0, 15).toUpperCase()}IND`, 15, 35); // Dynamic dummy GSTIN for compliance mockup
+  doc.text(salon.address || 'Salon Complete Address', 30, 25);
+  doc.text(`Phone: ${salon.phone || 'N/A'} | Email: support@salonflow.in`, 30, 30);
+  doc.text(`GSTIN: ${salon.id.slice(0, 15).toUpperCase()}IND`, 30, 35); // Dynamic dummy GSTIN for compliance mockup
 
   // Invoice Label
   doc.setFont('helvetica', 'bold');

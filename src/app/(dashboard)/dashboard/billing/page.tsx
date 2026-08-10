@@ -148,7 +148,7 @@ export default function BillingPage() {
     window.open(`/invoice/${invoiceId}`, '_blank');
   };
 
-  const handleGenerateInvoice = async (appointment: Appointment, quiet = false) => {
+  const handleGenerateInvoice = async (appointment: Appointment, quiet = false, forceRegenerate = false) => {
     if (!salonId) return;
     if (!quiet) {
       toast({
@@ -163,7 +163,8 @@ export default function BillingPage() {
         body: JSON.stringify({
           salonId,
           appointmentId: appointment.id,
-          sendWhatsApp: false
+          sendWhatsApp: false,
+          forceRegenerate
         })
       });
       const resData = await response.json();
@@ -472,7 +473,7 @@ export default function BillingPage() {
                                   <MessageCircle className="mr-2 h-4 w-4" />
                                   Resend WhatsApp PDF
                               </DropdownMenuItem>
-                              <DropdownMenuItem onSelect={() => handleGenerateInvoice(appt)}>
+                              <DropdownMenuItem onSelect={() => handleGenerateInvoice(appt, false, true)}>
                                   <RefreshCw className="mr-2 h-4 w-4" />
                                   Regenerate Invoice
                               </DropdownMenuItem>

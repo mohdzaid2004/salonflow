@@ -50,7 +50,7 @@ export async function GET() {
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    const { salonId, appointmentId, sendWhatsApp } = body;
+    const { salonId, appointmentId, sendWhatsApp, forceRegenerate } = body;
 
     if (!salonId || !appointmentId) {
       return NextResponse.json(
@@ -81,7 +81,7 @@ export async function POST(req: Request) {
     // 2. Check if invoice already exists to prevent duplicate generation
     const existingInvoiceRef = db.doc(`salons/${salonId}/invoices/${appointmentId}`);
     const existingSnap = await existingInvoiceRef.get();
-    if (existingSnap.exists) {
+    if (existingSnap.exists && !forceRegenerate) {
       const data = existingSnap.data();
       return NextResponse.json({ 
         success: true, 
