@@ -54,6 +54,15 @@ const loyaltySchema = z.object({
 
 type LoyaltyFormValues = z.infer<typeof loyaltySchema>;
 
+const whatsappSchema = z.object({
+  automatedWhatsappEnabled: z.boolean(),
+  twilioAccountSid: z.string().trim(),
+  twilioAuthToken: z.string().trim(),
+  twilioWhatsappNumber: z.string().trim(),
+});
+
+type WhatsAppFormValues = z.infer<typeof whatsappSchema>;
+
 export default function SettingsPage({}) {
   const { user } = useUser();
   const auth = useAuth();
@@ -79,6 +88,40 @@ export default function SettingsPage({}) {
       loyaltyPointsRatio: salon?.loyaltyPointsRatio || 5, // Default to 5%
     }
   });
+
+  const whatsappForm = useForm<WhatsAppFormValues>({
+    resolver: zodResolver(whatsappSchema),
+    values: {
+      automatedWhatsappEnabled: salon?.automatedWhatsappEnabled || false,
+      twilioAccountSid: salon?.twilioAccountSid || '',
+      twilioAuthToken: salon?.twilioAuthToken || '',
+      twilioWhatsappNumber: salon?.twilioWhatsappNumber || '',
+    }
+  });
+
+  const handleWhatsAppSubmit = (data: WhatsAppFormValues) => {
+    if (!salonDocRef) return;
+    startTransition(async () => {
+      try {
+        await updateDoc(salonDocRef, {
+          automatedWhatsappEnabled: data.automatedWhatsappEnabled,
+          twilioAccountSid: data.twilioAccountSid,
+          twilioAuthToken: data.twilioAuthToken,
+          twilioWhatsappNumber: data.twilioWhatsappNumber,
+        });
+        toast({
+          title: 'WhatsApp settings updated',
+          description: 'Your Twilio configuration has been saved successfully.',
+        });
+      } catch (error) {
+        toast({
+          variant: 'destructive',
+          title: 'Error',
+          description: 'Failed to update WhatsApp settings.',
+        });
+      }
+    });
+  };
 
   const handleToggleFeature = (feature: 'appointmentsEnabled' | 'loyaltyProgramEnabled' | 'automatedWhatsappEnabled', enabled: boolean) => {
     if (!salonDocRef) return;
@@ -345,6 +388,98 @@ export default function SettingsPage({}) {
           </CardContent>
         </Card>
       )}
+
+      <Card>
+        <CardHeader>
+          <CardTitle>WhatsApp & Invoicing Automation</CardTitle>
+          <CardDescription>
+            Configure your Twilio WhatsApp Business API credentials to automatically send PDF invoices and feedback forms.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {isLoading ? (
+            <Skeleton className="h-48 w-full" />
+          ) : (
+            <form onSubmit={whatsappForm.handleSubmit(handleWhatsAppSubmit)} className="space-y-4">
+              <div className="flex items-center space-x-2 pb-2">
+                <Controller
+                  name="automatedWhatsappEnabled"
+                  control={whatsappForm.control}
+                  render={({ field }) => (
+                    <Switch
+                      id="automated-whatsapp-toggle"
+                      checked={field.value}
+                      onCheckedChange={field.onChange}
+                      disabled={isPending}
+                    />
+                  )}
+                />
+                <Label htmlFor="automated-whatsapp-toggle">
+                  Enable Automated WhatsApp Invoice Dispatch
+                </Label>
+              </div>
+              <Separator />
+              <div className="grid gap-4 md:grid-cols-2">
+                <div className="space-y-2">
+                  <Label htmlFor="twilio-sid">Twilio Account SID</Label>
+                  <Controller
+                    name="twilioAccountSid"
+                    control={whatsappForm.control}
+                    render={({ field }) => (
+                      <Input
+                        id="twilio-sid"
+                        placeholder="ACxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+                        {...field}
+                        disabled={isPending}
+                      />
+                    )}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="twilio-token">Twilio Auth Token</Label>
+                  <Controller
+                    name="twilioAuthToken"
+                    control={whatsappForm.control}
+                    render={({ field }) => (
+                      <Input
+                        id="twilio-token"
+                        type="password"
+                        placeholder="your_auth_token"
+                        {...field}
+                        disabled={isPending}
+                      />
+                    )}
+                  />
+                </div>
+                <div className="space-y-2 md:col-span-2">
+                  <Label htmlFor="twilio-phone">Twilio WhatsApp Number</Label>
+                  <Controller
+                    name="twilioWhatsappNumber"
+                    control={whatsappForm.control}
+                    render={({ field }) => (
+                      <Input
+                        id="twilio-phone"
+                        placeholder="whatsapp:+14155238886"
+                        {...field}
+                        disabled={isPending}
+                      />
+                    )}
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Must start with 'whatsapp:' prefix, e.g. whatsapp:+14155238886 (your Twilio Sandbox or approved number).
+                  </p>
+                </div>
+              </div>
+              <div className="flex justify-end pt-2">
+                <Button type="submit" disabled={isPending}>
+                  {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  Save WhatsApp Settings
+                </Button>
+              </div>
+            </form>
+          )}
+        </CardContent>
+      </Card>
 
       <Card className="border-destructive">
         <CardHeader>

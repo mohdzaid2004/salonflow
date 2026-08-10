@@ -14,6 +14,9 @@ export type Salon = {
   trialEndsAt?: unknown; // Firebase Timestamp
   subscriptionPlanId?: string;
   automatedWhatsappEnabled?: boolean;
+  twilioAccountSid?: string;
+  twilioAuthToken?: string;
+  twilioWhatsappNumber?: string;
 };
 
 export type Service = {
