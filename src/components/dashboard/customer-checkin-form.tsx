@@ -1,6 +1,6 @@
 'use client';
 
-import { useTransition, useMemo } from 'react';
+import { useTransition, useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -21,7 +21,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
-import { Loader2 } from 'lucide-react';
+import { Loader2, CheckCircle, MessageCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import {
   useFirestore,
@@ -54,6 +54,7 @@ const checkinFormSchema = z.object({
   serviceIds: z.array(z.string()).min(1, 'At least one service is required.'),
   staffId: z.string().min(1, 'Please select a staff member.'),
   date: z.date({ required_error: 'Please select a date and time.' }),
+  sendWhatsApp: z.boolean(),
 });
 
 type CheckinFormValues = z.infer<typeof checkinFormSchema>;
@@ -73,6 +74,9 @@ export function CustomerCheckinForm({
   const { user } = useUser();
   const salonId = user?.uid;
 
+  const [isSuccess, setIsSuccess] = useState(false);
+  const [successData, setSuccessData] = useState<{ appointment: any; serviceNames: string } | null>(null);
+
   const salonDocRef = useMemo(() => {
     if (!firestore || !salonId) return null;
     return doc(firestore, 'salons', salonId);
@@ -88,8 +92,31 @@ export function CustomerCheckinForm({
       serviceIds: [],
       staffId: '',
       date: new Date(),
+      sendWhatsApp: true,
     },
   });
+
+  const sendWhatsAppCheckinMessage = (appointment: any, serviceNames: string) => {
+    if (!salonId) return;
+
+    const apptDate = appointment.date && appointment.date.toDate ? appointment.date.toDate() : new Date(appointment.date);
+    const appointmentDateStr = format(apptDate, "dd-MM-yyyy");
+    const appointmentTimeStr = format(apptDate, "hh:mm a");
+
+    const isToday = format(apptDate, "yyyy-MM-dd") === format(new Date(), "yyyy-MM-dd");
+
+    let whatsappMessage = '';
+    if (isToday) {
+      whatsappMessage = `Hi ${appointment.customerName}\n\n✅ Your check-in has been confirmed.\n\nPlease wait while our staff prepares for your appointment.`;
+    } else {
+      whatsappMessage = `Hi ${appointment.customerName} 👋\n\nYour appointment has been confirmed.\n\n📅 Date: ${appointmentDateStr}\n🕒 Time: ${appointmentTimeStr}\n💇 Service: ${serviceNames}\n\nThank you for choosing Salon Flow ❤️`;
+    }
+
+    const phone = `91${appointment.customerPhone}`;
+    const encodedMessage = encodeURIComponent(whatsappMessage);
+    const whatsappUrl = `https://api.whatsapp.com/send?phone=${phone}&text=${encodedMessage}`;
+    window.open(whatsappUrl, '_blank');
+  };
 
   async function onSubmit(data: CheckinFormValues) {
     startTransition(async () => {
@@ -116,44 +143,36 @@ export function CustomerCheckinForm({
       }
       
       const appointmentData = {
-        ...data,
+        customerName: data.customerName,
+        customerPhone: data.customerPhone,
+        serviceIds: data.serviceIds,
+        staffId: data.staffId,
         date: Timestamp.fromDate(data.date),
         salonId,
         customerId,
-        status: 'booked',
+        status: 'booked' as const,
       };
       
       const appointmentsRef = collection(firestore, `salons/${salonId}/appointments`);
-      addDocumentNonBlocking(appointmentsRef, appointmentData);
+      const docRef = await addDocumentNonBlocking(appointmentsRef, appointmentData);
+
+      const serviceNames = data.serviceIds
+        .map(id => services.find(s => s.id === id)?.name)
+        .filter(Boolean)
+        .join(', ');
 
       // Trigger Twilio WhatsApp notification automatically if enabled in settings
-      if (salon?.automatedWhatsappEnabled) {
+      if (data.sendWhatsApp && salon?.automatedWhatsappEnabled) {
         const appointmentDateStr = format(data.date, "dd-MM-yyyy");
         const appointmentTimeStr = format(data.date, "hh:mm a");
-        const serviceNames = data.serviceIds
-          .map(id => services.find(s => s.id === id)?.name)
-          .filter(Boolean)
-          .join(', ');
 
         const isToday = format(data.date, "yyyy-MM-dd") === format(new Date(), "yyyy-MM-dd");
 
         let whatsappMessage = '';
         if (isToday) {
-          whatsappMessage = `Hi ${data.customerName}
-
-✅ Your check-in has been confirmed.
-
-Please wait while our staff prepares for your appointment.`;
+          whatsappMessage = `Hi ${data.customerName}\n\n✅ Your check-in has been confirmed.\n\nPlease wait while our staff prepares for your appointment.`;
         } else {
-          whatsappMessage = `Hi ${data.customerName} 👋
-
-Your appointment has been confirmed.
-
-📅 Date: ${appointmentDateStr}
-🕒 Time: ${appointmentTimeStr}
-💇 Service: ${serviceNames}
-
-Thank you for choosing Salon Flow ❤️`;
+          whatsappMessage = `Hi ${data.customerName} 👋\n\nYour appointment has been confirmed.\n\n📅 Date: ${appointmentDateStr}\n🕒 Time: ${appointmentTimeStr}\n💇 Service: ${serviceNames}\n\nThank you for choosing Salon Flow ❤️`;
         }
 
         const phone = `91${data.customerPhone}`;
@@ -177,8 +196,62 @@ Thank you for choosing Salon Flow ❤️`;
         title: 'Success!',
         description: `Appointment for ${data.customerName} has been booked.`,
       });
-      setOpen(false);
+
+      setSuccessData({
+        appointment: {
+          id: docRef.id,
+          ...appointmentData
+        },
+        serviceNames
+      });
+      setIsSuccess(true);
     });
+  }
+
+  if (isSuccess && successData) {
+    const { appointment, serviceNames } = successData;
+    return (
+      <div className="flex flex-col items-center justify-center space-y-4 py-6 text-center">
+        <CheckCircle className="h-16 w-16 text-green-500" />
+        <div>
+          <h3 className="text-xl font-semibold font-headline">Check-in Confirmed!</h3>
+          <p className="text-sm text-muted-foreground mt-1">For {appointment.customerName}</p>
+        </div>
+
+        <div className="w-full bg-accent/50 rounded-lg p-4 space-y-2 text-sm">
+          <div className="flex justify-between">
+            <span className="text-muted-foreground">Phone:</span>
+            <span className="font-medium font-mono">+91 {appointment.customerPhone}</span>
+          </div>
+          <div className="flex justify-between flex-col items-start gap-1">
+            <span className="text-muted-foreground">Services:</span>
+            <span className="font-medium text-left">{serviceNames}</span>
+          </div>
+        </div>
+
+        <div className="w-full space-y-2 pt-2">
+          {form.getValues('sendWhatsApp') && !salon?.automatedWhatsappEnabled && (
+            <Button
+              onClick={() => sendWhatsAppCheckinMessage(appointment, serviceNames)}
+              className="w-full bg-green-600 hover:bg-green-700 text-white flex items-center justify-center gap-2"
+            >
+              <MessageCircle className="h-4 w-4" />
+              Open WhatsApp to Share
+            </Button>
+          )}
+          
+          <Button 
+            variant="outline" 
+            onClick={() => {
+              setOpen(false);
+            }} 
+            className="w-full"
+          >
+            Close
+          </Button>
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -318,6 +391,23 @@ Thank you for choosing Salon Flow ❤️`;
                 <FormMessage />
                 </FormItem>
             )}
+        />
+        <FormField
+          control={form.control}
+          name="sendWhatsApp"
+          render={({ field }) => (
+            <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
+              <div className="space-y-0.5">
+                <FormLabel>Send WhatsApp Notification</FormLabel>
+              </div>
+              <FormControl>
+                <Checkbox
+                  checked={field.value}
+                  onCheckedChange={field.onChange}
+                />
+              </FormControl>
+            </FormItem>
+          )}
         />
         <Button type="submit" className="w-full" disabled={isPending}>
           {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}

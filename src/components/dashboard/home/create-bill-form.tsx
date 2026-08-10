@@ -22,7 +22,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
-import { Loader2, Star, ChevronsUpDown, X } from 'lucide-react';
+import { Loader2, Star, ChevronsUpDown, X, CheckCircle, MessageCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import {
   useFirestore,
@@ -70,6 +70,9 @@ export function CreateBillForm({
   const firestore = useFirestore();
   const { user } = useUser();
   const salonId = user?.uid;
+
+  const [isSuccess, setIsSuccess] = useState(false);
+  const [successData, setSuccessData] = useState<{ appointment: Appointment, invoiceNumber: string, invoiceUrl: string } | null>(null);
 
   const customerPoints = customer.loyaltyPoints || 0;
   const loyaltyEnabled = salon?.loyaltyProgramEnabled;
@@ -275,13 +278,63 @@ export function CreateBillForm({
         console.error('[Billing Checkout] Invoicing pipeline fetch error:', err);
       }
 
-      // Trigger manual fallback if sendWhatsApp was selected but Twilio automated toggle is off
-      if (data.sendWhatsApp && !salon?.automatedWhatsappEnabled) {
-        sendWhatsAppMessage(newAppointment, invoiceNumber, invoiceUrl);
-      }
-
-      setOpen(false);
+      setSuccessData({
+        appointment: newAppointment,
+        invoiceNumber,
+        invoiceUrl
+      });
+      setIsSuccess(true);
     });
+  }
+
+  if (isSuccess && successData) {
+    const { appointment, invoiceNumber, invoiceUrl } = successData;
+    return (
+      <div className="flex flex-col items-center justify-center space-y-4 py-6 text-center">
+        <CheckCircle className="h-16 w-16 text-green-500" />
+        <div>
+          <h3 className="text-xl font-semibold font-headline">Payment Recorded Successfully!</h3>
+          <p className="text-sm text-muted-foreground mt-1">Invoice No: {invoiceNumber}</p>
+        </div>
+
+        <div className="w-full bg-accent/50 rounded-lg p-4 space-y-2 text-sm">
+          <div className="flex justify-between">
+            <span className="text-muted-foreground">Customer:</span>
+            <span className="font-medium">{appointment.customerName}</span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-muted-foreground">Amount Paid:</span>
+            <span className="font-medium">₹{appointment.amountPaid}</span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-muted-foreground">Payment Method:</span>
+            <span className="font-medium">{appointment.paymentMethod}</span>
+          </div>
+        </div>
+
+        <div className="w-full space-y-2 pt-2">
+          {form.getValues('sendWhatsApp') && (
+            <Button
+              onClick={() => sendWhatsAppMessage(appointment, invoiceNumber, invoiceUrl)}
+              className="w-full bg-green-600 hover:bg-green-700 text-white flex items-center justify-center gap-2"
+            >
+              <MessageCircle className="h-4 w-4" />
+              Open WhatsApp to Share
+            </Button>
+          )}
+          
+          <Button 
+            variant="outline" 
+            onClick={() => {
+              setOpen(false);
+            }} 
+            className="w-full"
+          >
+            Close
+          </Button>
+        </div>
+      </div>
+    );
   }
 
   return (
