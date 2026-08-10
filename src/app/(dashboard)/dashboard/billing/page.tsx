@@ -39,10 +39,11 @@ import {
   DropdownMenuSeparator,
 } from '@/components/ui/dropdown-menu';
 import { collection, query, where, Timestamp, doc, deleteDoc } from 'firebase/firestore';
-import type { Appointment, Staff, Salon } from '@/lib/data';
+import type { Appointment, Staff, Salon, Service } from '@/lib/data';
 import { Skeleton } from '@/components/ui/skeleton';
 import { format } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
+import { ToastAction } from '@/components/ui/toast';
 import * as XLSX from 'xlsx';
 
 export default function BillingPage() {
@@ -75,9 +76,15 @@ export default function BillingPage() {
     return doc(firestore, 'salons', salonId);
   }, [firestore, salonId]);
 
+  const servicesQuery = useMemo(() => {
+    if (!firestore || !salonId) return null;
+    return query(collection(firestore, `salons/${salonId}/services`));
+  }, [firestore, salonId]);
+
   const { data: appointments, isLoading: isLoadingAppointments } = useCollection<Appointment>(appointmentsQuery);
   const { data: staff, isLoading: isLoadingStaff } = useCollection<Staff>(staffQuery);
   const { data: invoices, isLoading: isLoadingInvoices } = useCollection<any>(invoicesQuery);
+  const { data: services } = useCollection<Service>(servicesQuery);
   const { data: salon } = useDoc<Salon>(salonDocRef);
   
   const isLoading = isLoadingAppointments || isLoadingStaff || isLoadingInvoices;
@@ -186,7 +193,7 @@ export default function BillingPage() {
     if (!salonId) return;
     
     // Check if invoice exists, if not generate it first
-    const existing = invoiceMap.get(appointment.id);
+    let existing = invoiceMap.get(appointment.id);
     if (!existing) {
       toast({
         title: 'Compiling Invoice first...',
@@ -194,6 +201,7 @@ export default function BillingPage() {
       });
       const generatedUrl = await handleGenerateInvoice(appointment, true);
       if (!generatedUrl) return;
+      existing = invoiceMap.get(appointment.id);
     }
 
     toast({
@@ -214,10 +222,73 @@ export default function BillingPage() {
       const resData = await response.json();
 
       if (response.ok && resData.success) {
-        toast({
-          title: 'Notification Sent',
-          description: `WhatsApp invoice successfully delivered to ${appointment.customerName}!`,
-        });
+        if (!salon?.automatedWhatsappEnabled) {
+          const invoiceNumber = resData.invoiceNumber || existing?.invoiceNumber || `INV-${appointment.id.slice(-6).toUpperCase()}`;
+          const invoiceUrl = resData.invoiceUrl || existing?.invoiceUrl || '';
+          
+          const selectedServices = (appointment.serviceIds || []).map(id => {
+            const s = services?.find(srv => srv.id === id);
+            return s ? `- ${s.name}: ₹${s.price}` : null;
+          }).filter(Boolean);
+          const serviceList = selectedServices.length > 0 ? selectedServices.join('\n') : '- Service(s)';
+
+          const paymentDate = format(appointment.date instanceof Timestamp ? appointment.date.toDate() : new Date(appointment.date as any), 'dd-MM-yyyy');
+          const paymentTime = format(appointment.date instanceof Timestamp ? appointment.date.toDate() : new Date(appointment.date as any), 'hh:mm a');
+
+          const feedbackId = `${salonId}_${appointment.id}`;
+          const feedbackLink = `${window.location.origin}/feedback/${feedbackId}`;
+
+          const message = `💇 Thank You for Visiting ${salon?.name || 'our salon'}!\n\n` +
+            `Hi ${appointment.customerName},\n\n` +
+            `Your payment has been received successfully. 🎉\n\n` +
+            `━━━━━━━━━━━━━━━━━━\n` +
+            `🧾 Invoice Details\n` +
+            `━━━━━━━━━━━━━━━━━━\n` +
+            `Invoice No : ${invoiceNumber}\n` +
+            `Date       : ${paymentDate}\n` +
+            `Time       : ${paymentTime}\n\n` +
+            `💇 Service(s):\n` +
+            `${serviceList}\n\n` +
+            `💰 Total Amount : ₹${appointment.amountPaid}\n` +
+            `💳 Payment Mode : ${appointment.paymentMethod}\n\n` +
+            `📎 Your PDF Invoice is attached to this message.\n` +
+            `${invoiceUrl ? `👉 View / Download PDF: ${invoiceUrl}\n` : ''}\n` +
+            `━━━━━━━━━━━━━━━━━━\n` +
+            `⭐ Rate Your Experience\n` +
+            `━━━━━━━━━━━━━━━━━━\n\n` +
+            `We hope you loved your visit!\n\n` +
+            `Please take 30 seconds to rate your experience.\n\n` +
+            `⭐⭐⭐⭐⭐\n\n` +
+            `👉 ${feedbackLink}\n\n` +
+            `━━━━━━━━━━━━━━━━━━\n\n` +
+            `Thank you for choosing ${salon?.name || 'our salon'} ❤️\n\n` +
+            `📍 ${salon?.address || ''}\n` +
+            `📞 ${salon?.phone || ''}`;
+
+          const phone = `91${appointment.customerPhone}`;
+          const encodedMessage = encodeURIComponent(message);
+          const whatsappUrl = `https://api.whatsapp.com/send?phone=${phone}&text=${encodedMessage}`;
+
+          toast({
+            title: 'Invoice Compiled Successfully',
+            description: 'Automated Twilio WhatsApp is disabled. Click "Share" to send via WhatsApp Web/App.',
+            action: (
+              <ToastAction 
+                altText="Share" 
+                onClick={() => {
+                  window.open(whatsappUrl, '_blank');
+                }}
+              >
+                Share
+              </ToastAction>
+            ),
+          });
+        } else {
+          toast({
+            title: 'Notification Sent',
+            description: `WhatsApp invoice successfully delivered to ${appointment.customerName}!`,
+          });
+        }
       } else {
         throw new Error(resData.error || 'Failed to dispatch via Twilio API');
       }
