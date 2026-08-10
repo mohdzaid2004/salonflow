@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useCollection, useFirestore, useUser, useDoc } from '@/firebase';
 import {
   Table,
@@ -54,6 +54,11 @@ export default function BillingPage() {
 
   const [customerSearch, setCustomerSearch] = useState('');
   const [staffSearch, setStaffSearch] = useState('');
+  const [isMounted, setIsMounted] = useState(false);
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   // 1. Fetch data from firestore
   const appointmentsQuery = useMemo(() => {
@@ -135,23 +140,24 @@ export default function BillingPage() {
   };
   
   const formatDate = (date: any) => {
-    if (!date) return 'N/A';
-    if (date instanceof Timestamp) {
-      return format(date.toDate(), 'PP, p');
-    }
-    if (typeof date.toDate === 'function') {
-      return format(date.toDate(), 'PP, p');
-    }
-    if (date.seconds !== undefined) {
-      return format(new Date(date.seconds * 1000), 'PP, p');
-    }
+    if (!isMounted) return '...';
     try {
-      const d = new Date(date);
-      if (!isNaN(d.getTime())) {
+      if (!date) return 'N/A';
+      let d: Date | null = null;
+      if (date instanceof Timestamp) {
+        d = date.toDate();
+      } else if (typeof date.toDate === 'function') {
+        d = date.toDate();
+      } else if (date.seconds !== undefined) {
+        d = new Date(Number(date.seconds) * 1000);
+      } else {
+        d = new Date(date);
+      }
+      if (d && !isNaN(d.getTime())) {
         return format(d, 'PP, p');
       }
     } catch (e) {
-      // ignore
+      console.error("formatDate error:", e);
     }
     return 'N/A';
   };
