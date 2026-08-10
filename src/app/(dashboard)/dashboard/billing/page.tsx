@@ -101,14 +101,26 @@ export default function BillingPage() {
   
   const filteredAppointments = useMemo(() => {
     if (!appointments) return [];
+    
+    const getTimestampMillis = (date: any) => {
+      if (!date) return 0;
+      if (date instanceof Timestamp) return date.toMillis();
+      if (typeof date.toMillis === 'function') return date.toMillis();
+      if (typeof date.toDate === 'function') return date.toDate().getTime();
+      if (date.seconds !== undefined) return date.seconds * 1000;
+      const d = new Date(date);
+      return isNaN(d.getTime()) ? 0 : d.getTime();
+    };
+
     return appointments.filter(appt => {
-        const customerMatch = customerSearch ? appt.customerName.toLowerCase().includes(customerSearch.toLowerCase()) : true;
+        const customerName = appt.customerName || '';
+        const customerMatch = customerSearch ? customerName.toLowerCase().includes(customerSearch.toLowerCase()) : true;
         const staffName = staffMap.get(appt.staffId)?.toLowerCase() || '';
         const staffMatch = staffSearch ? staffName.includes(staffSearch.toLowerCase()) : true;
         return customerMatch && staffMatch;
     }).sort((a, b) => {
-      const aTime = a.date instanceof Timestamp ? a.date.toMillis() : (a.date ? new Date(a.date as any).getTime() : 0);
-      const bTime = b.date instanceof Timestamp ? b.date.toMillis() : (b.date ? new Date(b.date as any).getTime() : 0);
+      const aTime = getTimestampMillis(a.date);
+      const bTime = getTimestampMillis(b.date);
       return bTime - aTime;
     });
   }, [appointments, customerSearch, staffSearch, staffMap]);
@@ -122,13 +134,19 @@ export default function BillingPage() {
     return <>&#8377;{formattedAmount}</>;
   };
   
-  const formatDate = (date: unknown) => {
-    if (!date) return '';
+  const formatDate = (date: any) => {
+    if (!date) return 'N/A';
     if (date instanceof Timestamp) {
       return format(date.toDate(), 'PP, p');
     }
+    if (typeof date.toDate === 'function') {
+      return format(date.toDate(), 'PP, p');
+    }
+    if (date.seconds !== undefined) {
+      return format(new Date(date.seconds * 1000), 'PP, p');
+    }
     try {
-      const d = new Date(date as any);
+      const d = new Date(date);
       if (!isNaN(d.getTime())) {
         return format(d, 'PP, p');
       }
@@ -339,11 +357,24 @@ export default function BillingPage() {
     
     const excelData = filteredAppointments.map(appt => {
       const invoice = invoiceMap.get(appt.id);
+      let dateStr = 'N/A';
+      if (appt.date) {
+        if (appt.date instanceof Timestamp) {
+          dateStr = format(appt.date.toDate(), 'dd-MM-yyyy hh:mm a');
+        } else if ((appt.date as any).seconds !== undefined) {
+          dateStr = format(new Date((appt.date as any).seconds * 1000), 'dd-MM-yyyy hh:mm a');
+        } else {
+          const d = new Date(appt.date as any);
+          if (!isNaN(d.getTime())) {
+            dateStr = format(d, 'dd-MM-yyyy hh:mm a');
+          }
+        }
+      }
       return {
         'Invoice Number': invoice?.invoiceNumber || `INV-${appt.id.slice(0,6).toUpperCase()}`,
-        'Date': appt.date instanceof Timestamp ? format(appt.date.toDate(), 'dd-MM-yyyy hh:mm a') : (appt.date ? format(new Date(appt.date as any), 'dd-MM-yyyy hh:mm a') : ''),
-        'Customer Name': appt.customerName,
-        'Customer Phone': appt.customerPhone,
+        'Date': dateStr,
+        'Customer Name': appt.customerName || 'N/A',
+        'Customer Phone': appt.customerPhone || 'N/A',
         'Served By Staff': staffMap.get(appt.staffId) || 'N/A',
         'Gross Amount': appt.subtotal,
         'Points Redeemed': appt.pointsRedeemed || 0,
