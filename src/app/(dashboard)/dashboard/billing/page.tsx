@@ -48,7 +48,7 @@ import * as XLSX from 'xlsx';
 
 export default function BillingPage() {
   const firestore = useFirestore();
-  const { user } = useUser();
+  const { user, isUserLoading } = useUser();
   const { toast } = useToast();
   const salonId = user?.uid;
 
@@ -62,29 +62,29 @@ export default function BillingPage() {
 
   // 1. Fetch data from firestore
   const appointmentsQuery = useMemo(() => {
-    if (!firestore || !salonId) return null;
+    if (!firestore || !salonId || isUserLoading) return null;
     return query(collection(firestore, `salons/${salonId}/appointments`), where('status', '==', 'completed'));
-  }, [firestore, salonId]);
+  }, [firestore, salonId, isUserLoading]);
   
   const staffQuery = useMemo(() => {
-    if (!firestore || !salonId) return null;
+    if (!firestore || !salonId || isUserLoading) return null;
     return query(collection(firestore, `salons/${salonId}/staff`));
-  }, [firestore, salonId]);
+  }, [firestore, salonId, isUserLoading]);
 
   const invoicesQuery = useMemo(() => {
-    if (!firestore || !salonId) return null;
+    if (!firestore || !salonId || isUserLoading) return null;
     return query(collection(firestore, `salons/${salonId}/invoices`));
-  }, [firestore, salonId]);
+  }, [firestore, salonId, isUserLoading]);
   
   const salonDocRef = useMemo(() => {
-    if (!firestore || !salonId) return null;
+    if (!firestore || !salonId || isUserLoading) return null;
     return doc(firestore, 'salons', salonId);
-  }, [firestore, salonId]);
+  }, [firestore, salonId, isUserLoading]);
 
   const servicesQuery = useMemo(() => {
-    if (!firestore || !salonId) return null;
+    if (!firestore || !salonId || isUserLoading) return null;
     return query(collection(firestore, `salons/${salonId}/services`));
-  }, [firestore, salonId]);
+  }, [firestore, salonId, isUserLoading]);
 
   const { data: appointments, isLoading: isLoadingAppointments } = useCollection<Appointment>(appointmentsQuery);
   const { data: staff, isLoading: isLoadingStaff } = useCollection<Staff>(staffQuery);
@@ -130,13 +130,14 @@ export default function BillingPage() {
     });
   }, [appointments, customerSearch, staffSearch, staffMap]);
 
-  const formatCurrency = (amount: number) => {
-    const cleanAmount = isNaN(amount) || amount === undefined ? 0 : amount;
+  const formatCurrency = (amount: any) => {
+    const num = Number(amount);
+    const cleanAmount = isNaN(num) || amount === undefined || amount === null ? 0 : num;
     const formattedAmount = new Intl.NumberFormat('en-IN', {
       maximumFractionDigits: 2,
       minimumFractionDigits: 2,
-    }).format(cleanAmount || 0);
-    return <>&#8377;{formattedAmount}</>;
+    }).format(cleanAmount);
+    return <>₹{formattedAmount}</>;
   };
   
   const formatDate = (date: any) => {

@@ -44,14 +44,14 @@ export default function CustomersPage({}) {
   const salonId = user?.uid;
 
   const customersQuery = useMemo(() => {
-    if (!firestore || !salonId) return null;
+    if (!firestore || !salonId || isUserLoading) return null;
     return query(collection(firestore, `salons/${salonId}/customers`));
-  }, [firestore, salonId]);
+  }, [firestore, salonId, isUserLoading]);
   
   const salonDocRef = useMemo(() => {
-    if (!firestore || !salonId) return null;
+    if (!firestore || !salonId || isUserLoading) return null;
     return doc(firestore, 'salons', salonId);
-  }, [firestore, salonId]);
+  }, [firestore, salonId, isUserLoading]);
 
   const { data: customers, isLoading: isLoadingCustomers } = useCollection<Customer>(customersQuery);
   const { data: salon, isLoading: isLoadingSalon } = useDoc<Salon>(salonDocRef);

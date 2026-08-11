@@ -50,17 +50,17 @@ export default function OverviewPage({}) {
   }, []);
 
   const appointmentsQuery = useMemo(() => {
-    if (!salonId || !firestore) return null;
+    if (!salonId || !firestore || isUserLoading) return null;
     return query(
       collection(firestore, `salons/${salonId}/appointments`),
       where('status', '==', 'completed')
     );
-  }, [salonId, firestore]);
+  }, [salonId, firestore, isUserLoading]);
 
   const servicesQuery = useMemo(() => {
-    if (!salonId || !firestore) return null;
+    if (!salonId || !firestore || isUserLoading) return null;
     return query(collection(firestore, `salons/${salonId}/services`));
-  }, [salonId, firestore]);
+  }, [salonId, firestore, isUserLoading]);
 
   const { data: appointments, isLoading: isLoadingAppointments } = useCollection<Appointment>(appointmentsQuery);
   const { data: services, isLoading: isLoadingServices } = useCollection<Service>(servicesQuery);

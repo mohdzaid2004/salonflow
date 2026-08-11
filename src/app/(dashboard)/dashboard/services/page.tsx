@@ -63,9 +63,9 @@ export default function ServicesPage({}) {
   const salonId = user?.uid;
 
   const servicesQuery = useMemo(() => {
-    if (!firestore || !salonId) return null;
+    if (!firestore || !salonId || isUserLoading) return null;
     return query(collection(firestore, `salons/${salonId}/services`));
-  }, [firestore, salonId]);
+  }, [firestore, salonId, isUserLoading]);
 
   const { data: services, isLoading } = useCollection<Service>(servicesQuery);
 

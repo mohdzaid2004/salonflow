@@ -69,7 +69,7 @@ type NewCustomerFormValues = z.infer<typeof newCustomerSchema>;
 
 export default function HomePage({}) {
   const firestore = useFirestore();
-  const { user } = useUser();
+  const { user, isUserLoading } = useUser();
   const { toast } = useToast();
 
   const [isSearching, setIsSearching] = useState(false);
@@ -85,22 +85,22 @@ export default function HomePage({}) {
   const salonId = user?.uid;
 
   const salonDocRef = useMemo(() => {
-    if (!firestore || !salonId) return null;
+    if (!firestore || !salonId || isUserLoading) return null;
     return doc(firestore, 'salons', salonId);
-  }, [firestore, salonId]);
+  }, [firestore, salonId, isUserLoading]);
   const { data: salon } = useDoc<Salon>(salonDocRef);
 
   // Fetch services and staff for the new bill form
   const servicesQuery = useMemo(() => {
-    if (!firestore || !salonId) return null;
+    if (!firestore || !salonId || isUserLoading) return null;
     return query(collection(firestore, `salons/${salonId}/services`));
-  }, [firestore, salonId]);
+  }, [firestore, salonId, isUserLoading]);
   const { data: services } = useCollection<Service>(servicesQuery);
 
   const staffQuery = useMemo(() => {
-    if (!firestore || !salonId) return null;
+    if (!firestore || !salonId || isUserLoading) return null;
     return query(collection(firestore, `salons/${salonId}/staff`));
-  }, [firestore, salonId]);
+  }, [firestore, salonId, isUserLoading]);
   const { data: staff } = useCollection<Staff>(staffQuery);
 
 

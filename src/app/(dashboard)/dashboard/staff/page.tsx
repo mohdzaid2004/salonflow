@@ -66,14 +66,14 @@ export default function StaffPage({}) {
   const salonId = user?.uid;
 
   const staffQuery = useMemo(() => {
-    if (!firestore || !salonId) return null;
+    if (!firestore || !salonId || isUserLoading) return null;
     return query(collection(firestore, `salons/${salonId}/staff`));
-  }, [firestore, salonId]);
+  }, [firestore, salonId, isUserLoading]);
   
   const reviewsQuery = useMemo(() => {
-    if (!firestore || !salonId) return null;
+    if (!firestore || !salonId || isUserLoading) return null;
     return query(collection(firestore, `salons/${salonId}/reviews`));
-  }, [firestore, salonId]);
+  }, [firestore, salonId, isUserLoading]);
 
   const { data: staff, isLoading: isLoadingStaff } = useCollection<Staff>(staffQuery);
   const { data: reviews, isLoading: isLoadingReviews } = useCollection<Review>(reviewsQuery);

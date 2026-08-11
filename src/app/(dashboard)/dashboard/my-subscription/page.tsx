@@ -65,7 +65,7 @@ const pricingTiers = [
 
 
 export default function MySubscriptionPage() {
-  const { user } = useUser();
+  const { user, isUserLoading } = useUser();
   const firestore = useFirestore();
   const { toast } = useToast();
   const [isPending, startTransition] = useTransition();
@@ -75,9 +75,9 @@ export default function MySubscriptionPage() {
   const salonId = user?.uid;
 
   const salonDocRef = useMemo(() => {
-    if (!firestore || !salonId) return null;
+    if (!firestore || !salonId || isUserLoading) return null;
     return doc(firestore, 'salons', salonId);
-  }, [firestore, salonId]);
+  }, [firestore, salonId, isUserLoading]);
 
   const { data: salon, isLoading } = useDoc<Salon>(salonDocRef);
 

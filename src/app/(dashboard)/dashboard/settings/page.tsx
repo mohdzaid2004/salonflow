@@ -64,7 +64,7 @@ const whatsappSchema = z.object({
 type WhatsAppFormValues = z.infer<typeof whatsappSchema>;
 
 export default function SettingsPage({}) {
-  const { user } = useUser();
+  const { user, isUserLoading } = useUser();
   const auth = useAuth();
   const firestore = useFirestore();
   const router = useRouter();
@@ -76,9 +76,9 @@ export default function SettingsPage({}) {
 
   const salonId = user?.uid;
   const salonDocRef = useMemo(() => {
-    if (!firestore || !salonId) return null;
+    if (!firestore || !salonId || isUserLoading) return null;
     return doc(firestore, 'salons', salonId);
-  }, [firestore, salonId]);
+  }, [firestore, salonId, isUserLoading]);
 
   const { data: salon, isLoading } = useDoc<Salon>(salonDocRef);
 

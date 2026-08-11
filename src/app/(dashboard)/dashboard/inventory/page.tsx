@@ -64,9 +64,9 @@ export default function InventoryPage({}) {
   const salonId = user?.uid;
 
   const inventoryQuery = useMemo(() => {
-    if (!firestore || !salonId) return null;
+    if (!firestore || !salonId || isUserLoading) return null;
     return query(collection(firestore, `salons/${salonId}/inventory`));
-  }, [firestore, salonId]);
+  }, [firestore, salonId, isUserLoading]);
 
   const { data: products, isLoading } = useCollection<InventoryProduct>(inventoryQuery);
 
