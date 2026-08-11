@@ -15,7 +15,7 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ArrowRight, Calendar, UserPlus } from 'lucide-react';
+import { UserPlus } from 'lucide-react';
 import type { Staff, Service, Appointment } from '@/lib/data';
 import { CustomerCheckinForm } from '@/components/dashboard/customer-checkin-form';
 import Link from 'next/link';
@@ -147,7 +147,7 @@ export default function DashboardPage({}) {
         </Card>
       </div>
 
-      <div className="lg:col-span-2">
+      <div className="lg:col-span-3">
         <Card>
           <CardHeader>
             <CardTitle>Upcoming Appointments</CardTitle>
@@ -188,29 +188,6 @@ export default function DashboardPage({}) {
                 </p>
               )}
             </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      <div>
-        <Card className="flex h-full flex-col justify-between">
-          <CardHeader>
-            <CardTitle>Full Calendar</CardTitle>
-            <CardDescription>
-              View and manage all appointments for the day, week, or month.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="flex-grow">
-            <div className="flex h-full items-center justify-center rounded-lg bg-accent p-8">
-              <Calendar className="h-16 w-16 text-primary" />
-            </div>
-          </CardContent>
-          <CardContent>
-             <Button asChild className="w-full">
-                <Link href="/dashboard/calendar">
-                    View Calendar <ArrowRight className="ml-2 h-4 w-4" />
-                </Link>
-             </Button>
           </CardContent>
         </Card>
       </div>
