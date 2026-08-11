@@ -57,6 +57,7 @@ export function CreateBillForm({
   salon,
   setOpen,
   onBillCreated,
+  appointment,
 }: {
   customer: Customer;
   staff: Staff[];
@@ -64,6 +65,7 @@ export function CreateBillForm({
   salon: Salon | null;
   setOpen: (open: boolean) => void;
   onBillCreated: (appointment: Appointment) => void;
+  appointment?: Appointment;
 }) {
   const [isPending, startTransition] = useTransition();
   const { toast } = useToast();
@@ -109,8 +111,8 @@ export function CreateBillForm({
   const form = useForm<BillFormValues>({
     resolver: zodResolver(billFormSchema),
     defaultValues: {
-      serviceIds: [],
-      staffId: '',
+      serviceIds: appointment?.serviceIds || [],
+      staffId: appointment?.staffId || '',
       redeemPoints: 0,
       finalAmount: 0,
       sendWhatsApp: true,
@@ -207,6 +209,10 @@ export function CreateBillForm({
       
       const appointmentData = {
         serviceIds: data.serviceIds,
+        services: data.serviceIds.map(id => {
+          const s = services.find(srv => srv.id === id);
+          return { id, name: s?.name || '', price: s?.price || 0 };
+        }).filter(Boolean),
         staffId: data.staffId,
         paymentMethod: data.paymentMethod,
         subtotal: serviceTotal,
@@ -220,12 +226,20 @@ export function CreateBillForm({
         status: 'completed' as const,
       };
       
-      const appointmentsRef = collection(firestore, `salons/${salonId}/appointments`);
-      const docRef = await addDocumentNonBlocking(appointmentsRef, appointmentData);
+      let apptId = '';
+      if (appointment) {
+        apptId = appointment.id;
+        const apptDocRef = doc(firestore, `salons/${salonId}/appointments`, appointment.id);
+        await updateDocumentNonBlocking(apptDocRef, appointmentData);
+      } else {
+        const appointmentsRef = collection(firestore, `salons/${salonId}/appointments`);
+        const docRef = await addDocumentNonBlocking(appointmentsRef, appointmentData);
+        apptId = docRef.id;
+      }
 
       const customerRef = doc(firestore, `salons/${salonId}/customers`, customer.id);
       const updateData: any = {
-          visitHistory: arrayUnion(docRef.id)
+          visitHistory: arrayUnion(apptId)
       };
 
       // Award and Redeem loyalty points if enabled
@@ -244,13 +258,13 @@ export function CreateBillForm({
 
 
       const newAppointment: Appointment = {
-          id: docRef.id,
+          id: apptId,
           ...appointmentData
       }
 
       onBillCreated(newAppointment);
 
-      let invoiceNumber = `INV-${new Date().getFullYear()}${String(new Date().getMonth() + 1).padStart(2, '0')}${String(new Date().getDate()).padStart(2, '0')}-${docRef.id.slice(-6).toUpperCase()}`;
+      let invoiceNumber = `INV-${new Date().getFullYear()}${String(new Date().getMonth() + 1).padStart(2, '0')}${String(new Date().getDate()).padStart(2, '0')}-${apptId.slice(-6).toUpperCase()}`;
       let invoiceUrl = '';
       try {
         // Await the backend invoicing pipeline to prevent browser from aborting the request on modal close
@@ -261,7 +275,7 @@ export function CreateBillForm({
           },
           body: JSON.stringify({
             salonId,
-            appointmentId: docRef.id,
+            appointmentId: apptId,
             sendWhatsApp: data.sendWhatsApp && salon?.automatedWhatsappEnabled
           })
         });

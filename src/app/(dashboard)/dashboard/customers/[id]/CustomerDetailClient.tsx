@@ -18,37 +18,37 @@ import { Phone, Cake, Star, Calendar, IndianRupee, User as StaffIcon } from 'luc
 
 export default function CustomerDetailClient() {
   const { id: customerId } = useParams();
-  const { user } = useUser();
+  const { user, isUserLoading } = useUser();
   const firestore = useFirestore();
 
   const salonId = user?.uid;
 
   const salonDocRef = useMemo(() => {
-    if (!firestore || !salonId) return null;
+    if (!firestore || !salonId || isUserLoading) return null;
     return doc(firestore, 'salons', salonId);
-  }, [firestore, salonId]);
+  }, [firestore, salonId, isUserLoading]);
 
   const customerDocRef = useMemo(() => {
-    if (!firestore || !salonId || !customerId) return null;
+    if (!firestore || !salonId || !customerId || isUserLoading) return null;
     return doc(
       firestore,
       `salons/${salonId}/customers`,
       customerId as string
     );
-  }, [firestore, salonId, customerId]);
+  }, [firestore, salonId, customerId, isUserLoading]);
   
   const appointmentsQuery = useMemo(() => {
-    if (!firestore || !salonId || !customerId) return null;
+    if (!firestore || !salonId || !customerId || isUserLoading) return null;
     return query(
         collection(firestore, `salons/${salonId}/appointments`),
         where('customerId', '==', customerId as string)
     );
-  }, [firestore, salonId, customerId]);
+  }, [firestore, salonId, customerId, isUserLoading]);
 
   const staffQuery = useMemo(() => {
-      if (!firestore || !salonId) return null;
+      if (!firestore || !salonId || isUserLoading) return null;
       return collection(firestore, `salons/${salonId}/staff`);
-  }, [firestore, salonId]);
+  }, [firestore, salonId, isUserLoading]);
 
   const { data: salon, isLoading: isSalonLoading } = useDoc<Salon>(salonDocRef);
   const { data: customer, isLoading: isCustomerLoading } = useDoc<Customer>(customerDocRef);

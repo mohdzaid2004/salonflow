@@ -54,7 +54,7 @@ export type Appointment = {
   staffId: string;
   serviceIds: string[];
   date: unknown; // Firebase Timestamp
-  status: 'booked' | 'completed' | 'cancelled';
+  status: 'booked' | 'active' | 'completed' | 'cancelled';
   paymentMethod: 'Cash' | 'Card' | 'UPI';
   subtotal: number;
   pointsRedeemed: number;

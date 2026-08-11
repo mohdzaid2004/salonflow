@@ -53,7 +53,8 @@ const checkinFormSchema = z.object({
     .length(10, 'Phone number must be 10 digits.'),
   serviceIds: z.array(z.string()).min(1, 'At least one service is required.'),
   staffId: z.string().min(1, 'Please select a staff member.'),
-  date: z.date({ required_error: 'Please select a date and time.' }),
+  date: z.date({ required_error: 'Please select a date.' }),
+  timeSlot: z.string().min(1, 'Please select an available time slot.'),
   sendWhatsApp: z.boolean(),
 });
 
@@ -76,6 +77,9 @@ export function CustomerCheckinForm({
 
   const [isSuccess, setIsSuccess] = useState(false);
   const [successData, setSuccessData] = useState<{ appointment: any; serviceNames: string } | null>(null);
+  
+  const [bookedSlots, setBookedSlots] = useState<string[]>([]);
+  const [isLoadingSlots, setIsLoadingSlots] = useState(false);
 
   const salonDocRef = useMemo(() => {
     if (!firestore || !salonId) return null;
@@ -92,9 +96,69 @@ export function CustomerCheckinForm({
       serviceIds: [],
       staffId: '',
       date: new Date(),
+      timeSlot: '',
       sendWhatsApp: true,
     },
   });
+
+  const selectedDate = form.watch('date');
+  const selectedStaffId = form.watch('staffId');
+
+  const timeSlots = useMemo(() => {
+    const slots = [];
+    let current = new Date();
+    current.setHours(9, 0, 0, 0); // Start at 9:00 AM
+    const end = new Date();
+    end.setHours(21, 0, 0, 0); // End at 9:00 PM
+    
+    while (current < end) {
+      slots.push(format(current, 'hh:mm a'));
+      current = new Date(current.getTime() + 30 * 60 * 1000); // add 30 mins
+    }
+    return slots;
+  }, []);
+
+  useMemo(() => {
+    if (!firestore || !salonId || !selectedDate || !selectedStaffId) {
+      setBookedSlots([]);
+      return;
+    }
+
+    const fetchBookedSlots = async () => {
+      setIsLoadingSlots(true);
+      try {
+        const startOfDay = new Date(selectedDate);
+        startOfDay.setHours(0, 0, 0, 0);
+        const endOfDay = new Date(selectedDate);
+        endOfDay.setHours(23, 59, 59, 999);
+
+        const apptsRef = collection(firestore, `salons/${salonId}/appointments`);
+        const q = query(
+          apptsRef,
+          where('staffId', '==', selectedStaffId),
+          where('date', '>=', Timestamp.fromDate(startOfDay)),
+          where('date', '<=', Timestamp.fromDate(endOfDay))
+        );
+
+        const snap = await getDocs(q);
+        const booked = snap.docs
+          .map(doc => {
+            const data = doc.data();
+            if (data.status === 'cancelled') return null;
+            const d = data.date instanceof Timestamp ? data.date.toDate() : new Date(data.date);
+            return format(d, 'hh:mm a');
+          })
+          .filter(Boolean) as string[];
+        setBookedSlots(booked);
+      } catch (err) {
+        console.error("Error fetching booked slots:", err);
+      } finally {
+        setIsLoadingSlots(false);
+      }
+    };
+
+    fetchBookedSlots();
+  }, [firestore, salonId, selectedDate, selectedStaffId]);
 
   const sendWhatsAppCheckinMessage = (appointment: any, serviceNames: string) => {
     if (!salonId) return;
@@ -136,18 +200,33 @@ export function CustomerCheckinForm({
           name: data.customerName,
           phone: data.customerPhone,
           salonId: salonId,
+          visitHistory: [],
+          loyaltyPoints: 0,
         });
         customerId = customerDocRef.id;
       } else {
         customerId = customerSnapshot.docs[0].id;
       }
       
+      const [hoursStr, minutesStr, period] = data.timeSlot.split(/[: ]/);
+      let hours = parseInt(hoursStr, 10);
+      const minutes = parseInt(minutesStr, 10);
+      if (period === 'PM' && hours < 12) hours += 12;
+      if (period === 'AM' && hours === 12) hours = 0;
+
+      const combinedDate = new Date(data.date);
+      combinedDate.setHours(hours, minutes, 0, 0);
+
       const appointmentData = {
         customerName: data.customerName,
         customerPhone: data.customerPhone,
         serviceIds: data.serviceIds,
+        services: data.serviceIds.map(id => {
+          const s = services.find(srv => srv.id === id);
+          return { id, name: s?.name || '', price: s?.price || 0 };
+        }).filter(Boolean),
         staffId: data.staffId,
-        date: Timestamp.fromDate(data.date),
+        date: Timestamp.fromDate(combinedDate),
         salonId,
         customerId,
         status: 'booked' as const,
@@ -356,7 +435,7 @@ export function CustomerCheckinForm({
             name="date"
             render={({ field }) => (
                 <FormItem className="flex flex-col">
-                <FormLabel>Date & Time</FormLabel>
+                <FormLabel>Date</FormLabel>
                 <Popover>
                     <PopoverTrigger asChild>
                     <FormControl>
@@ -368,7 +447,7 @@ export function CustomerCheckinForm({
                         )}
                         >
                         {field.value ? (
-                            format(field.value, "PPP, hh:mm a")
+                            format(field.value, "PPP")
                         ) : (
                             <span>Pick a date</span>
                         )}
@@ -391,6 +470,33 @@ export function CustomerCheckinForm({
                 <FormMessage />
                 </FormItem>
             )}
+        />
+        <FormField
+          control={form.control}
+          name="timeSlot"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Available Time Slot</FormLabel>
+              <Select onValueChange={field.onChange} value={field.value} disabled={!selectedStaffId || isLoadingSlots}>
+                <FormControl>
+                  <SelectTrigger>
+                    <SelectValue placeholder={!selectedStaffId ? "Please select staff first" : isLoadingSlots ? "Loading slots..." : "Select a time slot"} />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  {timeSlots.map((slot) => {
+                    const isBooked = bookedSlots.includes(slot);
+                    return (
+                      <SelectItem key={slot} value={slot} disabled={isBooked}>
+                        {slot} {isBooked ? '(Booked)' : ''}
+                      </SelectItem>
+                    );
+                  })}
+                </SelectContent>
+              </Select>
+              <FormMessage />
+            </FormItem>
+          )}
         />
         <FormField
           control={form.control}

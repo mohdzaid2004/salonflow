@@ -61,37 +61,38 @@ export default function InvoiceClient() {
 
                 const salonDocRef = doc(firestore, 'salons', salonId);
                 const staffDocRef = doc(firestore, `salons/${salonId}/staff`, apptData.staffId);
-                const customerDocRef = doc(firestore, `salons/${salonId}/customers`, apptData.customerId);
-                
-                let servicesSnap;
-                if (apptData.serviceIds && apptData.serviceIds.length > 0) {
-                    const servicesQuery = query(
-                        collection(firestore, `salons/${salonId}/services`),
-                        where('__name__', 'in', apptData.serviceIds)
-                    );
-                    servicesSnap = await getDocs(servicesQuery);
-                }
-                
 
-                const [salonSnap, staffSnap, customerSnap] = await Promise.all([
+                const [salonSnap, staffSnap] = await Promise.all([
                     getDoc(salonDocRef),
-                    getDoc(staffDocRef),
-                    getDoc(customerDocRef),
+                    getDoc(staffDocRef)
                 ]);
 
-                if (!salonSnap.exists() || !staffSnap.exists() || !customerSnap.exists()) {
+                if (!salonSnap.exists() || !staffSnap.exists()) {
                     setStatus('invalid');
                     return;
                 }
 
                 setSalon({ id: salonSnap.id, ...salonSnap.data() } as Salon);
                 setStaff({ id: staffSnap.id, ...staffSnap.data() } as Staff);
-                setCustomer({ id: customerSnap.id, ...customerSnap.data() } as Customer);
+                
+                setCustomer({
+                    id: apptData.customerId,
+                    name: apptData.customerName,
+                    phone: apptData.customerPhone,
+                } as Customer);
 
-                if (servicesSnap) {
-                    const fetchedServices = servicesSnap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Service));
-                    setServices(fetchedServices);
+                let fetchedServices: Service[] = [];
+                if ((apptData as any).services && (apptData as any).services.length > 0) {
+                    fetchedServices = (apptData as any).services;
+                } else if (apptData.serviceIds && apptData.serviceIds.length > 0) {
+                    const serviceSnaps = await Promise.all(
+                        apptData.serviceIds.map(id => getDoc(doc(firestore, `salons/${salonId}/services`, id)))
+                    );
+                    fetchedServices = serviceSnaps
+                        .filter(snap => snap.exists())
+                        .map(snap => ({ id: snap.id, ...snap.data() } as Service));
                 }
+                setServices(fetchedServices);
 
                 setStatus('loaded');
             } catch (error) {

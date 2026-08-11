@@ -18,28 +18,28 @@ import { Phone, Cake, Star, Award } from 'lucide-react';
 
 export default function StaffDetailClient() {
   const { id: staffId } = useParams();
-  const { user } = useUser();
+  const { user, isUserLoading } = useUser();
   const firestore = useFirestore();
 
   const salonId = user?.uid;
 
   const staffDocRef = useMemo(() => {
-    if (!firestore || !salonId || !staffId) return null;
+    if (!firestore || !salonId || !staffId || isUserLoading) return null;
     return doc(firestore, `salons/${salonId}/staff`, staffId as string);
-  }, [firestore, salonId, staffId]);
+  }, [firestore, salonId, staffId, isUserLoading]);
 
   const reviewsQuery = useMemo(() => {
-    if (!firestore || !salonId || !staffId) return null;
+    if (!firestore || !salonId || !staffId || isUserLoading) return null;
     return query(
       collection(firestore, `salons/${salonId}/reviews`),
       where('staffId', '==', staffId)
     );
-  }, [firestore, salonId, staffId]);
+  }, [firestore, salonId, staffId, isUserLoading]);
   
   const customersQuery = useMemo(() => {
-    if (!firestore || !salonId) return null;
+    if (!firestore || !salonId || isUserLoading) return null;
     return query(collection(firestore, `salons/${salonId}/customers`));
-  }, [firestore, salonId]);
+  }, [firestore, salonId, isUserLoading]);
 
 
   const { data: staff, isLoading: isStaffLoading } = useDoc<Staff>(staffDocRef);

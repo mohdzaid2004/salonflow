@@ -29,7 +29,7 @@ import {
 } from '@/components/ui/dialog';
 
 export default function DashboardPage({}) {
-  const { user } = useUser();
+  const { user, isUserLoading } = useUser();
   const firestore = useFirestore();
   const salonId = user?.uid;
   const { setActions } = useHeaderActions();
@@ -46,28 +46,28 @@ export default function DashboardPage({}) {
   }, []);
 
   const appointmentsQuery = useMemo(() => {
-    if (!salonId || !firestore) return null;
+    if (!salonId || !firestore || isUserLoading) return null;
     return query(
       collection(firestore, `salons/${salonId}/appointments`),
       where('date', '>=', todayStart),
       where('date', '<=', todayEnd)
     );
-  }, [salonId, firestore, todayStart, todayEnd]);
+  }, [salonId, firestore, todayStart, todayEnd, isUserLoading]);
 
   const { data: appointments, isLoading: isLoadingAppointments } =
     useCollection<Appointment>(appointmentsQuery);
 
   const staffQuery = useMemo(() => {
-    if (!firestore || !salonId) return null;
+    if (!firestore || !salonId || isUserLoading) return null;
     return query(collection(firestore, `salons/${salonId}/staff`));
-  }, [firestore, salonId]);
+  }, [firestore, salonId, isUserLoading]);
   const { data: staff, isLoading: isLoadingStaff } =
     useCollection<Staff>(staffQuery);
 
   const servicesQuery = useMemo(() => {
-    if (!firestore || !salonId) return null;
+    if (!firestore || !salonId || isUserLoading) return null;
     return query(collection(firestore, `salons/${salonId}/services`));
-  }, [firestore, salonId]);
+  }, [firestore, salonId, isUserLoading]);
   const { data: services, isLoading: isLoadingServices } =
     useCollection<Service>(servicesQuery);
 
@@ -99,15 +99,31 @@ export default function DashboardPage({}) {
     return () => setActions(null);
   }, [setActions, staff, services, isCheckinOpen]);
 
+  const getApptDate = (date: any): Date => {
+    if (!date) return new Date();
+    if (date instanceof Timestamp) return date.toDate();
+    if (typeof date.toDate === 'function') return date.toDate();
+    if (date.seconds !== undefined) return new Date(Number(date.seconds) * 1000);
+    const d = new Date(date);
+    return isNaN(d.getTime()) ? new Date() : d;
+  };
+
+  const getApptMillis = (date: any): number => {
+    if (!date) return 0;
+    if (date instanceof Timestamp) return date.toMillis();
+    if (typeof date.toMillis === 'function') return date.toMillis();
+    if (typeof date.toDate === 'function') return date.toDate().getTime();
+    if (date.seconds !== undefined) return date.seconds * 1000;
+    const d = new Date(date);
+    return isNaN(d.getTime()) ? 0 : d.getTime();
+  };
+
   const upcomingAppointments = useMemo(() => {
     if (!appointments) return [];
     const now = new Date();
     return appointments
-      .filter((appt) => (appt.date as Timestamp).toDate() > now)
-      .sort(
-        (a, b) =>
-          (a.date as Timestamp).toMillis() - (b.date as Timestamp).toMillis()
-      )
+      .filter((appt) => getApptDate(appt.date) > now)
+      .sort((a, b) => getApptMillis(a.date) - getApptMillis(b.date))
       .slice(0, 3);
   }, [appointments]);
 
@@ -148,7 +164,7 @@ export default function DashboardPage({}) {
                   >
                     <div>
                       <p className="font-semibold">
-                        {(appt.date as Timestamp).toDate().toLocaleTimeString([], {
+                        {getApptDate(appt.date).toLocaleTimeString([], {
                           hour: '2-digit',
                           minute: '2-digit',
                         })}

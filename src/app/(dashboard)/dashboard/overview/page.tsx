@@ -65,6 +65,15 @@ export default function OverviewPage({}) {
   const { data: appointments, isLoading: isLoadingAppointments } = useCollection<Appointment>(appointmentsQuery);
   const { data: services, isLoading: isLoadingServices } = useCollection<Service>(servicesQuery);
 
+  const getApptDate = (date: any): Date | null => {
+    if (!date) return null;
+    if (date instanceof Timestamp) return date.toDate();
+    if (typeof date.toDate === 'function') return date.toDate();
+    if (date.seconds !== undefined) return new Date(Number(date.seconds) * 1000);
+    const d = new Date(date);
+    return isNaN(d.getTime()) ? null : d;
+  };
+
   const todaysAppointments = useMemo(() => {
     if (!appointments) return [];
     const today = new Date();
@@ -73,18 +82,19 @@ export default function OverviewPage({}) {
     tomorrow.setDate(tomorrow.getDate() + 1);
 
     return appointments.filter(appt => {
-      if (!appt.date) return false;
-      const apptDate = (appt.date as Timestamp).toDate();
+      const apptDate = getApptDate(appt.date);
+      if (!apptDate) return false;
       return apptDate >= today && apptDate < tomorrow;
     });
   }, [appointments]);
 
   const monthlyAppointments = useMemo(() => {
     if (!appointments) return [];
+    const monthStart = monthStartTimestamp.toDate();
     return appointments.filter(appt => {
-        if (!appt.date) return false;
-        const apptDate = (appt.date as Timestamp).toDate();
-        return apptDate >= monthStartTimestamp.toDate();
+        const apptDate = getApptDate(appt.date);
+        if (!apptDate) return false;
+        return apptDate >= monthStart;
     });
   }, [appointments, monthStartTimestamp]);
 
@@ -93,7 +103,7 @@ export default function OverviewPage({}) {
       return { totalRevenue: 0, completedAppointments: 0 };
     }
     const completedAppointments = todaysAppointments.length;
-    const totalRevenue = todaysAppointments.reduce((acc, appt) => acc + appt.amountPaid, 0);
+    const totalRevenue = todaysAppointments.reduce((acc, appt) => acc + (appt.amountPaid || 0), 0);
     return { totalRevenue, completedAppointments };
   }, [todaysAppointments]);
 
@@ -101,7 +111,7 @@ export default function OverviewPage({}) {
     if (!monthlyAppointments) {
         return { totalRevenue: 0 };
     }
-    const totalRevenue = monthlyAppointments.reduce((acc, appt) => acc + appt.amountPaid, 0);
+    const totalRevenue = monthlyAppointments.reduce((acc, appt) => acc + (appt.amountPaid || 0), 0);
     return { totalRevenue };
   }, [monthlyAppointments]);
   
@@ -113,7 +123,7 @@ export default function OverviewPage({}) {
 
     monthlyAppointments.forEach(appt => {
       if (appt.serviceIds && appt.serviceIds.length > 0) {
-        const revenuePerService = appt.amountPaid / appt.serviceIds.length;
+        const revenuePerService = (appt.amountPaid || 0) / appt.serviceIds.length;
         appt.serviceIds.forEach(serviceId => {
             const service = serviceMap.get(serviceId);
             if (service) {
@@ -130,25 +140,27 @@ export default function OverviewPage({}) {
   
   const last7DaysRevenue = useMemo(() => {
     if (!appointments) return [];
+    const sevenDaysAgo = sevenDaysAgoTimestamp.toDate();
     const last7DaysAppointments = appointments.filter(appt => {
-      if (!appt.date) return false;
-      const apptDate = (appt.date as Timestamp).toDate();
-      return apptDate >= sevenDaysAgoTimestamp.toDate();
+      const apptDate = getApptDate(appt.date);
+      if (!apptDate) return false;
+      return apptDate >= sevenDaysAgo;
     });
     
     const revenueByDay = new Map<string, number>();
     for (let i = 0; i < 7; i++) {
-        const date = new Date(sevenDaysAgoTimestamp.toDate());
+        const date = new Date(sevenDaysAgo);
         date.setDate(date.getDate() + i);
         const dateString = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric'});
         revenueByDay.set(dateString, 0);
     }
     
     last7DaysAppointments.forEach(appt => {
-        if (!appt.date) return;
-        const dateString = (appt.date as Timestamp).toDate().toLocaleDateString('en-US', { month: 'short', day: 'numeric'});
+        const apptDate = getApptDate(appt.date);
+        if (!apptDate) return;
+        const dateString = apptDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric'});
         const currentRevenue = revenueByDay.get(dateString) || 0;
-        revenueByDay.set(dateString, currentRevenue + appt.amountPaid);
+        revenueByDay.set(dateString, currentRevenue + (appt.amountPaid || 0));
     });
     
     return Array.from(revenueByDay.entries()).map(([name, revenue]) => ({ name, revenue }));

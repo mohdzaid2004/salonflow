@@ -49,9 +49,9 @@ export default function DashboardLayout({
   // The user's UID is the salon's ID upon signup.
   const salonId = user?.uid;
   const salonDocRef = useMemo(() => {
-    if (!firestore || !salonId) return null;
+    if (!firestore || !salonId || isUserLoading) return null;
     return doc(firestore, 'salons', salonId);
-  }, [firestore, salonId]);
+  }, [firestore, salonId, isUserLoading]);
 
   // Fetch the salon document. The dashboard will wait until this is loaded.
   const { data: salon, isLoading: isSalonLoading } = useDoc<Salon>(salonDocRef);
