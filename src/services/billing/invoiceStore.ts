@@ -20,6 +20,9 @@ export interface InvoiceMetadata {
   whatsappStatus: 'pending' | 'sent' | 'failed';
   printCount: number;
   lastPrinted?: any;
+  feedbackSubmitted?: boolean;
+  feedbackRating?: number | null;
+  feedbackSubmittedAt?: any;
 }
 
 /**

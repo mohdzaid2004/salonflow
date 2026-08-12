@@ -17,6 +17,7 @@ export type Salon = {
   twilioAccountSid?: string;
   twilioAuthToken?: string;
   twilioWhatsappNumber?: string;
+  email?: string;
 };
 
 export type Service = {
@@ -43,6 +44,7 @@ export type Customer = {
   dob?: string;
   visitHistory: string[];
   loyaltyPoints?: number;
+  email?: string;
 };
 
 export type Appointment = {

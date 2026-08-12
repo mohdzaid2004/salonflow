@@ -55,35 +55,17 @@ export async function sendWhatsAppInvoiceNotification(payload: WhatsAppNotificat
 
   // Build the user-defined structured message template
   const messageBody = 
-    `💇 Thank You for Visiting ${salonName}!\n\n` +
+    `💇 Thank you for visiting ${salonName}!\n\n` +
     `Hi ${customerName},\n\n` +
-    `Your payment has been received successfully. 🎉\n\n` +
-    `━━━━━━━━━━━━━━━━━━\n` +
-    `🧾 Invoice Details\n` +
-    `━━━━━━━━━━━━━━━━━━\n` +
-    `Invoice No : ${invoiceNumber}\n` +
-    `Date       : ${paymentDate}\n` +
-    `Time       : ${paymentTime}\n\n` +
-    `💇 Service(s):\n` +
-    `${serviceListStr}\n\n` +
-    `💰 Total Amount : ₹${formattedAmount}\n` +
-    `💳 Payment Mode : ${paymentMethod}\n\n` +
-    `🎁 Loyalty Points Earned : ${pointsEarned}\n` +
-    `⭐ Current Balance : ${currentPoints} Points\n\n` +
-    `📎 Your PDF Invoice is attached to this message.\n\n` +
-    `━━━━━━━━━━━━━━━━━━\n` +
-    `⭐ Rate Your Experience\n` +
-    `━━━━━━━━━━━━━━━━━━\n\n` +
-    `We hope you loved your visit!\n\n` +
-    `Please take 30 seconds to rate your experience.\n\n` +
-    `⭐⭐⭐⭐⭐\n\n` +
-    `👉 ${feedbackUrl}\n\n` +
-    `Your feedback helps us improve our services and serve you better.\n\n` +
-    `━━━━━━━━━━━━━━━━━━\n\n` +
-    `Thank you for choosing ${salonName} ❤️\n\n` +
-    `We look forward to welcoming you again.\n\n` +
-    `📍 ${salonAddress}\n` +
-    `📞 ${salonPhone}`;
+    `Your payment has been received successfully.\n\n` +
+    `🧾 Invoice: ${invoiceNumber}\n` +
+    `💰 Amount Paid: ₹${formattedAmount}\n` +
+    `💳 Payment Method: ${paymentMethod}\n\n` +
+    `📎 Invoice:\n` +
+    `${pdfUrl}\n\n` +
+    `⭐ We'd love your feedback:\n` +
+    `${feedbackUrl}\n\n` +
+    `Thank you for choosing ${salonName}!`;
 
   try {
     console.log(`[Invoice Notifier] Dispatching Twilio WhatsApp message to ${formattedTo} with PDF attachment...`);

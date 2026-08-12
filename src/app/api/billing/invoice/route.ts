@@ -185,7 +185,10 @@ export async function POST(req: Request) {
       invoiceUrl: downloadUrl,
       storagePath,
       whatsappStatus: 'pending',
-      printCount: 0
+      printCount: 0,
+      feedbackSubmitted: (appointment as any).feedbackSubmitted || false,
+      feedbackRating: (appointment as any).feedbackRating || null,
+      feedbackSubmittedAt: (appointment as any).feedbackSubmittedAt || null
     });
 
     // 10. Centralized WhatsApp notification dispatch if requested

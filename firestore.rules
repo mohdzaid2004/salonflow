@@ -81,6 +81,15 @@ service cloud.firestore {
       return request.resource.data.salonId == resource.data.salonId;
     }
 
+    function isValidFeedbackUpdate() {
+      let affected = request.resource.data.diff(resource.data).affectedKeys();
+      return affected.hasOnly(['feedbackSubmitted', 'feedbackRating', 'feedbackSubmittedAt'])
+        && (!resource.data.keys().hasAll(['feedbackSubmitted']) || resource.data.feedbackSubmitted == false)
+        && request.resource.data.feedbackSubmitted == true
+        && request.resource.data.feedbackRating >= 1
+        && request.resource.data.feedbackRating <= 5;
+    }
+
     /**
      * @description Rules for the salon tenant root document.
      * @path /salons/{salonId}
@@ -124,7 +133,8 @@ service cloud.firestore {
      */
     match /salons/{salonId}/appointments/{appointmentId} {
         allow get: if true; // Allow GET for any user for feedback page
-        allow list, write: if isSignedIn() && (isOwner(salonId) || isSalonMember(salonId));
+        allow update: if isValidFeedbackUpdate() || (isSignedIn() && (isOwner(salonId) || isSalonMember(salonId)));
+        allow list, create, delete: if isSignedIn() && (isOwner(salonId) || isSalonMember(salonId));
     }
 
     /**
@@ -165,7 +175,8 @@ service cloud.firestore {
      */
     match /salons/{salonId}/invoices/{invoiceId} {
       allow get: if true; // Allow GET for invoice verification QR code/link
-      allow list, write: if isSignedIn() && (isOwner(salonId) || isSalonMember(salonId));
+      allow update: if isValidFeedbackUpdate() || (isSignedIn() && (isOwner(salonId) || isSalonMember(salonId)));
+      allow list, create, delete: if isSignedIn() && (isOwner(salonId) || isSalonMember(salonId));
     }
 
     /**

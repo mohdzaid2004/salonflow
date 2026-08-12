@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useEffect } from 'react';
 import { useFirestore } from '@/firebase';
-import { doc, getDoc, collection, Timestamp, addDoc, query, where, getDocs, limit } from 'firebase/firestore';
+import { doc, getDoc, collection, Timestamp, addDoc, updateDoc, query, where, getDocs, limit } from 'firebase/firestore';
 import type { Appointment, Salon, Staff, Review } from '@/lib/data';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -172,6 +172,26 @@ export default function FeedbackClient() {
       
       const reviewsRef = collection(firestore, `salons/${salonId}/reviews`);
       await addDoc(reviewsRef, reviewData);
+
+      // Update the corresponding appointment
+      const apptRef = doc(firestore, `salons/${salonId}/appointments/${appointmentId}`);
+      await updateDoc(apptRef, {
+        feedbackSubmitted: true,
+        feedbackRating: rating,
+        feedbackSubmittedAt: Timestamp.now()
+      });
+
+      // Try updating invoice as well if it already exists
+      try {
+        const invoiceRef = doc(firestore, `salons/${salonId}/invoices/${appointmentId}`);
+        await updateDoc(invoiceRef, {
+          feedbackSubmitted: true,
+          feedbackRating: rating,
+          feedbackSubmittedAt: Timestamp.now()
+        });
+      } catch (invErr) {
+        console.warn("[Feedback] Could not update invoice document (might not exist yet):", invErr);
+      }
       
       setStatus('submitted');
       setTimeout(() => {
