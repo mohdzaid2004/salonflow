@@ -157,7 +157,19 @@ export async function POST(req: Request) {
     });
 
     // 7. Upload PDF to Firebase Storage (returns public download URL)
-    const { downloadUrl, storagePath } = await uploadInvoicePDF(salonId, invoiceNumber, pdfBuffer);
+    let downloadUrl = '';
+    let storagePath = '';
+    let isBase64Fallback = false;
+    try {
+      const uploadRes = await uploadInvoicePDF(salonId, invoiceNumber, pdfBuffer);
+      downloadUrl = uploadRes.downloadUrl;
+      storagePath = uploadRes.storagePath;
+    } catch (uploadErr) {
+      console.warn('[Invoice API Route] Storage upload failed, falling back to base64 inline PDF delivery:', uploadErr);
+      downloadUrl = `data:application/pdf;base64,${pdfBuffer.toString('base64')}`;
+      storagePath = '';
+      isBase64Fallback = true;
+    }
 
     // 8. Calculations (inclusive 18% GST)
     const grandTotal = appointment.amountPaid;
@@ -182,7 +194,7 @@ export async function POST(req: Request) {
       gstAmount,
       finalAmount: grandTotal,
       paymentMethod: appointment.paymentMethod,
-      invoiceUrl: downloadUrl,
+      invoiceUrl: isBase64Fallback ? '' : downloadUrl,
       storagePath,
       whatsappStatus: 'pending',
       printCount: 0,
