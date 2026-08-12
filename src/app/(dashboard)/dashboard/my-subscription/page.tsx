@@ -254,11 +254,7 @@ export default function MySubscriptionPage() {
   };
 
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-IN', {
-      style: 'currency',
-      currency: 'INR',
-      maximumFractionDigits: 0
-    }).format(amount);
+    return '₹' + amount.toLocaleString('en-IN', { maximumFractionDigits: 0 });
   };
 
   const renderSkeleton = () => (

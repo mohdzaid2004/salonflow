@@ -57,6 +57,9 @@ export async function getPlanId(planType: 'starter' | 'professional' | 'business
     return plan.id;
   } catch (err: any) {
     console.error(`[Razorpay Config] Failed to create dynamic plan for ${planType}:`, err);
-    throw new Error(`Failed to resolve plan ID: ${err.message || err}`);
+    const detailMsg = err.error && typeof err.error === 'object'
+      ? (err.error.description || JSON.stringify(err.error))
+      : (err.error || err.message || JSON.stringify(err));
+    throw new Error(`Failed to create plan: ${detailMsg}. Ensure Subscriptions/recurring billing is active in your Razorpay settings.`);
   }
 }
