@@ -43,6 +43,14 @@ async function fetchImageBase64(url: string): Promise<{ dataUrl: string, format:
 export async function generateInvoicePDF(details: InvoiceDetails): Promise<Buffer> {
   const { invoiceNumber, salon, customer, staff, appointment, services } = details;
 
+  const parseDate = (dateVal: any): Date => {
+    if (!dateVal) return new Date();
+    if (typeof dateVal.toDate === 'function') return dateVal.toDate();
+    if (dateVal.seconds !== undefined) return new Date(dateVal.seconds * 1000);
+    const d = new Date(dateVal);
+    return isNaN(d.getTime()) ? new Date() : d;
+  };
+
   // Initialize A4 PDF (portrait, points, a4)
   const doc = new jsPDF({
     orientation: 'portrait',
@@ -144,7 +152,7 @@ export async function generateInvoicePDF(details: InvoiceDetails): Promise<Buffe
 
   doc.setFont('helvetica', 'normal');
   doc.setTextColor(31, 41, 55);
-  doc.text(format(new Date(appointment.date as any), 'dd MMM yyyy'), 15, 97);
+  doc.text(format(parseDate(appointment.date), 'dd MMM yyyy'), 15, 97);
   doc.text(appointment.paymentMethod || 'UPI', pageWidth / 3 + 10, 97);
   
   doc.setFont('helvetica', 'bold');
