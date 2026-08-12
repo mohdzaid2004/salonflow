@@ -15,16 +15,16 @@ env:
   - variable: TWILIO_WHATSAPP_NUMBER
     secret: TWILIO_WHATSAPP_NUMBER
   - variable: RAZORPAY_KEY_ID
-    secret: RAZORPAY_KEY_ID
+    value: ""
   - variable: RAZORPAY_KEY_SECRET
-    secret: RAZORPAY_KEY_SECRET
+    value: ""
   - variable: RAZORPAY_WEBHOOK_SECRET
-    secret: RAZORPAY_WEBHOOK_SECRET
+    value: ""
   - variable: RAZORPAY_STARTER_PLAN_ID
-    secret: RAZORPAY_STARTER_PLAN_ID
+    value: ""
   - variable: RAZORPAY_PROFESSIONAL_PLAN_ID
-    secret: RAZORPAY_PROFESSIONAL_PLAN_ID
+    value: ""
   - variable: RAZORPAY_BUSINESS_PLAN_ID
-    secret: RAZORPAY_BUSINESS_PLAN_ID
+    value: ""
   - variable: NEXT_PUBLIC_RAZORPAY_KEY_ID
-    secret: RAZORPAY_KEY_ID
+    value: ""
