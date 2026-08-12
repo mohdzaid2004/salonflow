@@ -47,6 +47,7 @@
     "next": "16.0.10",
     "patch-package": "^8.0.0",
     "qrcode": "^1.5.4",
+    "razorpay": "^2.9.8",
     "react": "^19.2.1",
     "react-day-picker": "^9.11.3",
     "react-dom": "^19.2.1",

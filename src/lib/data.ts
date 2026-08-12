@@ -10,9 +10,12 @@ export type Salon = {
   themeColor?: string;
   loyaltyPointsRatio?: number;
   loyaltyProgramEnabled?: boolean;
-  billingStatus?: 'trialing' | 'active' | 'past_due' | 'canceled';
+  billingStatus?: 'trialing' | 'active' | 'past_due' | 'canceled' | 'pending' | 'halted';
   trialEndsAt?: unknown; // Firebase Timestamp
   subscriptionPlanId?: string;
+  subscriptionId?: string;
+  subscriptionStatus?: string;
+  nextBillingDate?: unknown; // Firebase Timestamp
   automatedWhatsappEnabled?: boolean;
   twilioAccountSid?: string;
   twilioAuthToken?: string;

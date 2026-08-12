@@ -99,6 +99,15 @@ service cloud.firestore {
     }
 
     /**
+     * @description Rules for root-level subscriptions.
+     * @path /subscriptions/{subscriptionId}
+     */
+    match /subscriptions/{subscriptionId} {
+      allow read: if isSignedIn() && resource.data.salonId == request.auth.uid;
+      allow write: if false;
+    }
+
+    /**
      * @description Rules for the salon tenant root document.
      * @path /salons/{salonId}
      * @allow An anonymous user can GET a salon document for the feedback page.

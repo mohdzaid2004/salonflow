@@ -56,6 +56,19 @@ export default function DashboardLayout({
   // Fetch the salon document. The dashboard will wait until this is loaded.
   const { data: salon, isLoading: isSalonLoading } = useDoc<Salon>(salonDocRef);
 
+  // Effect to enforce subscription gating on expired free trials.
+  useEffect(() => {
+    if (!isSalonLoading && salon) {
+      const trialEndsAt = salon.trialEndsAt ? (salon.trialEndsAt as Timestamp).toDate() : null;
+      const isTrialExpired = trialEndsAt ? trialEndsAt < new Date() : false;
+      const hasAccess = salon.billingStatus === 'active' || !isTrialExpired;
+      
+      if (!hasAccess && pathname !== '/dashboard/my-subscription') {
+        router.push('/dashboard/my-subscription');
+      }
+    }
+  }, [salon, isSalonLoading, pathname, router]);
+
   // Effect to automatically initialize missing salon data for half-created accounts.
   useEffect(() => {
     if (!isSalonLoading && user && !salon && firestore) {
