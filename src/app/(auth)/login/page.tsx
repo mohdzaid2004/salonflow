@@ -78,12 +78,20 @@ export default function LoginPage({}) {
           let errorMessage = 'An unknown error occurred. Please try again.';
           switch (error.code) {
             case 'auth/user-not-found':
+              errorMessage = 'No account found with this email. Please sign up first.';
+              break;
             case 'auth/wrong-password':
             case 'auth/invalid-credential':
-              errorMessage = 'Invalid email or password.';
+              errorMessage = 'Incorrect email or password.';
               break;
             case 'auth/invalid-email':
               errorMessage = 'Please enter a valid email address.';
+              break;
+            case 'auth/user-disabled':
+              errorMessage = 'This account has been disabled. Please contact support.';
+              break;
+            case 'auth/too-many-requests':
+              errorMessage = 'Too many failed login attempts. Please try again later.';
               break;
             case 'auth/operation-not-allowed':
               errorMessage = 'Email/Password authentication is disabled in your Firebase Console. Please enable it in Authentication > Sign-in method.';
@@ -147,7 +155,15 @@ export default function LoginPage({}) {
               name="password"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Password</FormLabel>
+                  <div className="flex items-center justify-between">
+                    <FormLabel>Password</FormLabel>
+                    <Link
+                      href="/forgot-password"
+                      className="text-xs font-medium text-primary hover:underline"
+                    >
+                      Forgot password?
+                    </Link>
+                  </div>
                   <FormControl>
                     <Input type="password" {...field} />
                   </FormControl>

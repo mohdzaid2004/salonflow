@@ -27,17 +27,24 @@ import { useAuth, useFirestore } from '@/firebase';
 import { Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { FirebaseError } from 'firebase/app';
-import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
+import { createUserWithEmailAndPassword, updateProfile, signOut } from 'firebase/auth';
 import { doc, setDoc, Timestamp } from 'firebase/firestore';
 import Link from 'next/link';
 
-// Add salon name to the schema
 const signupFormSchema = z.object({
-  salonName: z.string().min(2, { message: 'Salon name must be at least 2 characters.' }),
+  fullName: z.string().min(1, { message: 'Full name is required.' }),
   email: z.string().email({ message: 'Please enter a valid email address.' }),
+  phone: z.string().min(10, { message: 'Please enter a valid 10-digit phone number.' }),
+  salonName: z.string().min(2, { message: 'Salon name must be at least 2 characters.' }),
   password: z
     .string()
     .min(6, { message: 'Password must be at least 6 characters.' }),
+  confirmPassword: z
+    .string()
+    .min(6, { message: 'Confirm password is required.' }),
+}).refine((data) => data.password === data.confirmPassword, {
+  message: "Passwords do not match.",
+  path: ["confirmPassword"],
 });
 
 type SignupFormValues = z.infer<typeof signupFormSchema>;
@@ -58,7 +65,7 @@ const timeoutPromise = <T,>(promise: Promise<T>, ms: number, errorMessage: strin
   });
 };
 
-export default function SignupPage({}) {
+export default function SignupPage() {
   const auth = useAuth();
   const firestore = useFirestore();
   const router = useRouter();
@@ -68,9 +75,12 @@ export default function SignupPage({}) {
   const form = useForm<SignupFormValues>({
     resolver: zodResolver(signupFormSchema),
     defaultValues: {
-      salonName: '',
+      fullName: '',
       email: '',
+      phone: '',
+      salonName: '',
       password: '',
+      confirmPassword: '',
     },
   });
 
@@ -92,16 +102,31 @@ export default function SignupPage({}) {
         const salonId = user.uid;
         
         try {
-          // These operations are critical for the user's account to be functional.
-          // We run them sequentially to ensure the salon and user profile are created.
           const trialEndsAt = new Date();
           trialEndsAt.setDate(trialEndsAt.getDate() + 15);
 
-          // 1. Create the user's own profile document. This is required for security rules.
+          // 1. Create root user profile document
+          const rootUserRef = doc(firestore, `users`, user.uid);
+          await timeoutPromise(
+            setDoc(rootUserRef, {
+              uid: user.uid,
+              fullName: data.fullName,
+              email: data.email,
+              phone: data.phone,
+              salonName: data.salonName,
+              role: 'owner',
+              createdAt: Timestamp.now(),
+              updatedAt: Timestamp.now()
+            }),
+            8000,
+            "Database write timeout. Please verify that Cloud Firestore is created and billing (Blaze plan) is enabled in your Firebase Console."
+          );
+
+          // 2. Create subcollection user document for existing system logic
           const userRef = doc(firestore, `salons/${salonId}/users`, user.uid);
           await timeoutPromise(
             setDoc(userRef, {
-              name: 'Owner',
+              name: data.fullName,
               role: 'owner',
               email: user.email,
               salonId: salonId,
@@ -110,7 +135,7 @@ export default function SignupPage({}) {
             "Database write timeout. Please verify that Cloud Firestore is created and billing (Blaze plan) is enabled in your Firebase Console."
           );
 
-          // 2. Create the salon document.
+          // 3. Create the salon document
           const salonRef = doc(firestore, 'salons', salonId);
           await timeoutPromise(
             setDoc(salonRef, {
@@ -124,7 +149,7 @@ export default function SignupPage({}) {
               address: '',
               city: '',
               state: '',
-              phone: '',
+              phone: data.phone,
               logoUrl: '',
               languageDefault: 'en',
               timezone: 'IST',
@@ -138,16 +163,19 @@ export default function SignupPage({}) {
             "Database write timeout. Please verify that Cloud Firestore is created and billing (Blaze plan) is enabled in your Firebase Console."
           );
 
-          // 3. Update the user's auth profile.
-          await updateProfile(user, { displayName: "Owner" });
+          // 4. Update the user's auth profile displayName
+          await updateProfile(user, { displayName: data.fullName });
+
+          // 5. Sign out user to prevent automatic login redirect
+          await signOut(auth);
 
           toast({
-            title: 'Success!',
-            description: 'Your salon has been created. Redirecting to dashboard...',
+            title: 'Account Created Successfully!',
+            description: 'Your salon profile has been configured. Please log in with your email and password.',
           });
 
-          // 4. Redirect to the dashboard.
-          router.push('/dashboard/home');
+          // 6. Redirect to login
+          router.push('/login');
 
         } catch (setupError: any) {
           console.error("Error setting up salon data:", setupError);
@@ -169,7 +197,7 @@ export default function SignupPage({}) {
         if (error instanceof FirebaseError) {
           switch (error.code) {
             case 'auth/email-already-in-use':
-              errorMessage = 'This email is already registered.';
+              errorMessage = 'This email is already registered. Please log in.';
               break;
             case 'auth/weak-password':
               errorMessage = 'The password is too weak.';
@@ -206,6 +234,19 @@ export default function SignupPage({}) {
           <CardContent className="space-y-4">
             <FormField
               control={form.control}
+              name="fullName"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Full Name</FormLabel>
+                  <FormControl>
+                    <Input placeholder="John Doe" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
               name="salonName"
               render={({ field }) => (
                 <FormItem>
@@ -222,9 +263,22 @@ export default function SignupPage({}) {
               name="email"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Email</FormLabel>
+                  <FormLabel>Email Address</FormLabel>
                   <FormControl>
                     <Input placeholder="owner@example.com" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="phone"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Phone Number</FormLabel>
+                  <FormControl>
+                    <Input placeholder="9988776655" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -243,6 +297,19 @@ export default function SignupPage({}) {
                 </FormItem>
               )}
             />
+            <FormField
+              control={form.control}
+              name="confirmPassword"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Confirm Password</FormLabel>
+                  <FormControl>
+                    <Input type="password" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
           </CardContent>
           <CardFooter className="flex flex-col gap-4">
             <Button type="submit" className="w-full" disabled={isSubmitting}>
@@ -251,7 +318,7 @@ export default function SignupPage({}) {
               )}
               Sign Up
             </Button>
-             <p className="text-center text-sm text-muted-foreground">
+            <p className="text-center text-sm text-muted-foreground">
               Already have an account?{' '}
               <Link
                 href="/login"
