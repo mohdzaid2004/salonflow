@@ -61,6 +61,9 @@ export type Appointment = {
   subtotal: number;
   pointsRedeemed: number;
   amountPaid: number;
+  feedbackSubmitted?: boolean;
+  feedbackRating?: number | null;
+  feedbackSubmittedAt?: any;
 };
 
 export type Review = {

@@ -497,10 +497,12 @@ export default function BillingPage() {
                       <TableCell className="text-xs">{appt.paymentMethod}</TableCell>
                       <TableCell className="font-mono text-xs text-muted-foreground">{formatCurrency(gstCalculated)}</TableCell>
                       <TableCell className="text-xs">
-                        {invoice?.feedbackSubmitted ? (
+                        {(appt.feedbackSubmitted || invoice?.feedbackSubmitted) ? (
                           <div className="flex items-center gap-1">
                             <span className="text-amber-500 font-bold text-sm">★</span>
-                            <span className="font-semibold text-amber-700">{invoice.feedbackRating}/5</span>
+                            <span className="font-semibold text-amber-700">
+                              {appt.feedbackRating ?? invoice?.feedbackRating}/5
+                            </span>
                           </div>
                         ) : (
                           <span className="text-muted-foreground text-xs italic">Pending</span>

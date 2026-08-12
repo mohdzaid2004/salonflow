@@ -84,7 +84,7 @@ service cloud.firestore {
     function isValidFeedbackUpdate() {
       let affected = request.resource.data.diff(resource.data).affectedKeys();
       return affected.hasOnly(['feedbackSubmitted', 'feedbackRating', 'feedbackSubmittedAt'])
-        && (!resource.data.keys().hasAll(['feedbackSubmitted']) || resource.data.feedbackSubmitted == false)
+        && resource.data.get('feedbackSubmitted', false) == false
         && request.resource.data.feedbackSubmitted == true
         && request.resource.data.feedbackRating >= 1
         && request.resource.data.feedbackRating <= 5;
