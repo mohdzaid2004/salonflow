@@ -58,7 +58,7 @@ export default function FeedbackClient() {
     try {
       const decodedId = decodeURIComponent(compositeId);
       const parts = decodedId.split('_');
-      return parts.length === 2 ? [parts[0], parts[1]] : [null, null];
+      return parts.length >= 2 ? [parts[0], parts.slice(1).join('_')] : [null, null];
     } catch (e) {
       console.error("Error decoding feedback ID:", e);
       return [null, null];
