@@ -254,7 +254,7 @@ export default function MySubscriptionPage() {
   };
 
   const formatCurrency = (amount: number) => {
-    return '₹' + amount.toLocaleString('en-IN', { maximumFractionDigits: 0 });
+    return '\u20B9' + amount.toLocaleString('en-IN', { maximumFractionDigits: 0 });
   };
 
   const renderSkeleton = () => (
