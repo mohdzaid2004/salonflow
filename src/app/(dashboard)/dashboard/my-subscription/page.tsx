@@ -254,7 +254,7 @@ export default function MySubscriptionPage() {
   };
 
   const formatCurrency = (amount: number) => {
-    return '\u20B9' + amount.toLocaleString('en-IN', { maximumFractionDigits: 0 });
+    return amount.toLocaleString('en-IN', { maximumFractionDigits: 0 });
   };
 
   const renderSkeleton = () => (
@@ -368,7 +368,7 @@ export default function MySubscriptionPage() {
               <div>
                 <p className="text-sm font-medium text-muted-foreground">Amount Period</p>
                 <p className="text-3xl font-bold mt-1">
-                  {isSubscribed && currentPlan ? formatCurrency(currentPlan.price) : 'Free'}
+                  {isSubscribed && currentPlan ? <><span className="font-sans">₹</span>{formatCurrency(currentPlan.price)}</> : 'Free'}
                   <span className="text-sm font-normal text-muted-foreground">/month</span>
                 </p>
                 {!!salon.nextBillingDate && (
@@ -419,7 +419,7 @@ export default function MySubscriptionPage() {
                 </CardHeader>
                 <CardContent className="flex-grow space-y-4">
                   <div className="flex items-baseline gap-1">
-                    <span className="text-3xl font-extrabold">{formatCurrency(plan.price)}</span>
+                    <span className="text-3xl font-extrabold"><span className="font-sans">₹</span>{formatCurrency(plan.price)}</span>
                     <span className="text-muted-foreground text-sm">/month</span>
                   </div>
                   <ul className="space-y-2 text-sm pt-4 border-t">
