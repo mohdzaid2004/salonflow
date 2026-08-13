@@ -59,7 +59,9 @@ export async function GET() {
     return NextResponse.json({
       success: true,
       environment: keyId.startsWith('rzp_test_') ? 'TEST' : 'LIVE',
-      keyIdPrefix: keyId.substring(0, 8) + '****',
+      keyId: keyId,
+      keySecretLength: keySecret.length,
+      keySecretPreview: keySecret.substring(0, 4) + '...' + keySecret.substring(keySecret.length - 4),
       results
     });
   } catch (err: any) {
