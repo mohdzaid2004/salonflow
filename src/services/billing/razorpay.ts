@@ -1,8 +1,8 @@
 import Razorpay from 'razorpay';
 
 export function getRazorpayInstance() {
-  const keyId = process.env.RAZORPAY_KEY_ID || '';
-  const keySecret = process.env.RAZORPAY_KEY_SECRET || '';
+  const keyId = process.env.RAZORPAY_KEY_ID || process.env['API key'] || '';
+  const keySecret = process.env.RAZORPAY_KEY_SECRET || process.env['Secret'] || '';
   
   if (!keyId || !keySecret) {
     throw new Error('Razorpay credentials are not configured yet. Please contact the administrator.');
@@ -45,7 +45,7 @@ export function getRazorpayPlanId(planType: 'starter' | 'professional' | 'busine
  * Logs safe diagnostic summaries to prevent printing full Razorpay Secrets in log collectors.
  */
 export function logSafeDiagnosticError(endpoint: string, err: any) {
-  const keyId = process.env.RAZORPAY_KEY_ID || '';
+  const keyId = process.env.RAZORPAY_KEY_ID || process.env['API key'] || '';
   const isTest = keyId.startsWith('rzp_test_');
   const environment = isTest ? 'TEST' : (keyId.startsWith('rzp_live_') ? 'LIVE' : 'UNKNOWN');
   const prefix = keyId ? keyId.substring(0, 8) + '****' : 'MISSING';
