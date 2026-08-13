@@ -14,11 +14,5 @@ env:
     secret: TWILIO_AUTH_TOKEN
   - variable: TWILIO_WHATSAPP_NUMBER
     secret: TWILIO_WHATSAPP_NUMBER
-  - variable: RAZORPAY_KEY_ID
-    secret: RAZORPAY_KEY_ID
-  - variable: RAZORPAY_KEY_SECRET
-    secret: RAZORPAY_KEY_SECRET
   - variable: RAZORPAY_WEBHOOK_SECRET
     secret: RAZORPAY_WEBHOOK_SECRET
-  - variable: NEXT_PUBLIC_RAZORPAY_KEY_ID
-    secret: RAZORPAY_KEY_ID
