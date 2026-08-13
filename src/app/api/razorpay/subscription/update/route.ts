@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getAuth } from 'firebase-admin/auth';
 import { getAdminApp, getAdminDb } from '@/services/billing/config';
-import { getRazorpayInstance, getPlanId } from '@/services/billing/razorpay';
+import { getRazorpayInstance, getRazorpayPlanId } from '@/services/billing/razorpay';
 import { FieldValue } from 'firebase-admin/firestore';
 
 export const dynamic = 'force-dynamic';
@@ -52,7 +52,7 @@ export async function POST(req: Request) {
         return NextResponse.json({ success: false, error: 'planId is required for changing plan.' }, { status: 400 });
       }
 
-      const newPlanId = await getPlanId(planId);
+      const newPlanId = getRazorpayPlanId(planId);
       console.log(`[Subscription API] Updating Razorpay subscription ${subscriptionId} to plan ${planId} (${newPlanId})...`);
 
       // Price classification for upgrade vs downgrade (Starter: 499, Professional: 999, Business: 1999)

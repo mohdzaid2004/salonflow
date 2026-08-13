@@ -5,7 +5,14 @@ export function getRazorpayInstance() {
   const keySecret = process.env.RAZORPAY_KEY_SECRET || '';
   
   if (!keyId || !keySecret) {
-    console.warn('[Razorpay Init] Warning: RAZORPAY_KEY_ID or RAZORPAY_KEY_SECRET environment variables are missing.');
+    throw new Error('Razorpay credentials are not configured yet. Please contact the administrator.');
+  }
+
+  const isTest = keyId.startsWith('rzp_test_');
+  const isLive = keyId.startsWith('rzp_live_');
+  
+  if (!isTest && !isLive) {
+    throw new Error('Payment configuration error. Please try again later.');
   }
 
   return new Razorpay({
@@ -15,51 +22,42 @@ export function getRazorpayInstance() {
 }
 
 /**
- * Resolves a plan ID for a given plan type. If the plan ID environment variable is not defined,
- * it will automatically create a monthly plan dynamically via the Razorpay API under the active credentials,
- * and return the new ID.
+ * Returns the configured static Razorpay Plan ID for a given plan type.
+ * Maps 'starter', 'professional', and 'business' directly to environment variables.
+ * Dynamic plan creation at checkout is strictly disabled for production stability.
  */
-export async function getPlanId(planType: 'starter' | 'professional' | 'business'): Promise<string> {
-  const envMap = {
+export function getRazorpayPlanId(planType: 'starter' | 'professional' | 'business'): string {
+  const planMap: Record<string, string | undefined> = {
     starter: process.env.RAZORPAY_STARTER_PLAN_ID,
     professional: process.env.RAZORPAY_PROFESSIONAL_PLAN_ID,
-    business: process.env.RAZORPAY_BUSINESS_PLAN_ID,
+    business: process.env.RAZORPAY_BUSINESS_PLAN_ID
   };
 
-  const envVal = envMap[planType];
-  if (envVal) {
-    return envVal;
+  const id = planMap[planType];
+  if (!id) {
+    throw new Error(`Razorpay Plan ID for "${planType}" is not configured in your environment variables. Please check settings.`);
   }
 
-  // Fallback to dynamic creation
-  const instance = getRazorpayInstance();
-  const planDetailsMap = {
-    starter: { name: 'SalonFlow Starter', price: 499 },
-    professional: { name: 'SalonFlow Professional', price: 999 },
-    business: { name: 'SalonFlow Business', price: 1999 },
-  };
+  return id;
+}
 
-  const details = planDetailsMap[planType];
-  console.log(`[Razorpay Config] Plan ID for "${planType}" is missing in env. Dynamically creating monthly plan...`);
-  
-  try {
-    const plan = await instance.plans.create({
-      period: 'monthly',
-      interval: 1,
-      item: {
-        name: details.name,
-        amount: details.price * 100, // paise
-        currency: 'INR',
-        description: `${details.name} Plan - Monthly Recurring Subscription`,
-      },
-    });
-    console.log(`[Razorpay Config] Dynamic plan creation successful. Type: ${planType}, Plan ID: ${plan.id}`);
-    return plan.id;
-  } catch (err: any) {
-    console.error(`[Razorpay Config] Failed to create dynamic plan for ${planType}:`, err);
-    const detailMsg = err.error && typeof err.error === 'object'
-      ? (err.error.description || JSON.stringify(err.error))
-      : (err.error || err.message || JSON.stringify(err));
-    throw new Error(`Failed to create plan: ${detailMsg}. Ensure Subscriptions/recurring billing is active in your Razorpay settings.`);
-  }
+/**
+ * Logs safe diagnostic summaries to prevent printing full Razorpay Secrets in log collectors.
+ */
+export function logSafeDiagnosticError(endpoint: string, err: any) {
+  const keyId = process.env.RAZORPAY_KEY_ID || '';
+  const isTest = keyId.startsWith('rzp_test_');
+  const environment = isTest ? 'TEST' : (keyId.startsWith('rzp_live_') ? 'LIVE' : 'UNKNOWN');
+  const prefix = keyId ? keyId.substring(0, 8) + '****' : 'MISSING';
+  const status = err.statusCode || 500;
+  const description = err.error && typeof err.error === 'object'
+    ? (err.error.description || JSON.stringify(err.error))
+    : (err.error || err.message || JSON.stringify(err));
+
+  console.error(`[Razorpay Debug Summary]`);
+  console.error(`Razorpay environment: ${environment}`);
+  console.error(`Key ID: ${prefix}`);
+  console.error(`Endpoint: ${endpoint}`);
+  console.error(`Status: ${status}`);
+  console.error(`Error: ${description}`);
 }

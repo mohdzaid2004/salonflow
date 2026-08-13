@@ -448,7 +448,7 @@ export default function MySubscriptionPage() {
                       disabled={isCheckoutLoading}
                     >
                       {isCheckoutLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                      Start Subscription
+                      {isCheckoutLoading ? 'Creating subscription...' : 'Start Subscription'}
                     </Button>
                   )}
                 </CardFooter>
