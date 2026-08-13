@@ -287,23 +287,7 @@ export default function SettingsPage({}) {
                   Enable Loyalty Program
                 </Label>
               </div>
-              <Separator />
-              <div className="flex flex-col space-y-1">
-                <div className="flex items-center space-x-2">
-                  <Switch
-                    id="whatsapp-toggle"
-                    checked={salon?.automatedWhatsappEnabled}
-                    onCheckedChange={(checked) => handleToggleFeature('automatedWhatsappEnabled', checked)}
-                    disabled={isPending}
-                  />
-                  <Label htmlFor="whatsapp-toggle">
-                    Enable Automated Twilio WhatsApp Notifications
-                  </Label>
-                </div>
-                <p className="text-xs text-muted-foreground pl-12 mt-1">
-                  When enabled, billing receipts and feedback links are automatically sent via your configured Twilio WhatsApp number on checkout. If disabled, or if Twilio is not configured, the app opens a manual WhatsApp Web dispatch link.
-                </p>
-              </div>
+
             </div>
           )}
         </CardContent>
@@ -389,97 +373,7 @@ export default function SettingsPage({}) {
         </Card>
       )}
 
-      <Card>
-        <CardHeader>
-          <CardTitle>WhatsApp & Invoicing Automation</CardTitle>
-          <CardDescription>
-            Configure your Twilio WhatsApp Business API credentials to automatically send PDF invoices and feedback forms.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          {isLoading ? (
-            <Skeleton className="h-48 w-full" />
-          ) : (
-            <form onSubmit={whatsappForm.handleSubmit(handleWhatsAppSubmit)} className="space-y-4">
-              <div className="flex items-center space-x-2 pb-2">
-                <Controller
-                  name="automatedWhatsappEnabled"
-                  control={whatsappForm.control}
-                  render={({ field }) => (
-                    <Switch
-                      id="automated-whatsapp-toggle"
-                      checked={field.value}
-                      onCheckedChange={field.onChange}
-                      disabled={isPending}
-                    />
-                  )}
-                />
-                <Label htmlFor="automated-whatsapp-toggle">
-                  Enable Automated WhatsApp Invoice Dispatch
-                </Label>
-              </div>
-              <Separator />
-              <div className="grid gap-4 md:grid-cols-2">
-                <div className="space-y-2">
-                  <Label htmlFor="twilio-sid">Twilio Account SID</Label>
-                  <Controller
-                    name="twilioAccountSid"
-                    control={whatsappForm.control}
-                    render={({ field }) => (
-                      <Input
-                        id="twilio-sid"
-                        placeholder="ACxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
-                        {...field}
-                        disabled={isPending}
-                      />
-                    )}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="twilio-token">Twilio Auth Token</Label>
-                  <Controller
-                    name="twilioAuthToken"
-                    control={whatsappForm.control}
-                    render={({ field }) => (
-                      <Input
-                        id="twilio-token"
-                        type="password"
-                        placeholder="your_auth_token"
-                        {...field}
-                        disabled={isPending}
-                      />
-                    )}
-                  />
-                </div>
-                <div className="space-y-2 md:col-span-2">
-                  <Label htmlFor="twilio-phone">Twilio WhatsApp Number</Label>
-                  <Controller
-                    name="twilioWhatsappNumber"
-                    control={whatsappForm.control}
-                    render={({ field }) => (
-                      <Input
-                        id="twilio-phone"
-                        placeholder="whatsapp:+14155238886"
-                        {...field}
-                        disabled={isPending}
-                      />
-                    )}
-                  />
-                  <p className="text-xs text-muted-foreground">
-                    Must start with 'whatsapp:' prefix, e.g. whatsapp:+14155238886 (your Twilio Sandbox or approved number).
-                  </p>
-                </div>
-              </div>
-              <div className="flex justify-end pt-2">
-                <Button type="submit" disabled={isPending}>
-                  {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                  Save WhatsApp Settings
-                </Button>
-              </div>
-            </form>
-          )}
-        </CardContent>
-      </Card>
+
 
       <Card className="border-destructive">
         <CardHeader>
