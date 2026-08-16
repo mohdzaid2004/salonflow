@@ -244,7 +244,7 @@ export default function CustomersPage({}) {
             </div>
         </CardHeader>
         <CardContent>
-          <Table>
+          <Table className="min-w-[600px]">
             <TableHeader>
               <TableRow>
                 <TableHead>Name</TableHead>

@@ -466,7 +466,7 @@ export default function BillingPage() {
             </div>
           </div>
           <div className="rounded-md border overflow-x-auto">
-          <Table>
+          <Table className="min-w-[800px]">
             <TableHeader>
               <TableRow>
                 <TableHead>Invoice Number</TableHead>

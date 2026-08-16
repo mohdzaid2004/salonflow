@@ -145,7 +145,7 @@ export default function InventoryPage({}) {
           </Dialog>
         </CardHeader>
         <CardContent>
-          <Table>
+          <Table className="min-w-[600px]">
             <TableHeader>
               <TableRow>
                 <TableHead>Product</TableHead>

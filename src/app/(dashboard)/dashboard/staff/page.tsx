@@ -289,7 +289,7 @@ export default function StaffPage({}) {
             </Dialog>
         </CardHeader>
         <CardContent>
-          <Table>
+          <Table className="min-w-[500px]">
             <TableHeader>
               <TableRow>
                 <TableHead>Name</TableHead>

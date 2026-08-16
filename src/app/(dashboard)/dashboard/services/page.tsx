@@ -146,7 +146,7 @@ export default function ServicesPage({}) {
           </Dialog>
         </CardHeader>
         <CardContent>
-          <Table>
+          <Table className="min-w-[500px]">
             <TableHeader>
               <TableRow>
                 <TableHead>Name</TableHead>

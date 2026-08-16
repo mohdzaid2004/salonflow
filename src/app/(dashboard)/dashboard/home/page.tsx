@@ -273,7 +273,7 @@ export default function HomePage({}) {
                     </CardDescription>
                 </CardHeader>
                 <CardContent className="flex-grow">
-                <Table>
+                <Table className="min-w-[400px]">
                     <TableHeader>
                     <TableRow>
                         <TableHead>Customer</TableHead>
