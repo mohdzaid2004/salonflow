@@ -225,21 +225,21 @@ export default function SignupPage() {
   return (
     <div className="flex min-h-screen w-full font-sans">
       {/* Left Panel */}
-      <div className="hidden lg:flex flex-col w-1/2 relative bg-purple-50 text-slate-900 p-12">
-        <div className="absolute inset-0 z-0">
+      <div className="hidden lg:flex flex-col w-5/12 relative bg-[#f8f7fb] text-slate-900 px-12 py-10 overflow-hidden border-r border-slate-100">
+        <div className="absolute bottom-0 left-0 w-full h-[45%] bg-gradient-to-t from-purple-100/50 to-transparent z-0">
           <img 
             src="https://images.unsplash.com/photo-1560066984-138dadb4c035?q=80&w=1000" 
             alt="Salon Interior" 
-            className="h-full w-full object-cover opacity-10" 
+            className="w-full h-full object-cover object-bottom opacity-[0.85] mix-blend-multiply" 
           />
         </div>
         <div className="relative z-10 flex flex-col h-full">
-          <div className="flex items-center gap-2 mb-20">
+          <div className="flex items-center gap-2 mb-12">
             <Logo className="h-8 w-8 text-primary" />
             <span className="font-headline text-2xl font-bold text-slate-900">SalonFlow</span>
           </div>
           
-          <div className="mt-auto mb-20 max-w-md">
+          <div className="max-w-md mb-auto">
             <h1 className="text-4xl font-bold mb-6">Manage Your Salon<br/><span className="text-primary">Smarter & Faster</span></h1>
             <p className="text-lg text-slate-600 mb-10 border-l-2 border-primary pl-4">All-in-one salon management system to handle appointments, billing, staff, customers & more — effortlessly.</p>
             

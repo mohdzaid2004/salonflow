@@ -130,21 +130,21 @@ export default function LoginPage({}) {
   return (
     <div className="flex min-h-screen w-full font-sans">
       {/* Left Panel */}
-      <div className="hidden lg:flex flex-col w-1/2 relative bg-zinc-950 text-white p-12">
-        <div className="absolute inset-0 z-0">
+      <div className="hidden lg:flex flex-col w-5/12 relative bg-zinc-950 text-white px-12 py-10 overflow-hidden border-r border-zinc-900">
+        <div className="absolute bottom-0 left-0 w-full h-[45%] bg-gradient-to-t from-black to-transparent z-0">
           <img 
             src="https://images.unsplash.com/photo-1521590832167-7bcbfaa6381f?q=80&w=1000" 
             alt="Salon Interior" 
-            className="h-full w-full object-cover opacity-20" 
+            className="w-full h-full object-cover object-bottom opacity-60 mix-blend-screen" 
           />
         </div>
         <div className="relative z-10 flex flex-col h-full">
-          <div className="flex items-center gap-2 mb-20">
-            <Logo className="h-8 w-8 text-primary" />
+          <div className="flex items-center gap-2 mb-12">
+            <Logo className="h-8 w-8 text-white" />
             <span className="font-headline text-2xl font-bold">SalonFlow</span>
           </div>
           
-          <div className="mt-auto mb-20 max-w-md">
+          <div className="max-w-md mb-auto">
             <h1 className="text-4xl font-bold mb-6">Welcome to<br/><span className="text-primary">SalonFlow</span></h1>
             <p className="text-lg text-zinc-300 mb-10 border-l-2 border-primary pl-4">Smart salon management<br/>made simple.</p>
             
