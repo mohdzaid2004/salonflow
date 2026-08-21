@@ -316,9 +316,9 @@ export default function SignupPage() {
                     name="fullName"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel className="font-semibold">Full Name</FormLabel>
+                        <FormLabel className="font-semibold text-slate-700">Full Name</FormLabel>
                         <FormControl>
-                          <Input className="bg-zinc-50" placeholder="John Doe" {...field} />
+                          <Input className="h-11 bg-white border-slate-200 focus-visible:ring-primary" placeholder="John Doe" {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -329,9 +329,9 @@ export default function SignupPage() {
                     name="salonName"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel className="font-semibold">Salon Name</FormLabel>
+                        <FormLabel className="font-semibold text-slate-700">Salon Name</FormLabel>
                         <FormControl>
-                          <Input className="bg-zinc-50" placeholder="Your Salon's Name" {...field} />
+                          <Input className="h-11 bg-white border-slate-200 focus-visible:ring-primary" placeholder="Your Salon's Name" {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -342,9 +342,9 @@ export default function SignupPage() {
                     name="email"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel className="font-semibold">Email Address</FormLabel>
+                        <FormLabel className="font-semibold text-slate-700">Email Address</FormLabel>
                         <FormControl>
-                          <Input className="bg-zinc-50" placeholder="owner@example.com" {...field} />
+                          <Input className="h-11 bg-white border-slate-200 focus-visible:ring-primary" type="email" placeholder="owner@example.com" {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -355,10 +355,20 @@ export default function SignupPage() {
                     name="phone"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel className="font-semibold">Phone Number</FormLabel>
-                        <FormControl>
-                          <Input className="bg-zinc-50" placeholder="10-digit mobile number" {...field} />
-                        </FormControl>
+                        <FormLabel className="font-semibold text-slate-700">Phone Number</FormLabel>
+                        <div className="flex items-center">
+                          <span className="inline-flex h-11 items-center rounded-l-md border border-r-0 border-slate-200 bg-slate-50 px-3 text-sm text-slate-500 font-medium">
+                            +91
+                          </span>
+                          <FormControl>
+                            <Input
+                              type="tel"
+                              placeholder="9988776655"
+                              className="h-11 rounded-l-none bg-white border-slate-200 focus-visible:ring-primary"
+                              {...field}
+                            />
+                          </FormControl>
+                        </div>
                         <FormMessage />
                       </FormItem>
                     )}
@@ -368,9 +378,9 @@ export default function SignupPage() {
                     name="password"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel className="font-semibold">Password</FormLabel>
+                        <FormLabel className="font-semibold text-slate-700">Password</FormLabel>
                         <FormControl>
-                          <Input className="bg-zinc-50" type="password" placeholder="••••••••" {...field} />
+                          <Input className="h-11 bg-white border-slate-200 focus-visible:ring-primary" type="password" placeholder="••••••••" {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -381,9 +391,9 @@ export default function SignupPage() {
                     name="confirmPassword"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel className="font-semibold">Confirm Password</FormLabel>
+                        <FormLabel className="font-semibold text-slate-700">Confirm Password</FormLabel>
                         <FormControl>
-                          <Input className="bg-zinc-50" type="password" placeholder="••••••••" {...field} />
+                          <Input className="h-11 bg-white border-slate-200 focus-visible:ring-primary" type="password" placeholder="••••••••" {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -391,27 +401,33 @@ export default function SignupPage() {
                   />
                 </CardContent>
                 <CardFooter className="flex flex-col gap-5 pb-8">
-                  <Button type="submit" className="w-full h-12 text-md rounded-xl mt-4" disabled={isSubmitting}>
-                    {isSubmitting && (
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  <Button type="submit" className="w-full h-12 text-md rounded-xl mt-4 font-semibold shadow-sm transition-all bg-primary hover:bg-primary/90" disabled={isSubmitting}>
+                    {isSubmitting ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Creating your salon...
+                      </>
+                    ) : (
+                      <>
+                        Create My Salon &rarr;
+                      </>
                     )}
-                    Sign Up
                   </Button>
                   
                   <div className="relative w-full">
                     <div className="absolute inset-0 flex items-center">
-                      <span className="w-full border-t border-zinc-200" />
+                      <span className="w-full border-t border-slate-200" />
                     </div>
-                    <div className="relative flex justify-center text-xs uppercase">
-                      <span className="bg-white px-2 text-zinc-500">or</span>
+                    <div className="relative flex justify-center text-xs uppercase font-medium">
+                      <span className="bg-white px-2 text-slate-400">or</span>
                     </div>
                   </div>
 
-                  <p className="text-center text-sm text-zinc-600">
+                  <p className="text-center text-sm text-slate-600 font-medium">
                     Already have an account?{' '}
                     <Link
                       href="/login"
-                      className="font-semibold text-primary hover:underline"
+                      className="font-semibold text-primary hover:underline transition-colors"
                     >
                       Log In
                     </Link>
@@ -420,6 +436,16 @@ export default function SignupPage() {
               </form>
             </Form>
           </Card>
+
+          {/* Trust Elements */}
+          <div className="mt-8 text-center space-y-3">
+            <p className="text-sm font-medium text-slate-500">Your salon data is securely stored.</p>
+            <div className="flex items-center justify-center gap-4 text-xs font-medium text-slate-400">
+              <span className="flex items-center gap-1">🔒 Secure account</span>
+              <span className="flex items-center gap-1">⚡ Quick setup</span>
+              <span className="flex items-center gap-1">☁ Cloud-based</span>
+            </div>
+          </div>
         </div>
       </div>
     </div>
