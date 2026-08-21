@@ -37,7 +37,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { Loader2, Search, ArrowRight, LayoutGrid } from 'lucide-react';
+import { Loader2, Search, ArrowRight } from 'lucide-react';
 import { Logo } from '@/components/logo';
 import { useFirestore, useUser, useCollection, useDoc } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
@@ -215,45 +215,20 @@ export default function HomePage({}) {
 
   return (
     <>
-      <div className="relative min-h-[calc(100vh-1px)] -mx-4 -my-4 sm:-mx-8 sm:-my-8 px-4 py-4 sm:px-8 sm:py-8 w-[calc(100%+2rem)] sm:w-[calc(100%+4rem)] flex flex-col font-sans">
-        {/* Background Image */}
-        <div className="absolute inset-0 z-0">
-          <img 
-            src="https://images.unsplash.com/photo-1633681926022-84c23e8cb2d6?q=80&w=1500" 
-            alt="Salon Background" 
-            className="h-full w-full object-cover opacity-[0.15]" 
-          />
-          <div className="absolute inset-0 bg-primary/5 mix-blend-multiply"></div>
-        </div>
-
-        {/* Header bar */}
-        <div className="relative z-10 flex justify-between items-center w-full max-w-7xl mx-auto mb-8 sm:mb-0">
-          <div className="flex items-center gap-2">
-            <Logo className="h-8 w-8 text-primary" />
-            <span className="font-headline text-2xl font-bold text-slate-900">{salon?.name || 'Toni & Guy'}</span>
-          </div>
-          <Link href="/dashboard/overview">
-            <Button variant="outline" className="bg-white/80 backdrop-blur-sm shadow-sm font-semibold rounded-xl gap-2 h-10 border-slate-200 hover:bg-white text-slate-800">
-              <LayoutGrid className="w-4 h-4 text-primary" /> Dashboard
-            </Button>
-          </Link>
-        </div>
-
-        {/* Main Content Area */}
-        <div className="relative z-10 flex-1 flex flex-col items-center justify-center pt-8 pb-12 sm:pt-0">
-          <div className={`grid w-full gap-8 ${checkedInAppointments.length > 0 ? 'grid-cols-1 lg:grid-cols-2 max-w-6xl' : 'max-w-md'}`}>
-            <Card className={`bg-white/95 backdrop-blur-md shadow-2xl border-0 rounded-3xl py-6 px-2 sm:px-4 ${checkedInAppointments.length > 0 ? 'w-full' : 'w-full max-w-md mx-auto'}`}>
-              <CardHeader className="items-center text-center pb-6">
-                <div className="mx-auto bg-primary/10 p-4 rounded-3xl w-16 h-16 flex items-center justify-center mb-4 shadow-sm">
-                  <Logo className="h-8 w-8 text-primary" />
-                </div>
-                <CardTitle className="font-headline text-3xl font-bold font-serif tracking-tight">
-                  Customer Check-in
-                </CardTitle>
-                <CardDescription className="text-base mt-2 text-slate-500">
-                  Enter a customer's phone number to create a bill.
-                </CardDescription>
-              </CardHeader>
+      <div className={`grid w-full items-start gap-8 ${checkedInAppointments.length > 0 ? 'grid-cols-1 md:grid-cols-5' : 'flex justify-center'}`}>
+          <Card className={`py-4 ${checkedInAppointments.length > 0 ? 'md:col-span-2' : 'w-full max-w-md'}`}>
+            <CardHeader className="items-center text-center">
+              <div className="mb-4 flex items-center gap-2">
+                <Logo className="h-8 w-8 text-primary" />
+                <span className="font-headline text-2xl font-bold">{salon?.name || 'Your Salon'}</span>
+              </div>
+              <CardTitle className="font-headline text-3xl">
+                Customer Check-in
+              </CardTitle>
+              <CardDescription>
+                Enter a customer's phone number to create a bill.
+              </CardDescription>
+            </CardHeader>
             <Form {...searchForm}>
               <form onSubmit={searchForm.handleSubmit(handleSearch)}>
                 <CardContent className="space-y-4">
@@ -280,30 +255,13 @@ export default function HomePage({}) {
                       </FormItem>
                     )}
                   />
-                  <Button type="submit" className="w-full h-12 text-md rounded-xl font-semibold mt-4 shadow-md bg-primary hover:bg-primary/90" disabled={isSearching}>
+                  <Button type="submit" className="w-full" disabled={isSearching}>
                     {isSearching && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                     <Search className="mr-2 h-4 w-4" /> Search / Check-in
                   </Button>
                 </CardContent>
               </form>
             </Form>
-
-            <div className="relative my-8 px-6">
-              <div className="absolute inset-0 flex items-center px-6">
-                <span className="w-full border-t border-slate-200" />
-              </div>
-              <div className="relative flex justify-center text-xs font-semibold uppercase tracking-wider">
-                <span className="bg-white px-4 text-slate-400">OR</span>
-              </div>
-            </div>
-
-            <div className="px-6 pb-2">
-              <Link href="/dashboard/overview" className="block w-full">
-                <Button variant="outline" className="w-full h-12 text-base font-semibold rounded-xl gap-2 border-slate-200 hover:bg-slate-50 text-slate-700">
-                  <LayoutGrid className="w-5 h-5 text-primary" /> Go To Dashboard &rarr;
-                </Button>
-              </Link>
-            </div>
           </Card>
           
           {checkedInAppointments.length > 0 && (
@@ -349,8 +307,14 @@ export default function HomePage({}) {
             </Card>
           )}
 
-          </div>
-        </div>
+      </div>
+
+      <div className="mt-12 flex w-full justify-center">
+        <Button asChild size="lg" variant="outline">
+          <Link href="/dashboard/overview">
+            Go To Dashboard <ArrowRight className="ml-2" />
+          </Link>
+        </Button>
       </div>
 
       {/* New Customer Registration Dialog */}
