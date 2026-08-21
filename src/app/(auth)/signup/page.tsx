@@ -302,96 +302,125 @@ export default function SignupPage() {
       <div className="max-w-[1320px] w-full mx-auto grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center">
         
         {/* ================= LEFT SECTION: Branding & Value Props ================= */}
-        <div className="lg:col-span-6 flex flex-col justify-center order-2 lg:order-1 px-2 sm:px-6 py-4">
+        <div className="lg:col-span-6 flex flex-col justify-center order-2 lg:order-1 px-2 sm:px-6 py-4 relative">
           
+          {/* Ambient Glow */}
+          <div className="absolute -top-12 -left-12 w-72 h-72 bg-purple-300/30 rounded-full blur-3xl pointer-events-none -z-10" />
+          <div className="absolute bottom-10 right-10 w-80 h-80 bg-indigo-300/20 rounded-full blur-3xl pointer-events-none -z-10" />
+
+          {/* Social Proof Badge */}
+          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/90 backdrop-blur-md border border-purple-200/80 shadow-sm text-xs font-semibold text-purple-900 w-fit mb-6">
+            <div className="flex -space-x-1">
+              <span className="inline-block w-4 h-4 rounded-full bg-purple-500 text-[9px] text-white flex items-center justify-center font-bold">★</span>
+              <span className="inline-block w-4 h-4 rounded-full bg-indigo-500 text-[9px] text-white flex items-center justify-center font-bold">★</span>
+              <span className="inline-block w-4 h-4 rounded-full bg-pink-500 text-[9px] text-white flex items-center justify-center font-bold">★</span>
+            </div>
+            <span>Trusted by 500+ modern salons across India</span>
+          </div>
+
           {/* Logo & Brand Header */}
-          <div className="flex items-center gap-3 mb-6">
-            <div className="h-11 w-11 rounded-2xl bg-gradient-to-tr from-purple-700 to-indigo-600 flex items-center justify-center shadow-lg shadow-purple-600/20 text-white p-2">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="h-12 w-12 rounded-2xl bg-gradient-to-tr from-purple-700 via-purple-600 to-indigo-600 flex items-center justify-center shadow-xl shadow-purple-600/30 text-white p-2.5">
               <Logo className="h-full w-full text-white" />
             </div>
-            <span className="font-headline text-3xl font-extrabold tracking-tight text-slate-900">
-              Salon<span className="text-purple-700">Flow</span>
-            </span>
-            <span className="ml-2 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-purple-100 text-purple-800 border border-purple-200">
-              Pro SaaS
-            </span>
+            <div>
+              <span className="font-headline text-3xl font-extrabold tracking-tight text-slate-900">
+                Salon<span className="text-purple-700">Flow</span>
+              </span>
+              <span className="block text-[11px] font-bold uppercase tracking-widest text-purple-600">Enterprise Salon OS</span>
+            </div>
           </div>
 
           {/* Headline & Subhead */}
           <div className="space-y-3 mb-8">
-            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-slate-900 tracking-tight leading-[1.15]">
-              Manage Your Salon <br className="hidden sm:inline" />
-              <span className="bg-gradient-to-r from-purple-700 via-indigo-600 to-purple-600 bg-clip-text text-transparent">
-                Smarter & Faster
+            <h1 className="text-3xl sm:text-4xl lg:text-[44px] font-extrabold text-slate-900 tracking-tight leading-[1.12]">
+              Manage Your Salon <br />
+              <span className="bg-gradient-to-r from-purple-700 via-indigo-600 to-pink-600 bg-clip-text text-transparent">
+                Smarter, Faster & Effortlessly
               </span>
             </h1>
-            <p className="text-base sm:text-lg text-slate-600 leading-relaxed max-w-xl">
-              All-in-one salon management platform for appointments, billing, staff, customers, inventory and business growth.
+            <p className="text-base sm:text-lg text-slate-600 leading-relaxed max-w-xl font-normal">
+              The modern all-in-one operating system for high-growth salons, spas, and styling studios. From appointment booking to GST billing and customer loyalty.
             </p>
           </div>
 
-          {/* 4 Feature Cards Grid */}
+          {/* 4 Luxury Feature Cards Grid */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 mb-8">
             
             {/* Feature 1 */}
-            <div className="flex items-start gap-3.5 p-4 rounded-2xl bg-white/80 backdrop-blur-sm border border-purple-100/70 shadow-sm hover:shadow-md transition-shadow">
-              <div className="p-2.5 rounded-xl bg-purple-50 text-purple-700 shrink-0">
+            <div className="group flex items-start gap-3.5 p-4 rounded-2xl bg-white/90 backdrop-blur-md border border-purple-100/90 shadow-sm hover:shadow-lg hover:border-purple-300 hover:-translate-y-0.5 transition-all duration-300">
+              <div className="p-2.5 rounded-xl bg-purple-100/70 text-purple-700 group-hover:scale-110 transition-transform shrink-0">
                 <Calendar className="w-5 h-5" />
               </div>
               <div>
                 <h3 className="text-sm font-bold text-slate-900">Smart Appointments</h3>
-                <p className="text-xs text-slate-500 mt-0.5 leading-snug">Manage bookings effortlessly.</p>
+                <p className="text-xs text-slate-500 mt-0.5 leading-snug">Real-time chair booking & queue management.</p>
               </div>
             </div>
 
             {/* Feature 2 */}
-            <div className="flex items-start gap-3.5 p-4 rounded-2xl bg-white/80 backdrop-blur-sm border border-purple-100/70 shadow-sm hover:shadow-md transition-shadow">
-              <div className="p-2.5 rounded-xl bg-indigo-50 text-indigo-600 shrink-0">
+            <div className="group flex items-start gap-3.5 p-4 rounded-2xl bg-white/90 backdrop-blur-md border border-indigo-100/90 shadow-sm hover:shadow-lg hover:border-indigo-300 hover:-translate-y-0.5 transition-all duration-300">
+              <div className="p-2.5 rounded-xl bg-indigo-100/70 text-indigo-600 group-hover:scale-110 transition-transform shrink-0">
                 <Users className="w-5 h-5" />
               </div>
               <div>
-                <h3 className="text-sm font-bold text-slate-900">Customer Management</h3>
-                <p className="text-xs text-slate-500 mt-0.5 leading-snug">Build stronger customer relationships.</p>
+                <h3 className="text-sm font-bold text-slate-900">Customer CRM</h3>
+                <p className="text-xs text-slate-500 mt-0.5 leading-snug">Loyalty points, history & automated reminders.</p>
               </div>
             </div>
 
             {/* Feature 3 */}
-            <div className="flex items-start gap-3.5 p-4 rounded-2xl bg-white/80 backdrop-blur-sm border border-purple-100/70 shadow-sm hover:shadow-md transition-shadow">
-              <div className="p-2.5 rounded-xl bg-violet-50 text-violet-700 shrink-0">
+            <div className="group flex items-start gap-3.5 p-4 rounded-2xl bg-white/90 backdrop-blur-md border border-violet-100/90 shadow-sm hover:shadow-lg hover:border-violet-300 hover:-translate-y-0.5 transition-all duration-300">
+              <div className="p-2.5 rounded-xl bg-violet-100/70 text-violet-700 group-hover:scale-110 transition-transform shrink-0">
                 <CreditCard className="w-5 h-5" />
               </div>
               <div>
-                <h3 className="text-sm font-bold text-slate-900">Billing & Reports</h3>
-                <p className="text-xs text-slate-500 mt-0.5 leading-snug">Generate invoices & insights.</p>
+                <h3 className="text-sm font-bold text-slate-900">Instant GST Billing</h3>
+                <p className="text-xs text-slate-500 mt-0.5 leading-snug">Generate digital bills & split staff commissions.</p>
               </div>
             </div>
 
             {/* Feature 4 */}
-            <div className="flex items-start gap-3.5 p-4 rounded-2xl bg-white/80 backdrop-blur-sm border border-purple-100/70 shadow-sm hover:shadow-md transition-shadow">
-              <div className="p-2.5 rounded-xl bg-fuchsia-50 text-fuchsia-600 shrink-0">
+            <div className="group flex items-start gap-3.5 p-4 rounded-2xl bg-white/90 backdrop-blur-md border border-pink-100/90 shadow-sm hover:shadow-lg hover:border-pink-300 hover:-translate-y-0.5 transition-all duration-300">
+              <div className="p-2.5 rounded-xl bg-pink-100/70 text-pink-600 group-hover:scale-110 transition-transform shrink-0">
                 <TrendingUp className="w-5 h-5" />
               </div>
               <div>
-                <h3 className="text-sm font-bold text-slate-900">Grow Your Business</h3>
-                <p className="text-xs text-slate-500 mt-0.5 leading-snug">Track performance and revenue.</p>
+                <h3 className="text-sm font-bold text-slate-900">Business Analytics</h3>
+                <p className="text-xs text-slate-500 mt-0.5 leading-snug">Daily revenue, top stylists & inventory alerts.</p>
               </div>
             </div>
 
           </div>
 
+          {/* Mini Live Preview Metric Box */}
+          <div className="p-4 rounded-2xl bg-gradient-to-r from-purple-900 via-indigo-900 to-slate-900 text-white shadow-xl shadow-purple-950/20 mb-8 border border-white/10 hidden sm:flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping" />
+              <div>
+                <div className="text-[11px] uppercase tracking-wider text-purple-300 font-semibold">Today's Salon Revenue</div>
+                <div className="text-lg font-extrabold tracking-tight">₹24,850.00 <span className="text-xs font-medium text-emerald-400 ml-1">+18.4% today</span></div>
+              </div>
+            </div>
+            <div className="text-right pl-4 border-l border-white/10">
+              <div className="text-[11px] uppercase tracking-wider text-purple-300 font-semibold">Staff Active</div>
+              <div className="text-base font-bold">8 Stylists on Duty</div>
+            </div>
+          </div>
+
           {/* Value Pills / Checklist */}
-          <div className="flex flex-wrap items-center gap-x-6 gap-y-2 pt-2 border-t border-slate-200/80 text-xs sm:text-sm font-medium text-slate-600">
+          <div className="flex flex-wrap items-center gap-x-6 gap-y-2 pt-2 border-t border-slate-200/80 text-xs sm:text-sm font-semibold text-slate-700">
             <span className="flex items-center gap-1.5">
               <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" /> Cloud Based
             </span>
             <span className="flex items-center gap-1.5">
-              <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" /> Secure Data
+              <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" /> 100% Secure Data
             </span>
             <span className="flex items-center gap-1.5">
-              <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" /> Mobile Friendly
+              <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" /> Mobile & Tablet Ready
             </span>
             <span className="flex items-center gap-1.5">
-              <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" /> Real-Time Analytics
+              <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" /> Real-Time Sync
             </span>
           </div>
 
