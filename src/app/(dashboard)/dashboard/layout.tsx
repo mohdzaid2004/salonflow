@@ -173,13 +173,13 @@ export default function DashboardLayout({
           {!isHomePage && (
             <Sidebar>
               <SidebarHeader>
-                <div className="flex h-16 items-center gap-2 border-b p-2">
+                <div className="flex h-16 items-center gap-2 border-b border-sidebar-border p-2">
                   <Logo className="h-8 w-8 shrink-0 text-primary" />
                   <div className="flex flex-col overflow-hidden">
-                    <span className="truncate font-headline text-lg">
-                      {salon?.name || 'SalonFlow'}
+                    <span className="truncate font-headline text-lg font-bold tracking-tight">
+                      SALON FLOW
                     </span>
-                    <span className="truncate text-xs text-muted-foreground">
+                    <span className="truncate text-xs text-sidebar-foreground/70">
                       Your Dashboard
                     </span>
                   </div>
@@ -189,8 +189,8 @@ export default function DashboardLayout({
                 <MainNav salon={salon} />
               </SidebarContent>
               <SidebarFooter>
-                <Separator className="my-2" />
-                <div className="p-2 text-center text-xs text-muted-foreground">
+                <Separator className="my-2 bg-sidebar-border" />
+                <div className="p-2 text-center text-xs text-sidebar-foreground/70">
                   <p>&copy; {new Date().getFullYear()} SalonFlow India</p>
                 </div>
               </SidebarFooter>
