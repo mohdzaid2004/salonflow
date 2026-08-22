@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { MainNav } from '@/components/dashboard/main-nav';
 import { UserNav } from '@/components/dashboard/user-nav';
 import { Logo } from '@/components/logo';
@@ -174,46 +175,89 @@ export default function DashboardLayout({
   }
 
   return (
-    <div>
+    <div className="min-h-screen bg-[#FAF9FD]">
       <HeaderActionsProvider>
         <SidebarProvider>
-          <Sidebar>
-            <SidebarHeader>
-              <div className="flex h-16 items-center gap-2 border-b border-sidebar-border p-2">
-                <Logo className="h-8 w-8 shrink-0 text-primary" />
+          <Sidebar className="border-r border-slate-200/80 bg-white">
+            <SidebarHeader className="p-4 border-b border-slate-100">
+              <div className="flex items-center gap-3">
+                <div className="h-10 w-10 rounded-xl bg-purple-50 border border-purple-100 flex items-center justify-center text-purple-600 shadow-sm shrink-0">
+                  <Logo className="h-6 w-6 text-purple-600" />
+                </div>
                 <div className="flex flex-col overflow-hidden">
-                  <span className="truncate font-headline text-lg font-bold tracking-tight">
-                    SALON FLOW
+                  <span className="truncate font-serif text-lg font-bold text-slate-900 tracking-tight">
+                    {salon?.name || 'Toni & Guy'}
                   </span>
-                  <span className="truncate text-xs text-sidebar-foreground/70">
+                  <span className="truncate text-xs text-slate-500 font-medium">
                     Your Dashboard
                   </span>
                 </div>
               </div>
             </SidebarHeader>
-            <SidebarContent className="p-2">
+
+            <SidebarContent className="p-3">
               <MainNav salon={salon} />
             </SidebarContent>
-            <SidebarFooter>
-              <Separator className="my-2 bg-sidebar-border" />
-              <div className="p-2 text-center text-xs text-sidebar-foreground/70">
-                <p>&copy; {new Date().getFullYear()} SalonFlow India</p>
+
+            <SidebarFooter className="p-3">
+              {/* Go Premium Box */}
+              <div className="rounded-2xl bg-purple-50/80 border border-purple-100/90 p-4 text-left shadow-sm mb-2">
+                <div className="flex items-center gap-1.5 text-purple-700 font-bold text-xs mb-1">
+                  <span>👑</span>
+                  <span>Go Premium</span>
+                </div>
+                <p className="text-[11px] text-slate-500 leading-snug mb-3">
+                  Unlock advanced features and grow your business.
+                </p>
+                <Link
+                  href="/dashboard/my-subscription"
+                  className="block w-full text-center py-2 px-3 rounded-xl bg-white border border-purple-200 text-purple-700 hover:bg-purple-100/50 text-xs font-semibold shadow-sm transition-all"
+                >
+                  Upgrade Now
+                </Link>
+              </div>
+
+              <div className="pt-2 text-center text-[11px] text-slate-400 font-medium">
+                <p>&copy; {new Date().getFullYear()} {salon?.name || 'Toni & Guy'}. All rights reserved.</p>
               </div>
             </SidebarFooter>
           </Sidebar>
-          <SidebarInset>
-            <header className="sticky top-0 z-10 flex h-16 items-center gap-4 border-b bg-background px-4 sm:px-6">
-              <SidebarTrigger className="md:hidden" />
-              <div className="flex items-center gap-4">
-                <PageHeader />
+
+          <SidebarInset className="bg-[#FAF9FD]">
+            <header className="sticky top-0 z-10 flex h-16 items-center justify-between border-b border-slate-100 bg-[#FAF9FD]/90 backdrop-blur-md px-4 sm:px-8">
+              <div className="flex items-center gap-3">
+                <SidebarTrigger className="md:hidden" />
               </div>
-              <div className="ml-auto flex items-center gap-2">
-                <HeaderActions />
+              
+              <div className="flex items-center gap-3 sm:gap-4">
+                {/* Notification Bell */}
+                <button
+                  type="button"
+                  className="relative h-9 w-9 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 flex items-center justify-center text-slate-600 shadow-sm transition-colors"
+                >
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                  </svg>
+                  <span className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-purple-600 text-[10px] font-bold text-white flex items-center justify-center shadow-sm">
+                    3
+                  </span>
+                </button>
+
+                {/* User Dropdown */}
                 <UserNav />
+
+                {/* Date / Month Filter Pill */}
+                <div className="hidden sm:flex items-center gap-1.5 h-9 px-3.5 rounded-xl border border-slate-200 bg-white shadow-sm text-xs font-semibold text-slate-700 select-none">
+                  <span>🗓️</span>
+                  <span>{new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}</span>
+                  <span className="text-[10px] text-slate-400 ml-0.5">▾</span>
+                </div>
               </div>
             </header>
+
             <SubscriptionBanner salon={salon} />
-            <main className="flex flex-1 flex-col gap-4 bg-background p-4">
+
+            <main className="flex-1 p-4 sm:p-8 overflow-y-auto">
               {children}
             </main>
           </SidebarInset>

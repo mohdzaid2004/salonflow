@@ -3,14 +3,9 @@
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 import {
-  SidebarMenu,
-  SidebarMenuItem,
-  SidebarMenuButton,
-} from '@/components/ui/sidebar';
-import {
   Scissors,
   Users,
-  BookUser,
+  User,
   Settings,
   IndianRupee,
   LayoutGrid,
@@ -21,40 +16,42 @@ import {
 import type { Salon } from '@/lib/data';
 
 export const MainNavItems = [
-  { href: '/dashboard/home', label: 'Home', icon: Home, feature: 'core' },
-  { href: '/dashboard/overview', label: 'Overview', icon: LayoutGrid, feature: 'core' },
-  { href: '/dashboard/billing', label: 'Billing', icon: IndianRupee, feature: 'core' },
-  { href: '/dashboard/services', label: 'Services', icon: Scissors, feature: 'core' },
-  { href: '/dashboard/staff', label: 'Staff', icon: Users, feature: 'core' },
-  { href: '/dashboard/customers', label: 'Customers', icon: BookUser, feature: 'core' },
-  { href: '/dashboard/inventory', label: 'Inventory', icon: Package, feature: 'core' },
-  { href: '/dashboard/my-subscription', label: 'Subscription', icon: CreditCard, feature: 'core' },
-  { href: '/dashboard/settings', label: 'Settings', icon: Settings, feature: 'core' },
+  { href: '/dashboard/home', label: 'Home', icon: Home },
+  { href: '/dashboard/overview', label: 'Overview', icon: LayoutGrid },
+  { href: '/dashboard/billing', label: 'Billing', icon: IndianRupee },
+  { href: '/dashboard/services', label: 'Services', icon: Scissors },
+  { href: '/dashboard/staff', label: 'Staff', icon: User },
+  { href: '/dashboard/customers', label: 'Customers', icon: Users },
+  { href: '/dashboard/inventory', label: 'Inventory', icon: Package },
+  { href: '/dashboard/my-subscription', label: 'Subscriptions', icon: CreditCard },
+  { href: '/dashboard/settings', label: 'Settings', icon: Settings },
 ];
 
 export function MainNav({ salon }: { salon: Salon | null }) {
   const pathname = usePathname();
 
-  const visibleNavItems = MainNavItems.filter(item => {
-    // This can be extended later if more features are conditional
-    return true;
-  });
-
   return (
-    <SidebarMenu>
-      {visibleNavItems.map((link) => (
-        <SidebarMenuItem key={link.href}>
-          <Link href={link.href}>
-            <SidebarMenuButton
-              isActive={pathname.startsWith(link.href) && (link.href !== '/dashboard/home' || pathname === '/dashboard/home')}
-              tooltip={link.label}
-            >
-              <link.icon />
-              <span>{link.label}</span>
-            </SidebarMenuButton>
+    <nav className="flex flex-col gap-1.5 px-1 py-2 select-none">
+      {MainNavItems.map((link) => {
+        const isActive = pathname === link.href || (link.href !== '/dashboard/home' && pathname.startsWith(link.href));
+        const Icon = link.icon;
+        
+        return (
+          <Link
+            key={link.href}
+            href={link.href}
+            className={`flex items-center gap-3 px-4 py-2.5 rounded-2xl text-xs sm:text-sm font-medium transition-all duration-200 ${
+              isActive
+                ? 'bg-purple-50 text-purple-700 font-bold shadow-sm'
+                : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+            }`}
+          >
+            <Icon className={`w-4 h-4 ${isActive ? 'text-purple-600' : 'text-slate-500'}`} />
+            <span>{link.label}</span>
           </Link>
-        </SidebarMenuItem>
-      ))}
-    </SidebarMenu>
+        );
+      })}
+    </nav>
   );
 }
+
