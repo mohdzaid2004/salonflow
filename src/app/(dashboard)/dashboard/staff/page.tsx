@@ -72,21 +72,19 @@ export default function StaffPage() {
   const { data: dbStaff } = useCollection<Staff>(staffQuery);
 
   const staffList = useMemo(() => {
-    if (dbStaff && dbStaff.length > 0) {
-      return dbStaff.map(s => ({
-        id: s.id,
-        name: s.name,
-        role: s.role || 'Stylist',
-        specialization: (s as any).specialization || 'Hair & Grooming',
-        appointmentsToday: 4,
-        revenue: 6500,
-        hours: '10:00 AM - 07:00 PM',
-        rating: 4.8,
-        reviewCount: 12,
-        status: 'Active',
-      }));
-    }
-    return DEFAULT_STAFF;
+    if (!dbStaff) return [];
+    return dbStaff.map(s => ({
+      id: s.id,
+      name: s.name,
+      role: s.role || 'Stylist',
+      specialization: (s as any).specialization || 'Hair & Grooming',
+      appointmentsToday: 0,
+      revenue: 0,
+      hours: '10:00 AM - 07:00 PM',
+      rating: 5.0,
+      reviewCount: 0,
+      status: 'Active',
+    }));
   }, [dbStaff]);
 
   const filteredStaff = useMemo(() => {

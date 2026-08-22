@@ -71,18 +71,16 @@ export default function ServicesPage() {
   const { data: dbServices } = useCollection<Service>(servicesQuery);
 
   const servicesList = useMemo(() => {
-    if (dbServices && dbServices.length > 0) {
-      return dbServices.map(s => ({
-        id: s.id,
-        name: s.name,
-        category: (s as any).category || 'Hair',
-        duration: (s as any).duration || '45 mins',
-        price: s.price || 500,
-        assignedStaff: (s as any).assignedStaff || 'All Stylists',
-        status: 'Active',
-      }));
-    }
-    return DEFAULT_SERVICES;
+    if (!dbServices) return [];
+    return dbServices.map(s => ({
+      id: s.id,
+      name: s.name,
+      category: (s as any).category || 'Hair',
+      duration: (s as any).duration || '45 mins',
+      price: s.price || 500,
+      assignedStaff: (s as any).assignedStaff || 'All Stylists',
+      status: 'Active',
+    }));
   }, [dbServices]);
 
   const filteredServices = useMemo(() => {

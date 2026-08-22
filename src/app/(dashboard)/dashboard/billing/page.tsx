@@ -68,7 +68,7 @@ export default function BillingPage() {
 
   const { data: dbInvoices } = useCollection<any>(invoicesQuery);
 
-  const [localInvoices, setLocalInvoices] = useState<InvoiceItem[]>(INITIAL_INVOICES);
+  const [localInvoices, setLocalInvoices] = useState<InvoiceItem[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('All');
   const [isNewBillOpen, setNewBillOpen] = useState(false);
@@ -82,7 +82,7 @@ export default function BillingPage() {
   const [paymentMode, setPaymentMode] = useState<'UPI' | 'Card' | 'Cash'>('UPI');
 
   const invoices = useMemo(() => {
-    if (dbInvoices && dbInvoices.length > 0) {
+    if (dbInvoices) {
       return dbInvoices.map((inv: any) => ({
         id: inv.id,
         invoiceNo: inv.invoiceNo || `INV-2026-${Math.floor(1000 + Math.random() * 9000)}`,

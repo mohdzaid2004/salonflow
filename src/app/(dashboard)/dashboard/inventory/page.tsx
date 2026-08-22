@@ -64,7 +64,7 @@ export default function InventoryPage() {
 
   const { data: dbProducts } = useCollection<any>(inventoryQuery);
 
-  const [localProducts, setLocalProducts] = useState<ProductItem[]>(INITIAL_PRODUCTS);
+  const [localProducts, setLocalProducts] = useState<ProductItem[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('All');
   const [isAddDialogOpen, setAddDialogOpen] = useState(false);
@@ -80,7 +80,7 @@ export default function InventoryPage() {
   const [formSupplier, setFormSupplier] = useState('Loreal India Ltd');
 
   const products = useMemo(() => {
-    if (dbProducts && dbProducts.length > 0) {
+    if (dbProducts) {
       return dbProducts.map((p: any) => ({
         id: p.id,
         name: p.name || 'Product',

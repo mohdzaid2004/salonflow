@@ -70,7 +70,7 @@ export default function AppointmentsPage() {
   const { data: dbAppointments } = useCollection<any>(apptQuery);
 
   const searchParams = useSearchParams();
-  const [localAppointments, setLocalAppointments] = useState<AppointmentItem[]>(INITIAL_APPOINTMENTS);
+  const [localAppointments, setLocalAppointments] = useState<AppointmentItem[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('All');
   const [isNewDialogOpen, setNewDialogOpen] = useState(false);
@@ -91,7 +91,7 @@ export default function AppointmentsPage() {
   const [formPrice, setFormPrice] = useState(950);
 
   const appointments = useMemo(() => {
-    if (dbAppointments && dbAppointments.length > 0) {
+    if (dbAppointments) {
       return dbAppointments.map((a: any) => ({
         id: a.id,
         customer: a.customer || a.customerName || 'Client',

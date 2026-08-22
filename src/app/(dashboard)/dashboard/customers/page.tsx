@@ -71,21 +71,19 @@ export default function CustomersPage() {
   
   const { data: dbCustomers, isLoading: isLoadingCustomers } = useCollection<Customer>(customersQuery);
 
-  // Merge live Firestore customers with sample realistic fallback
+  // Live Firestore customers
   const displayCustomers = useMemo(() => {
-    if (dbCustomers && dbCustomers.length > 0) {
-      return dbCustomers.map(c => ({
-        id: c.id,
-        name: c.name,
-        phone: c.phone,
-        visits: c.visitHistory?.length || 1,
-        lastVisit: 'Recent',
-        totalSpent: 4500,
-        tier: (c.loyaltyPoints && c.loyaltyPoints > 200) ? 'VIP' : 'Regular',
-        points: c.loyaltyPoints || 0,
-      }));
-    }
-    return SAMPLE_CUSTOMERS;
+    if (!dbCustomers) return [];
+    return dbCustomers.map(c => ({
+      id: c.id,
+      name: c.name,
+      phone: c.phone,
+      visits: c.visitHistory?.length || 1,
+      lastVisit: 'Recent',
+      totalSpent: ((c.visitHistory?.length || 1) * 1250),
+      tier: (c.loyaltyPoints && c.loyaltyPoints > 500) ? 'VIP' : (c.loyaltyPoints && c.loyaltyPoints > 200) ? 'Gold' : 'Regular',
+      points: c.loyaltyPoints || 0,
+    }));
   }, [dbCustomers]);
 
   const filteredCustomers = useMemo(() => {
