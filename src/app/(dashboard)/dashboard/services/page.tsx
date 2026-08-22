@@ -5,13 +5,10 @@ import {
   Scissors, 
   Search, 
   Plus, 
-  Clock, 
   IndianRupee, 
   Pencil, 
   Trash2, 
-  Tag, 
-  UserCheck, 
-  CalendarPlus 
+  Tag
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import {
@@ -35,13 +32,12 @@ import { AddServiceForm } from '@/components/dashboard/services/add-service-form
 import { EditServiceForm } from '@/components/dashboard/services/edit-service-form';
 import { useFirestore, useUser, useCollection, deleteDocumentNonBlocking } from '@/firebase';
 import { collection, query, doc } from 'firebase/firestore';
+
 interface ServiceViewItem {
   id: string;
   name: string;
   category: string;
-  duration: string;
   price: number;
-  assignedStaff: string;
   description?: string;
 }
 
@@ -74,9 +70,7 @@ export default function ServicesPage() {
         id: s.id,
         name: s.name,
         category: s.category || 'General',
-        duration: s.duration || '30 min',
         price: Number(s.price) || 500,
-        assignedStaff: s.assignedStaff || s.staff || 'All Stylists',
         description: s.description || '',
       }));
     }
@@ -133,7 +127,7 @@ export default function ServicesPage() {
             Services
           </h1>
           <p className="text-xs sm:text-sm text-slate-500 font-medium mt-0.5">
-            Service catalog, pricing rules, treatment durations, and stylist assignments.
+            Service catalog, treatment pricing, and active treatments menu.
           </p>
         </div>
 
@@ -178,14 +172,14 @@ export default function ServicesPage() {
         <div className="bg-white rounded-2xl p-3.5 sm:p-4 shadow-xs border border-slate-200/80">
           <span className="text-[11px] font-semibold text-slate-500">Online Booking</span>
           <div className="text-xl sm:text-2xl font-extrabold text-emerald-600 mt-0.5">Ready</div>
-          <span className="text-[10px] text-emerald-600 font-medium">Synced with appointment desk</span>
+          <span className="text-[10px] text-emerald-600 font-medium">Synced with desk</span>
         </div>
       </div>
 
       {/* Main Table / Mobile Card Container */}
       <div className="bg-white rounded-2xl p-4 sm:p-6 shadow-xs border border-slate-200/80 space-y-4">
         
-        {/* Search & Category Filter */}
+        {/* Search & Category Filter Bar */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div className="relative flex-1 max-w-sm">
             <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
@@ -198,24 +192,22 @@ export default function ServicesPage() {
             />
           </div>
 
-          {dynamicCategories.length > 1 && (
-            <div className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0">
-              {dynamicCategories.map((cat) => (
-                <button
-                  key={cat}
-                  type="button"
-                  onClick={() => setActiveCategory(cat)}
-                  className={`px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all ${
-                    activeCategory.toLowerCase() === cat.toLowerCase()
-                      ? 'bg-purple-700 text-white shadow-xs'
-                      : 'bg-slate-100/80 text-slate-600 hover:bg-slate-200/60'
-                  }`}
-                >
-                  {cat}
-                </button>
-              ))}
-            </div>
-          )}
+          <div className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0">
+            {dynamicCategories.map((cat) => (
+              <button
+                key={cat}
+                type="button"
+                onClick={() => setActiveCategory(cat)}
+                className={`px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all ${
+                  activeCategory === cat
+                    ? 'bg-purple-700 text-white shadow-xs'
+                    : 'bg-slate-100/80 text-slate-600 hover:bg-slate-200/60'
+                }`}
+              >
+                {cat}
+              </button>
+            ))}
+          </div>
         </div>
 
         {/* Mobile Interactive Cards (< md) */}
@@ -226,28 +218,13 @@ export default function ServicesPage() {
                 <div className="flex items-start justify-between gap-2">
                   <div>
                     <div className="font-bold text-slate-900 text-sm">{service.name}</div>
-                    <div className="text-[10px] text-slate-400">ID: {service.id}</div>
-                  </div>
-                  <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-purple-50 text-purple-700 border border-purple-100">
-                    <Tag className="w-2.5 h-2.5 text-purple-600" />
-                    {service.category}
-                  </span>
-                </div>
-
-                <div className="grid grid-cols-2 gap-2 text-xs pt-1 border-t border-slate-200/60">
-                  <div>
-                    <span className="text-[10px] text-slate-400 block font-semibold">Duration</span>
-                    <span className="font-medium text-slate-800 flex items-center gap-1">
-                      <Clock className="w-3 h-3 text-slate-400" /> {service.duration}
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-purple-50 text-purple-700 border border-purple-100 mt-1">
+                      <Tag className="w-2.5 h-2.5 text-purple-600" />
+                      {service.category}
                     </span>
                   </div>
-                  <div>
-                    <span className="text-[10px] text-slate-400 block font-semibold">Price</span>
-                    <span className="font-bold text-slate-900">₹{service.price.toLocaleString('en-IN')}</span>
-                  </div>
-                  <div className="col-span-2">
-                    <span className="text-[10px] text-slate-400 block font-semibold">Stylists</span>
-                    <span className="font-medium text-slate-600 text-xs">{service.assignedStaff}</span>
+                  <div className="text-right">
+                    <span className="text-base font-extrabold text-slate-900">₹{service.price.toLocaleString('en-IN')}</span>
                   </div>
                 </div>
 
@@ -289,9 +266,7 @@ export default function ServicesPage() {
               <tr className="border-b border-slate-100 text-slate-400 font-bold uppercase tracking-wider text-[10px]">
                 <th className="pb-3 pl-1">Service Name</th>
                 <th className="pb-3">Category</th>
-                <th className="pb-3">Duration</th>
                 <th className="pb-3">Price</th>
-                <th className="pb-3">Assigned Stylists</th>
                 <th className="pb-3 text-right pr-1">Actions</th>
               </tr>
             </thead>
@@ -309,14 +284,7 @@ export default function ServicesPage() {
                         {service.category}
                       </span>
                     </td>
-                    <td className="py-3.5">
-                      <div className="flex items-center gap-1 text-slate-600 font-medium">
-                        <Clock className="w-3 h-3 text-slate-400" />
-                        <span>{service.duration}</span>
-                      </div>
-                    </td>
                     <td className="py-3.5 font-bold text-slate-900">₹{service.price.toLocaleString('en-IN')}</td>
-                    <td className="py-3.5 font-medium text-slate-600">{service.assignedStaff}</td>
                     <td className="py-3.5 text-right pr-1">
                       <div className="flex items-center justify-end gap-1.5">
                         <button
@@ -347,7 +315,7 @@ export default function ServicesPage() {
                 ))
               ) : (
                 <tr>
-                  <td colSpan={6} className="text-center py-8 text-slate-400">
+                  <td colSpan={4} className="text-center py-8 text-slate-400">
                     No services in database yet. Click &quot;Add Service&quot; above to create one.
                   </td>
                 </tr>
@@ -374,18 +342,18 @@ export default function ServicesPage() {
       <AlertDialog open={isDeleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent className="rounded-3xl p-5 sm:p-6 bg-white shadow-2xl">
           <AlertDialogHeader>
-            <AlertDialogTitle className="text-lg font-bold text-slate-900">Delete Service?</AlertDialogTitle>
+            <AlertDialogTitle className="text-lg font-bold text-slate-900">Remove Service?</AlertDialogTitle>
             <AlertDialogDescription className="text-xs text-slate-500">
-              Are you sure you want to delete &apos;{selectedService?.name}&apos;? This action cannot be undone.
+              Are you sure you want to remove &quot;{selectedService?.name}&quot;? This action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <AlertDialogFooter className="pt-3">
-            <AlertDialogCancel className="h-9 rounded-xl text-xs font-bold">Cancel</AlertDialogCancel>
+          <AlertDialogFooter className="pt-2">
+            <AlertDialogCancel className="h-8 rounded-xl text-xs font-semibold">Cancel</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDeleteService}
-              className="h-9 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold"
+              className="h-8 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold"
             >
-              Delete Service
+              Remove
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

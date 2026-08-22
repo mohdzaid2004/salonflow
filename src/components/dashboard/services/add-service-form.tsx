@@ -14,7 +14,7 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-import { Loader2, CheckCircle, Scissors, Clock, IndianRupee, Tag, User } from 'lucide-react';
+import { Loader2, CheckCircle, Scissors, IndianRupee } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import {
   useFirestore,
@@ -43,9 +43,8 @@ export const SERVICE_CATEGORIES = [
 const addServiceFormSchema = z.object({
   name: z.string().min(2, 'Service name is required.'),
   category: z.string().min(1, 'Category is required.'),
-  duration: z.string().min(1, 'Duration is required.'),
   price: z.coerce.number().min(0, 'Price must be a positive number.'),
-  assignedStaff: z.string().optional(),
+  description: z.string().optional(),
 });
 
 type AddServiceFormValues = z.infer<typeof addServiceFormSchema>;
@@ -69,9 +68,8 @@ export function AddServiceForm({
     defaultValues: {
       name: '',
       category: 'Hair',
-      duration: '45 mins',
       price: 950,
-      assignedStaff: 'All Stylists',
+      description: '',
     },
   });
 
@@ -89,6 +87,7 @@ export function AddServiceForm({
       const serviceData = {
         ...data,
         salonId,
+        createdAt: new Date().toISOString(),
       };
 
       const servicesRef = collection(firestore, `salons/${salonId}/services`);
@@ -120,8 +119,8 @@ export function AddServiceForm({
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-3 pt-1">
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-3.5 pt-1">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           
           {/* Service Name */}
           <FormField
@@ -169,24 +168,6 @@ export function AddServiceForm({
             )}
           />
 
-          {/* Duration */}
-          <FormField
-            control={form.control}
-            name="duration"
-            render={({ field }) => (
-              <FormItem className="space-y-0.5">
-                <FormLabel className="text-[10px] font-bold text-slate-700 uppercase tracking-wider">Duration</FormLabel>
-                <div className="relative">
-                  <Clock className="w-3.5 h-3.5 text-purple-600 absolute left-2.5 top-1/2 -translate-y-1/2" />
-                  <FormControl>
-                    <Input placeholder="e.g., 45 mins" className="h-8 pl-8 rounded-xl text-xs bg-slate-50/50 border-slate-200" {...field} />
-                  </FormControl>
-                </div>
-                <FormMessage className="text-[10px] text-rose-500" />
-              </FormItem>
-            )}
-          />
-
           {/* Price */}
           <FormField
             control={form.control}
@@ -200,24 +181,6 @@ export function AddServiceForm({
                   <IndianRupee className="w-3.5 h-3.5 text-purple-600 absolute left-2.5 top-1/2 -translate-y-1/2" />
                   <FormControl>
                     <Input type="number" placeholder="950" className="h-8 pl-8 rounded-xl text-xs bg-slate-50/50 border-slate-200" {...field} />
-                  </FormControl>
-                </div>
-                <FormMessage className="text-[10px] text-rose-500" />
-              </FormItem>
-            )}
-          />
-
-          {/* Assigned Staff */}
-          <FormField
-            control={form.control}
-            name="assignedStaff"
-            render={({ field }) => (
-              <FormItem className="space-y-0.5">
-                <FormLabel className="text-[10px] font-bold text-slate-700 uppercase tracking-wider">Assigned Staff</FormLabel>
-                <div className="relative">
-                  <User className="w-3.5 h-3.5 text-purple-600 absolute left-2.5 top-1/2 -translate-y-1/2" />
-                  <FormControl>
-                    <Input placeholder="e.g. All Stylists" className="h-8 pl-8 rounded-xl text-xs bg-slate-50/50 border-slate-200" {...field} />
                   </FormControl>
                 </div>
                 <FormMessage className="text-[10px] text-rose-500" />
