@@ -22,7 +22,6 @@ export interface InvoiceItem {
   customer: string;
   phone: string;
   items: string;
-  subtotal: number;
   discount: number;
   total: number;
   method: 'UPI' | 'Card' | 'Cash';
@@ -56,22 +55,24 @@ export default function BillingPage() {
   const [statusFilter, setStatusFilter] = useState('All');
 
   const invoices: InvoiceItem[] = useMemo(() => {
-    if (dbInvoices) {
-      return dbInvoices.map((inv: any) => ({
-        id: inv.id,
-        invoiceNo: inv.invoiceNo || `INV-2026-${Math.floor(1000 + Math.random() * 9000)}`,
-        customer: inv.customer || 'Client',
-        phone: inv.phone || '+91 98000 00000',
-        items: inv.items || 'Salon Service',
-        subtotal: Number(inv.subtotal) || Number(inv.total) || 500,
-        discount: Number(inv.discount) || 0,
-        total: Number(inv.total) || 500,
-        method: inv.method || 'UPI',
-        status: inv.status || 'Paid',
-        date: inv.date || 'Today',
-        pointsEarned: inv.pointsEarned || Math.round((Number(inv.total) || 500) * 0.1),
-        loyaltyBalance: inv.loyaltyBalance || Math.round((Number(inv.total) || 500) * 0.1),
-      }));
+    if (dbInvoices && dbInvoices.length > 0) {
+      return dbInvoices.map((inv: any) => {
+        const amt = Number(inv.total ?? inv.amountPaid ?? inv.finalAmount ?? 350);
+        return {
+          id: inv.id,
+          invoiceNo: inv.invoiceNo || `INV-2026-${Math.floor(1000 + Math.random() * 9000)}`,
+          customer: inv.customer || inv.customerName || 'Customer name',
+          phone: inv.phone || inv.customerPhone || '+91 98000 00000',
+          items: inv.items || (inv.services && Array.isArray(inv.services) ? inv.services.map((s: any) => s.name).join(', ') : 'Salon Service'),
+          discount: Number(inv.discount ?? inv.pointsRedeemed) || 0,
+          total: amt,
+          method: (inv.method || inv.paymentMethod || 'UPI') as any,
+          status: (inv.status || (inv.paymentStatus === 'paid' ? 'Paid' : 'Paid')) as any,
+          date: inv.date ? (typeof inv.date === 'string' ? inv.date : 'Today') : 'Today',
+          pointsEarned: inv.pointsEarned || Math.round(amt * 0.1),
+          loyaltyBalance: inv.loyaltyBalance || Math.round(amt * 0.1),
+        };
+      });
     }
     return [];
   }, [dbInvoices]);
@@ -107,7 +108,7 @@ Your payment of ₹${inv.total.toLocaleString('en-IN')} has been successfully re
 
 🧾 Invoice: ${inv.invoiceNo}
 💳 Payment: ${inv.method}
-💰 Amount Paid: ₹${inv.total.toLocaleString('en-IN')}
+💰 Total Amount: ₹${inv.total.toLocaleString('en-IN')}
 
 🎁 Loyalty Points Earned: ${inv.pointsEarned || Math.round(inv.total * 0.1)}
 ⭐ Loyalty Balance: ${inv.loyaltyBalance || Math.round(inv.total * 0.1)} Points
@@ -156,9 +157,10 @@ ${salonAddress ? `📍 ${salonAddress}\n` : ''}📞 ${salonPhone}`;
 
   const totalCollected = invoices.filter(i => i.status === 'Paid').reduce((acc, i) => acc + i.total, 0);
   const pendingAmt = invoices.filter(i => i.status === 'Pending').reduce((acc, i) => acc + i.total, 0);
+  const totalDiscounts = invoices.reduce((acc, i) => acc + (i.discount || 0), 0);
 
   return (
-    <div className="space-y-4 sm:space-y-6 select-none">
+    <div className="space-y-4 sm:space-y-6 select-none font-sans">
       
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
@@ -198,9 +200,7 @@ ${salonAddress ? `📍 ${salonAddress}\n` : ''}📞 ${salonPhone}`;
         </div>
         <div className="bg-white rounded-2xl p-3.5 sm:p-4 shadow-xs border border-slate-200/80">
           <span className="text-[11px] font-semibold text-slate-500">Total Discounts</span>
-          <div className="text-xl sm:text-2xl font-extrabold text-slate-900 mt-0.5">
-            ₹{invoices.reduce((acc, i) => acc + (i.discount || 0), 0).toLocaleString('en-IN')}
-          </div>
+          <div className="text-xl sm:text-2xl font-extrabold text-slate-900 mt-0.5">₹{totalDiscounts.toLocaleString('en-IN')}</div>
           <span className="text-[10px] text-slate-400 font-medium">Customer loyalty & promos</span>
         </div>
       </div>
@@ -214,7 +214,7 @@ ${salonAddress ? `📍 ${salonAddress}\n` : ''}📞 ${salonPhone}`;
             <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
             <input
               type="text"
-              placeholder="Search invoice number, client, or phone..."
+              placeholder="Search invoice number, customer name, or phone..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full h-9 pl-9 pr-3 rounded-xl bg-slate-50 border border-slate-200 text-xs focus:outline-hidden focus:border-purple-600"
@@ -243,50 +243,46 @@ ${salonAddress ? `📍 ${salonAddress}\n` : ''}📞 ${salonPhone}`;
         <div className="block md:hidden space-y-3">
           {filteredInvoices.length > 0 ? (
             filteredInvoices.map((inv) => (
-              <div key={inv.id} className="p-3.5 rounded-xl border border-slate-200/80 bg-slate-50/50 space-y-2.5">
+              <div key={inv.id} className="p-4 rounded-2xl border border-slate-200/80 bg-white shadow-xs space-y-3">
                 <div className="flex items-start justify-between gap-2">
                   <div>
                     <div className="font-bold text-slate-900 text-sm">{inv.customer}</div>
-                    <div className="text-[10px] text-slate-400 font-mono">{inv.invoiceNo} • {inv.date}</div>
+                    <div className="text-[11px] text-slate-400 font-mono mt-0.5">{inv.invoiceNo} • {inv.date}</div>
                   </div>
-                  <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                  <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold ${
                     inv.status === 'Paid' ? 'bg-emerald-50 text-emerald-700 border border-emerald-100' : 'bg-amber-50 text-amber-700 border border-amber-100'
                   }`}>
                     {inv.status}
                   </span>
                 </div>
 
-                <div className="grid grid-cols-2 gap-2 text-xs pt-1 border-t border-slate-200/60">
+                <div className="grid grid-cols-2 gap-3 text-xs pt-2 border-t border-slate-100">
                   <div>
                     <span className="text-[10px] text-slate-400 block font-semibold">Service</span>
-                    <span className="font-medium text-slate-800 truncate block">{inv.items}</span>
+                    <span className="font-medium text-slate-800 truncate block mt-0.5">{inv.items}</span>
                   </div>
                   <div>
                     <span className="text-[10px] text-slate-400 block font-semibold">Method</span>
-                    <span className="font-medium text-purple-700">{inv.method}</span>
+                    <span className="font-medium text-purple-700 block mt-0.5">{inv.method}</span>
                   </div>
-                  <div>
-                    <span className="text-[10px] text-slate-400 block font-semibold">Subtotal</span>
-                    <span className="text-slate-600 font-medium">₹{inv.subtotal} {inv.discount > 0 ? `(-₹${inv.discount})` : ''}</span>
-                  </div>
-                  <div>
-                    <span className="text-[10px] text-slate-400 block font-semibold">Total Paid</span>
-                    <span className="font-bold text-slate-900">₹{inv.total.toLocaleString('en-IN')}</span>
+                  <div className="col-span-2 pt-1">
+                    <span className="text-[10px] text-slate-400 block font-semibold">Total Amount</span>
+                    <span className="font-bold text-slate-900 text-sm block mt-0.5">₹{inv.total.toLocaleString('en-IN')}</span>
                   </div>
                 </div>
 
-                <div className="flex items-center gap-2 pt-2 border-t border-slate-200/60">
+                <div className="flex items-center gap-2 pt-2 border-t border-slate-100">
                   <button
                     type="button"
                     onClick={() => toast({ title: 'Invoice Receipt', description: `Printed invoice ${inv.invoiceNo}` })}
-                    className="flex-1 py-1.5 rounded-lg bg-white border border-slate-200 text-slate-700 text-xs font-bold flex items-center justify-center gap-1.5 shadow-2xs"
+                    className="flex-1 py-2 rounded-xl bg-white border border-slate-200 text-slate-700 text-xs font-bold flex items-center justify-center gap-1.5 shadow-2xs hover:bg-slate-50 transition-all"
                   >
                     <Printer className="w-3.5 h-3.5 text-purple-600" /> Print
                   </button>
                   <button
                     type="button"
                     onClick={() => handleSendWhatsAppInvoice(inv)}
-                    className="flex-1 py-1.5 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs font-bold flex items-center justify-center gap-1.5 shadow-2xs"
+                    className="flex-1 py-2 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs font-bold flex items-center justify-center gap-1.5 shadow-2xs hover:bg-emerald-100 transition-all"
                   >
                     <Smartphone className="w-3.5 h-3.5 text-emerald-600" /> WhatsApp
                   </button>
@@ -306,10 +302,10 @@ ${salonAddress ? `📍 ${salonAddress}\n` : ''}📞 ${salonPhone}`;
             <thead>
               <tr className="border-b border-slate-100 text-slate-400 font-bold uppercase tracking-wider text-[10px]">
                 <th className="pb-3 pl-1">Invoice No</th>
-                <th className="pb-3">Client</th>
-                <th className="pb-3">Services</th>
-                <th className="pb-3">Amount</th>
-                <th className="pb-3">Mode</th>
+                <th className="pb-3">Customer name</th>
+                <th className="pb-3">Service</th>
+                <th className="pb-3">Total Amount</th>
+                <th className="pb-3">Method</th>
                 <th className="pb-3">Status</th>
                 <th className="pb-3 text-right pr-1">Actions</th>
               </tr>
