@@ -172,11 +172,43 @@ export default function LoginPage() {
           ownerId: loggedUser.uid,
           appointmentsEnabled: true,
           loyaltyProgramEnabled: true,
+          automatedWhatsappEnabled: true,
           subscriptionPlanId: 'starter',
           billingStatus: 'trialing',
           trialEndsAt: Timestamp.fromDate(trialEndsAt),
           themeColor: '275 100% 25.3%',
         });
+
+        // Initialize live starter services
+        const starterServices = [
+          { name: 'Classic Haircut & Styling', category: 'Hair', price: 350, duration: 30, description: 'Precision cut, wash, and style.' },
+          { name: 'Beard Trim & Grooming', category: 'Beard', price: 200, duration: 20, description: 'Shaping, edging, and beard oil.' },
+          { name: 'Premium Hair Spa', category: 'Hair', price: 800, duration: 45, description: 'Deep conditioning & scalp massage.' },
+          { name: 'Radiance Facial & Cleanup', category: 'Skin', price: 950, duration: 45, description: 'Exfoliation, steam, and herbal mask.' },
+        ];
+
+        for (let i = 0; i < starterServices.length; i++) {
+          const s = starterServices[i];
+          await setDoc(doc(firestore, `salons/${salonId}/services`, `service_${i + 1}`), {
+            salonId,
+            name: s.name,
+            category: s.category,
+            price: s.price,
+            duration: s.duration,
+            description: s.description,
+            createdAt: Timestamp.now(),
+          }).catch(() => {});
+        }
+
+        // Initialize live starter staff
+        await setDoc(doc(firestore, `salons/${salonId}/staff`, 'staff_owner'), {
+          salonId,
+          name: loggedUser.displayName || 'Salon Owner',
+          role: 'Master Stylist / Owner',
+          phone: loggedUser.phoneNumber || '+91 98765 43210',
+          status: 'Active',
+          createdAt: Timestamp.now(),
+        }).catch(() => {});
       }
 
       toast({

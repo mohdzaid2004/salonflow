@@ -259,10 +259,10 @@ export default function HomePage() {
               {/* Title & Subtitle */}
               <div className="space-y-1.5 mb-6">
                 <h1 className="font-serif text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
-                  Customer Check-in
+                  {salonDisplayName} Check-in
                 </h1>
                 <p className="text-xs sm:text-sm text-slate-500">
-                  Enter a customer&apos;s phone number to create a bill.
+                  Welcome to {salonDisplayName}. Enter customer phone number to check in.
                 </p>
               </div>
 

@@ -167,7 +167,40 @@ export default function SignupPage() {
       "Database write timeout. Please verify that Cloud Firestore is configured."
     );
 
-    // 4. Update display name
+    // 4. Create default starter services in live Firestore database for the new salon
+    const starterServices = [
+      { name: 'Classic Haircut & Styling', category: 'Hair', price: 350, duration: 30, description: 'Precision cut, wash, and style.' },
+      { name: 'Beard Trim & Grooming', category: 'Beard', price: 200, duration: 20, description: 'Shaping, edging, and beard oil.' },
+      { name: 'Premium Hair Spa', category: 'Hair', price: 800, duration: 45, description: 'Deep conditioning & scalp massage.' },
+      { name: 'Radiance Facial & Cleanup', category: 'Skin', price: 950, duration: 45, description: 'Exfoliation, steam, and herbal mask.' },
+    ];
+
+    for (let i = 0; i < starterServices.length; i++) {
+      const s = starterServices[i];
+      const serviceRef = doc(firestore, `salons/${salonId}/services`, `service_${i + 1}`);
+      await setDoc(serviceRef, {
+        salonId,
+        name: s.name,
+        category: s.category,
+        price: s.price,
+        duration: s.duration,
+        description: s.description,
+        createdAt: Timestamp.now(),
+      }).catch(() => {});
+    }
+
+    // 5. Create default staff member in live Firestore database
+    const staffRef = doc(firestore, `salons/${salonId}/staff`, 'staff_owner');
+    await setDoc(staffRef, {
+      salonId,
+      name: fullName,
+      role: 'Master Stylist / Owner',
+      phone: phone || '+91 98765 43210',
+      status: 'Active',
+      createdAt: Timestamp.now(),
+    }).catch(() => {});
+
+    // 6. Update Firebase Auth display name
     await updateProfile(user, { displayName: fullName });
   };
 
