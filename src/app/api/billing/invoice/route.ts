@@ -172,10 +172,8 @@ export async function POST(req: Request) {
       isBase64Fallback = false;
     }
 
-    // 8. Calculations (inclusive 18% GST)
+    // 8. Calculations (No GST)
     const grandTotal = appointment.amountPaid;
-    const taxableAmount = grandTotal / 1.18;
-    const gstAmount = grandTotal - taxableAmount;
     
     // Loyalty points calculation
     const loyaltyRatio = salon.loyaltyPointsRatio || 5;
@@ -191,8 +189,7 @@ export async function POST(req: Request) {
       appointmentId,
       staffId: appointment.staffId,
       staffName: staff.name,
-      subtotal: appointment.subtotal,
-      gstAmount,
+      subtotal: appointment.subtotal || grandTotal,
       finalAmount: grandTotal,
       paymentMethod: appointment.paymentMethod,
       invoiceUrl: isBase64Fallback ? '' : downloadUrl,

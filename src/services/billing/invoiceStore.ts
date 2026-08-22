@@ -12,7 +12,7 @@ export interface InvoiceMetadata {
   staffId: string;
   staffName: string;
   subtotal: number;
-  gstAmount: number;
+  gstAmount?: number;
   finalAmount: number;
   paymentMethod: string;
   invoiceUrl: string;

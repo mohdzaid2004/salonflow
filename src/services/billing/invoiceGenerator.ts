@@ -211,9 +211,6 @@ export async function generateInvoicePDF(details: InvoiceDetails): Promise<Buffe
   const pointsRedeemed = appointment.pointsRedeemed || 0;
   const subtotal = appointment.subtotal || services.reduce((acc, s) => acc + s.price, 0);
 
-  const taxableAmount = grandTotal / 1.18; // 18% inclusive GST
-  const gstAmount = grandTotal - taxableAmount;
-
   let rightLabelX = pageWidth - 65;
   let rightValX = pageWidth - 18;
   let summaryY = currentY + 8;
@@ -229,7 +226,6 @@ export async function generateInvoicePDF(details: InvoiceDetails): Promise<Buffe
   if (pointsRedeemed > 0) {
     addSummaryRow('Discount:', `- INR ${new Intl.NumberFormat('en-IN', { minimumFractionDigits: 2 }).format(pointsRedeemed)}`);
   }
-  addSummaryRow('Tax (18% GST):', `INR ${new Intl.NumberFormat('en-IN', { minimumFractionDigits: 2 }).format(gstAmount)}`);
   
   doc.setLineWidth(0.3);
   doc.line(rightLabelX, summaryY - 2, rightValX, summaryY - 2);

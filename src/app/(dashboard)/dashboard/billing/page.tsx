@@ -16,14 +16,13 @@ import { useToast } from '@/hooks/use-toast';
 import { useFirestore, useUser, useCollection, useDoc } from '@/firebase';
 import { collection, query, doc } from 'firebase/firestore';
 
-interface InvoiceItem {
+export interface InvoiceItem {
   id: string;
   invoiceNo: string;
   customer: string;
   phone: string;
   items: string;
   subtotal: number;
-  tax: number;
   discount: number;
   total: number;
   method: 'UPI' | 'Card' | 'Cash';
@@ -64,8 +63,7 @@ export default function BillingPage() {
         customer: inv.customer || 'Client',
         phone: inv.phone || '+91 98000 00000',
         items: inv.items || 'Salon Service',
-        subtotal: Number(inv.subtotal) || 500,
-        tax: Number(inv.tax) || 0,
+        subtotal: Number(inv.subtotal) || Number(inv.total) || 500,
         discount: Number(inv.discount) || 0,
         total: Number(inv.total) || 500,
         method: inv.method || 'UPI',
@@ -169,7 +167,7 @@ ${salonAddress ? `📍 ${salonAddress}\n` : ''}📞 ${salonPhone}`;
             Billing
           </h1>
           <p className="text-xs sm:text-sm text-slate-500 font-medium mt-0.5">
-            Automatic GST tax invoices and transaction records generated from completed customer visits.
+            Official customer invoices and transaction records generated from completed visits.
           </p>
         </div>
 
@@ -184,14 +182,14 @@ ${salonAddress ? `📍 ${salonAddress}\n` : ''}📞 ${salonPhone}`;
       {/* 4 Stat Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         <div className="bg-white rounded-2xl p-3.5 sm:p-4 shadow-xs border border-slate-200/80">
-          <span className="text-[11px] font-semibold text-slate-500">Gross Collections</span>
+          <span className="text-[11px] font-semibold text-slate-500">Total Revenue</span>
           <div className="text-xl sm:text-2xl font-extrabold text-slate-900 mt-0.5">₹{totalCollected.toLocaleString('en-IN')}</div>
-          <span className="text-[10px] text-emerald-600 font-medium">Settled revenue</span>
+          <span className="text-[10px] text-emerald-600 font-medium">Settled payments</span>
         </div>
         <div className="bg-white rounded-2xl p-3.5 sm:p-4 shadow-xs border border-slate-200/80">
-          <span className="text-[11px] font-semibold text-slate-500">Total Invoices</span>
+          <span className="text-[11px] font-semibold text-slate-500">Invoices Generated</span>
           <div className="text-xl sm:text-2xl font-extrabold text-purple-700 mt-0.5">{invoices.length}</div>
-          <span className="text-[10px] text-purple-600 font-medium">Tax receipts issued</span>
+          <span className="text-[10px] text-purple-600 font-medium">Live receipts recorded</span>
         </div>
         <div className="bg-white rounded-2xl p-3.5 sm:p-4 shadow-xs border border-slate-200/80">
           <span className="text-[11px] font-semibold text-slate-500">Pending Amount</span>
@@ -199,9 +197,11 @@ ${salonAddress ? `📍 ${salonAddress}\n` : ''}📞 ${salonPhone}`;
           <span className="text-[10px] text-amber-600 font-medium">Awaiting settlement</span>
         </div>
         <div className="bg-white rounded-2xl p-3.5 sm:p-4 shadow-xs border border-slate-200/80">
-          <span className="text-[11px] font-semibold text-slate-500">GST Compliance</span>
-          <div className="text-xl sm:text-2xl font-extrabold text-slate-900 mt-0.5">18% Active</div>
-          <span className="text-[10px] text-slate-400 font-medium">Standard Indian HSN/SAC</span>
+          <span className="text-[11px] font-semibold text-slate-500">Total Discounts</span>
+          <div className="text-xl sm:text-2xl font-extrabold text-slate-900 mt-0.5">
+            ₹{invoices.reduce((acc, i) => acc + (i.discount || 0), 0).toLocaleString('en-IN')}
+          </div>
+          <span className="text-[10px] text-slate-400 font-medium">Customer loyalty & promos</span>
         </div>
       </div>
 
@@ -266,8 +266,8 @@ ${salonAddress ? `📍 ${salonAddress}\n` : ''}📞 ${salonPhone}`;
                     <span className="font-medium text-purple-700">{inv.method}</span>
                   </div>
                   <div>
-                    <span className="text-[10px] text-slate-400 block font-semibold">Subtotal + GST</span>
-                    <span className="text-slate-600 font-medium">₹{inv.subtotal} + ₹{inv.tax}</span>
+                    <span className="text-[10px] text-slate-400 block font-semibold">Subtotal</span>
+                    <span className="text-slate-600 font-medium">₹{inv.subtotal} {inv.discount > 0 ? `(-₹${inv.discount})` : ''}</span>
                   </div>
                   <div>
                     <span className="text-[10px] text-slate-400 block font-semibold">Total Paid</span>

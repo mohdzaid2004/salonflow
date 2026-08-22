@@ -15,12 +15,12 @@ const features = [
   {
     icon: <Scissors className="h-10 w-10 text-primary" />,
     title: 'Service & Staff Management',
-    description: 'Easily add your services with GST pricing. Manage your staff, their schedules, and commissions all in one place.',
+    description: 'Easily add your services with custom pricing. Manage your staff, their schedules, and performance all in one place.',
   },
   {
     icon: <IndianRupee className="h-10 w-10 text-primary" />,
-    title: 'GST Billing & Payments',
-    description: 'Generate GST-compliant invoices and receipts effortlessly. Track payments via Cash, UPI, or Card.',
+    title: 'Instant Billing & Payments',
+    description: 'Generate customer invoices and receipts effortlessly. Track payments via Cash, UPI, or Card.',
   },
   {
     icon: <Users className="h-10 w-10 text-primary" />,

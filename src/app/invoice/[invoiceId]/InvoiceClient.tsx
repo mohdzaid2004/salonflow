@@ -151,13 +151,7 @@ export default function InvoiceClient() {
 
     const subtotal = appointment.subtotal ?? services.reduce((acc, s) => acc + s.price, 0);
     const pointsRedeemed = appointment.pointsRedeemed || 0;
-    
-    // GST calculations (inclusive 18% GST)
     const grandTotal = appointment.amountPaid;
-    const taxableAmount = grandTotal / 1.18;
-    const gstAmount = grandTotal - taxableAmount;
-    const cgstAmount = gstAmount / 2;
-    const sgstAmount = gstAmount / 2;
 
     return (
         <div className="min-h-screen p-4 sm:p-8 bg-zinc-50 print:bg-white print:p-0">
@@ -173,11 +167,10 @@ export default function InvoiceClient() {
                             <h1 className="text-2xl font-bold font-headline">{salon?.name}</h1>
                             <p className="text-sm text-muted-foreground">{salon?.address}</p>
                             <p className="text-sm text-muted-foreground">Phone: {salon?.phone}</p>
-                            <p className="text-xs text-muted-foreground font-mono">GSTIN: {salon?.id ? `${salon.id.slice(0, 15).toUpperCase()}IND` : 'N/A'}</p>
                         </div>
                     </div>
                     <div className="text-right">
-                        <h2 className="text-xl font-semibold text-muted-foreground">GST INVOICE</h2>
+                        <h2 className="text-xl font-semibold text-muted-foreground">INVOICE RECEIPT</h2>
                         <p className="text-sm font-mono text-primary font-semibold">#{appointment.id.slice(0, 6).toUpperCase()}</p>
                         <span className="inline-flex items-center rounded-full bg-green-50 px-2 py-1 text-xs font-medium text-green-700 ring-1 ring-inset ring-green-600/20 mt-1">Verified Online</span>
                     </div>
@@ -203,8 +196,7 @@ export default function InvoiceClient() {
                     <Table>
                         <TableHeader>
                             <TableRow>
-                                <TableHead className="w-3/5">Service / Item</TableHead>
-                                <TableHead className="text-center">SAC Code</TableHead>
+                                <TableHead className="w-4/5">Service / Item</TableHead>
                                 <TableHead className="text-right">Price</TableHead>
                             </TableRow>
                         </TableHeader>
@@ -212,7 +204,6 @@ export default function InvoiceClient() {
                             {services.map(service => (
                                 <TableRow key={service.id}>
                                     <TableCell className="font-medium">{service.name}</TableCell>
-                                    <TableCell className="text-center font-mono text-xs text-muted-foreground">999721</TableCell>
                                     <TableCell className="text-right">{formatCurrency(service.price)}</TableCell>
                                 </TableRow>
                             ))}
@@ -225,29 +216,17 @@ export default function InvoiceClient() {
                 <section className="flex justify-end">
                     <div className="w-full max-w-xs space-y-2 text-sm">
                         <div className="flex justify-between">
-                            <span className="text-muted-foreground">Gross Subtotal</span>
+                            <span className="text-muted-foreground">Subtotal</span>
                             <span>{formatCurrency(subtotal)}</span>
                         </div>
                         {pointsRedeemed > 0 && (
                             <div className="flex justify-between text-destructive">
-                                <span>Loyalty Points Redeemed</span>
+                                <span>Discount / Loyalty</span>
                                 <span>- {formatCurrency(pointsRedeemed)}</span>
                             </div>
                         )}
-                        <div className="flex justify-between text-xs text-muted-foreground font-mono">
-                            <span>Taxable Value</span>
-                            <span>{formatCurrency(taxableAmount)}</span>
-                        </div>
-                        <div className="flex justify-between text-xs text-muted-foreground font-mono">
-                            <span>CGST (9.0%)</span>
-                            <span>{formatCurrency(cgstAmount)}</span>
-                        </div>
-                        <div className="flex justify-between text-xs text-muted-foreground font-mono">
-                            <span>SGST (9.0%)</span>
-                            <span>{formatCurrency(sgstAmount)}</span>
-                        </div>
                         <div className="flex justify-between font-bold text-lg border-t pt-2 text-primary">
-                            <span>Grand Total (Net)</span>
+                            <span>Grand Total</span>
                             <span>{formatCurrency(grandTotal)}</span>
                         </div>
                     </div>
@@ -257,9 +236,9 @@ export default function InvoiceClient() {
 
                 <footer className="text-center text-xs text-muted-foreground space-y-2">
                     <p className="font-medium text-sm">Thank you for visiting! Please visit us again.</p>
-                    <p className="text-[10px]">TERMS: 1. Billed amounts are inclusive of 18% GST (9% CGST + 9% SGST). 2. Services are non-refundable. 3. System generated invoice copy.</p>
+                    <p className="text-[10px]">TERMS: 1. Services are non-refundable. 2. System generated invoice copy.</p>
                 </footer>
             </Card>
         </div>
-    )
+    );
 }

@@ -42,7 +42,7 @@ const subscriptionPlans = [
     features: [
       'Everything in Starter, plus:',
       'Unlimited Staff Members',
-      'Full Billing & GST Invoices',
+      'Full Billing & Digital Invoices',
       'Automated WhatsApp Campaigns',
       'Detailed Business Insights & Analytics',
     ],

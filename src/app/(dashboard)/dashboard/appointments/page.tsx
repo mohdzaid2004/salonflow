@@ -273,8 +273,7 @@ export default function AppointmentsPage() {
 
     const subtotal = payingAppt.price;
     const discountAmount = Math.round((subtotal * discountPercent) / 100);
-    const taxAmount = Math.round(((subtotal - discountAmount) * 18) / 100);
-    const totalPayable = subtotal - discountAmount + taxAmount;
+    const totalPayable = Math.max(0, subtotal - discountAmount);
     const now = new Date();
     const datePrefix = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}`;
     const invoiceNo = `INV-${datePrefix}-${Math.floor(1000 + Math.random() * 9000)}`;
@@ -291,7 +290,6 @@ export default function AppointmentsPage() {
       items: payingAppt.service,
       subtotal,
       discount: discountAmount,
-      tax: taxAmount,
       total: totalPayable,
       method: paymentMode,
       status: 'Paid',
@@ -620,14 +618,10 @@ ${salonAddress ? `📍 ${salonAddress}\n` : ''}📞 ${salonPhone}`;
                     <span>-₹{Math.round((payingAppt.price * discountPercent) / 100).toLocaleString('en-IN')}</span>
                   </div>
                 )}
-                <div className="flex justify-between text-slate-600">
-                  <span>GST (18%):</span>
-                  <span>+₹{Math.round(((payingAppt.price - Math.round((payingAppt.price * discountPercent) / 100)) * 18) / 100).toLocaleString('en-IN')}</span>
-                </div>
                 <div className="flex justify-between font-extrabold text-sm text-slate-900 border-t border-slate-200 pt-1.5">
                   <span>Total Payable:</span>
                   <span className="text-purple-700">
-                    ₹{(payingAppt.price - Math.round((payingAppt.price * discountPercent) / 100) + Math.round(((payingAppt.price - Math.round((payingAppt.price * discountPercent) / 100)) * 18) / 100)).toLocaleString('en-IN')}
+                    ₹{Math.max(0, payingAppt.price - Math.round((payingAppt.price * discountPercent) / 100)).toLocaleString('en-IN')}
                   </span>
                 </div>
               </div>

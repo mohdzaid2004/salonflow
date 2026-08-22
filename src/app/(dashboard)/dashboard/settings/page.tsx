@@ -62,7 +62,6 @@ export default function SettingsPage() {
   const [phone, setPhone] = useState('+91 98765 43210');
   const [email, setEmail] = useState('contact@salonflow.com');
   const [address, setAddress] = useState('Plot 42, Bandra West, Mumbai, Maharashtra 400050');
-  const [gstin, setGstin] = useState('27AABCT3518Q1ZV');
   
   // Working Hours State
   const [openTime, setOpenTime] = useState('09:30 AM');
@@ -71,7 +70,6 @@ export default function SettingsPage() {
 
   // Payments State
   const [upiId, setUpiId] = useState('salonflow.business@okaxis');
-  const [gstPercent, setGstPercent] = useState(18);
 
   // WhatsApp & Feedback Settings
   const [whatsAppPhone, setWhatsAppPhone] = useState('+91 98765 43210');
@@ -85,7 +83,6 @@ export default function SettingsPage() {
       if (salon.phone) setPhone(salon.phone);
       if ((salon as any).address) setAddress((salon as any).address);
       if ((salon as any).upiId) setUpiId((salon as any).upiId);
-      if ((salon as any).gstin) setGstin((salon as any).gstin);
       if ((salon as any).googleReviewUrl) setGoogleReviewUrl((salon as any).googleReviewUrl);
       if ((salon as any).whatsAppPhone) setWhatsAppPhone((salon as any).whatsAppPhone);
     }
@@ -102,7 +99,6 @@ export default function SettingsPage() {
           phone,
           address,
           upiId,
-          gstin,
           googleReviewUrl,
           whatsAppPhone,
           updatedAt: new Date().toISOString(),
@@ -232,16 +228,6 @@ export default function SettingsPage() {
                 className="w-full h-8 px-3 rounded-xl text-xs bg-slate-50 border border-slate-200"
               />
             </div>
-
-            <div className="space-y-1">
-              <label className="text-[10px] font-bold text-slate-700 uppercase tracking-wider">GSTIN Number (Optional)</label>
-              <input
-                type="text"
-                value={gstin}
-                onChange={(e) => setGstin(e.target.value)}
-                className="w-full h-8 px-3 rounded-xl text-xs bg-slate-50 border border-slate-200 uppercase font-mono"
-              />
-            </div>
           </div>
 
           <div className="pt-3 border-t border-slate-100 flex justify-end">
@@ -314,8 +300,8 @@ export default function SettingsPage() {
       {activeTab === 'payments' && (
         <div className="bg-white rounded-2xl p-4 sm:p-6 shadow-xs border border-slate-200/80 space-y-4">
           <div className="border-b border-slate-100 pb-3">
-            <h2 className="text-base font-bold text-slate-900">Payment & Tax Configuration</h2>
-            <p className="text-xs text-slate-400">Configure UPI QR codes, POS payment methods, and GST invoice parameters</p>
+            <h2 className="text-base font-bold text-slate-900">Payment & Billing Configuration</h2>
+            <p className="text-xs text-slate-400">Configure UPI QR codes, POS payment methods, and invoice parameters</p>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -326,16 +312,6 @@ export default function SettingsPage() {
                 value={upiId}
                 onChange={(e) => setUpiId(e.target.value)}
                 className="w-full h-8 px-3 rounded-xl text-xs bg-slate-50 border border-slate-200 font-mono"
-              />
-            </div>
-
-            <div className="space-y-1">
-              <label className="text-[10px] font-bold text-slate-700 uppercase tracking-wider">Default GST Rate (%)</label>
-              <input
-                type="number"
-                value={gstPercent}
-                onChange={(e) => setGstPercent(Number(e.target.value))}
-                className="w-full h-8 px-3 rounded-xl text-xs bg-slate-50 border border-slate-200"
               />
             </div>
           </div>

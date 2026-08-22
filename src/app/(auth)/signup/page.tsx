@@ -377,7 +377,7 @@ export default function SignupPage() {
                 <div>
                   <h3 className="text-sm font-bold text-white">Automated WhatsApp Invoices & PDF</h3>
                   <p className="text-xs text-slate-400 leading-relaxed mt-0.5">
-                    Deliver GST invoices directly to customer WhatsApp chats with zero manual effort.
+                    Deliver digital invoices and receipts directly to customer WhatsApp chats with zero manual effort.
                   </p>
                 </div>
               </div>

@@ -20,7 +20,7 @@ const plans = [
     features: [
       'Unlimited Staff Members',
       'Unlimited Appointments',
-      'GST Billing & Invoicing',
+      'Instant Billing & Digital Invoicing',
       'Customer Management',
       'WhatsApp Bill Sharing',
       'Staff & Customer Reviews',
