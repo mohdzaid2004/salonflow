@@ -241,6 +241,16 @@ export default function DashboardLayout({
             </div>
 
             <div className="flex items-center gap-3">
+              {/* Fast Check-in Desk Button */}
+              <Link
+                href="/dashboard/home"
+                className="inline-flex items-center gap-1.5 h-9 px-3.5 rounded-xl bg-purple-50 hover:bg-purple-100 border border-purple-200 text-purple-700 text-xs font-bold shadow-2xs transition-all"
+                title="Open Fast Customer Check-in Desk"
+              >
+                <span>⚡</span>
+                <span>Fast Check-in Desk</span>
+              </Link>
+
               {/* Notification Bell */}
               <button
                 type="button"

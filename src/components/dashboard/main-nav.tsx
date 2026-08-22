@@ -12,11 +12,14 @@ import {
   IndianRupee,
   BarChart3,
   Settings,
+  Zap,
+  CheckCircle2,
 } from 'lucide-react';
 import type { Salon } from '@/lib/data';
 
 export const MainNavItems = [
   { href: '/dashboard/overview', label: 'Dashboard', icon: LayoutGrid },
+  { href: '/dashboard/home', label: 'Fast Check-in & POS', icon: Zap },
   { href: '/dashboard/appointments', label: 'Appointments', icon: Calendar },
   { href: '/dashboard/customers', label: 'Customers', icon: Users },
   { href: '/dashboard/services', label: 'Services', icon: Scissors },
@@ -39,7 +42,7 @@ export function MainNav({
   return (
     <nav className="flex flex-col gap-1 px-1.5 select-none">
       {MainNavItems.map((link) => {
-        const isActive = pathname === link.href || (link.href !== '/dashboard/overview' && pathname.startsWith(`${link.href}/`)) || (link.href === '/dashboard/overview' && (pathname === '/dashboard' || pathname === '/dashboard/overview'));
+        const isActive = pathname === link.href || (link.href !== '/dashboard/overview' && link.href !== '/dashboard/home' && pathname.startsWith(`${link.href}/`)) || (link.href === '/dashboard/overview' && (pathname === '/dashboard' || pathname === '/dashboard/overview'));
         const Icon = link.icon;
         
         return (
@@ -62,6 +65,8 @@ export function MainNav({
               className={`w-4 h-4 shrink-0 transition-colors duration-200 ${
                 isActive 
                   ? 'text-[#A855F7]' 
+                  : link.href === '/dashboard/home'
+                  ? 'text-amber-400 group-hover:text-amber-300'
                   : 'text-[#9CA3AF] group-hover:text-[#D1D5DB]'
               }`} 
             />
