@@ -8,45 +8,63 @@ import {
   Users,
   Scissors,
   UserCheck,
-  IndianRupee,
   Package,
+  IndianRupee,
   BarChart3,
   Settings,
 } from 'lucide-react';
 import type { Salon } from '@/lib/data';
 
 export const MainNavItems = [
-  { href: '/dashboard/overview', label: 'Overview', icon: LayoutGrid },
+  { href: '/dashboard/overview', label: 'Dashboard', icon: LayoutGrid },
   { href: '/dashboard/appointments', label: 'Appointments', icon: Calendar },
   { href: '/dashboard/customers', label: 'Customers', icon: Users },
   { href: '/dashboard/services', label: 'Services', icon: Scissors },
   { href: '/dashboard/staff', label: 'Staff', icon: UserCheck },
-  { href: '/dashboard/billing', label: 'Billing', icon: IndianRupee },
   { href: '/dashboard/inventory', label: 'Inventory', icon: Package },
+  { href: '/dashboard/billing', label: 'Billing', icon: IndianRupee },
   { href: '/dashboard/reports', label: 'Reports', icon: BarChart3 },
   { href: '/dashboard/settings', label: 'Settings', icon: Settings },
 ];
 
-export function MainNav({ salon }: { salon: Salon | null }) {
+export function MainNav({ 
+  salon, 
+  onItemClick 
+}: { 
+  salon?: Salon | null; 
+  onItemClick?: () => void;
+}) {
   const pathname = usePathname();
 
   return (
-    <nav className="flex flex-col gap-1 px-1 select-none">
+    <nav className="flex flex-col gap-1 px-1.5 select-none">
       {MainNavItems.map((link) => {
-        const isActive = pathname === link.href || pathname.startsWith(`${link.href}/`);
+        const isActive = pathname === link.href || (link.href !== '/dashboard/overview' && pathname.startsWith(`${link.href}/`)) || (link.href === '/dashboard/overview' && (pathname === '/dashboard' || pathname === '/dashboard/overview'));
         const Icon = link.icon;
         
         return (
           <Link
             key={link.href}
             href={link.href}
-            className={`flex items-center gap-3 px-3.5 py-2 rounded-xl text-xs sm:text-[13px] font-medium transition-all duration-150 ${
+            onClick={onItemClick}
+            className={`group relative flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-[13px] font-medium transition-all duration-200 ${
               isActive
-                ? 'bg-purple-50 text-purple-700 font-bold shadow-sm'
-                : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+                ? 'bg-[#181326] text-white font-semibold shadow-xs border border-purple-900/50'
+                : 'text-[#9CA3AF] hover:text-[#E5E7EB] hover:bg-[#121212]'
             }`}
           >
-            <Icon className={`w-4 h-4 shrink-0 ${isActive ? 'text-purple-600' : 'text-slate-400'}`} />
+            {/* Left Purple Indicator on Active */}
+            {isActive && (
+              <span className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-5 rounded-r-full bg-[#A855F7]" />
+            )}
+
+            <Icon 
+              className={`w-4 h-4 shrink-0 transition-colors duration-200 ${
+                isActive 
+                  ? 'text-[#A855F7]' 
+                  : 'text-[#9CA3AF] group-hover:text-[#D1D5DB]'
+              }`} 
+            />
             <span className="truncate">{link.label}</span>
           </Link>
         );
