@@ -1,82 +1,29 @@
-/**
- * Core Philosophy: This ruleset enforces a strict multi-tenant security model for a Salon Management SaaS application.
- * A user's access is strictly confined to the data belonging to the salon they are a member of. All authorization
- * decisions are based on this tenancy, ensuring complete data isolation between different salons.
- *
- * Data Structure: The database is structured hierarchically with a top-level `/salons` collection. Each document
- * in this collection represents a unique salon tenant. All data related to a salon—such as its users, services,
- * staff, and appointments—is stored in dedicated subcollections under its specific salon document
- * (e.g., /salons/{salonId}/users/{userId}).
- *
- * Key Security Decisions:
- * - Tenant Isolation: The primary goal is to prevent any user from accessing data outside of their own salon.
- * - Public Feedback Form: The feedback page needs to read specific documents to render. To support this, any
- *   user (including unauthenticated users) is allowed to `get` individual salon, staff, and appointment
- *   documents, and `list` reviews for a specific appointment. All other broad read (`list`) and write permissions
- *   remain strictly limited to salon members.
- * - Salon Creation: Creation of top-level salon documents (`/salons/{salonId}`) is allowed only if the user's UID matches the salonId.
- * - User Self-Management: Users can create and manage their own user profile document, but only within the salon
- *   they are associated with.
- * - Public Review Creation: Anyone can create a review. This is necessary because the customer leaving the review is not an authenticated user of the app.
- *
- * Denormalization for Authorization: To ensure fast and secure authorization checks, a `salonId` field is
- * denormalized onto every document within a salon's subcollections. This allows rules to verify a document's
- * tenancy without performing slow and costly `get()` operations on parent documents. A user's membership
- * within a salon is verified by checking their own user document at `/salons/{salonId}/users/$(request.auth.uid)`.
- */
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
     // Helper Functions
-
-    /**
-     * Returns true if the user is authenticated.
-     */
     function isSignedIn() {
       return request.auth != null;
     }
 
-    /**
-     * Returns true if the requesting user's UID matches the provided userId.
-     * This is used to verify document ownership.
-     */
     function isOwner(userId) {
       return isSignedIn() && request.auth.uid == userId;
     }
 
-    /**
-     * Returns true if a document exists and the requesting user owns it.
-     * Used for secure update and delete operations.
-     */
     function isExistingOwner(userId) {
       return isOwner(userId) && resource != null;
     }
 
-    /**
-     * Checks if the currently authenticated user is a member of the specified salon.
-     * It performs a single `exists` operation to the user's own profile to verify their salon membership.
-     * This is the core function for enforcing multi-tenancy.
-     */
     function isSalonMember(salonId) {
       let userProfilePath = /databases/$(database)/documents/salons/$(salonId)/users/$(request.auth.uid);
-      // A user is a member of the salon if their user profile document exists within that salon's `users` subcollection.
-      // This `exists()` call is permitted by the `isOwner` rule on the `users` collection, avoiding circular dependencies.
       return exists(userProfilePath);
     }
 
-    /**
-     * Validates that the salonId in a newly created document's body
-     * matches the salonId from the document path. Enforces relational integrity.
-     */
     function hasValidSalonId(salonId) {
       return request.resource.data.salonId == salonId;
     }
 
-    /**
-     * Validates that the salonId of a document cannot be changed during an update.
-     * This prevents documents from being moved between salons.
-     */
     function isSalonIdImmutable() {
       return request.resource.data.salonId == resource.data.salonId;
     }
@@ -90,119 +37,72 @@ service cloud.firestore {
         && request.resource.data.feedbackRating <= 5;
     }
 
-    /**
-     * @description Rules for root-level user profiles.
-     * @path /users/{userId}
-     */
     match /users/{userId} {
       allow read, write: if request.auth != null && request.auth.uid == userId;
     }
 
-    /**
-     * @description Rules for root-level subscriptions.
-     * @path /subscriptions/{subscriptionId}
-     */
     match /subscriptions/{subscriptionId} {
       allow read: if isSignedIn() && resource.data.salonId == request.auth.uid;
       allow write: if false;
     }
 
-    /**
-     * @description Rules for the salon tenant root document.
-     * @path /salons/{salonId}
-     * @allow An anonymous user can GET a salon document for the feedback page.
-     * @principle Enforces data isolation between tenants at the root level.
-     */
     match /salons/{salonId} {
-      allow get: if true; // Allow GET for any user for feedback page
-      allow list: if false; // Disallow listing all salons in the database for privacy.
+      allow get: if true; // Allow GET for feedback page / online public profiles
+      allow list: if isSignedIn(); // Allow listing for super admin and authenticated tenant lookup
       allow create: if isOwner(salonId) && hasValidSalonId(salonId);
       allow update: if isSignedIn() && (isOwner(salonId) || isSalonMember(salonId)) && resource != null;
       allow delete: if request.auth.uid == salonId;
-    }
 
-    /**
-     * @description Rules for user profiles within a salon.
-     * @path /salons/{salonId}/users/{userId}
-     * @principle Users manage their own profile, but other salon members can view profiles for collaboration.
-     */
-    match /salons/{salonId}/users/{userId} {
-      allow get: if isOwner(userId);
-      allow list: if false;
-      allow create: if isOwner(userId) && hasValidSalonId(salonId);
-      allow update: if isExistingOwner(userId) && isSalonIdImmutable();
-      allow delete: if request.auth.uid == userId;
-    }
+      match /users/{userId} {
+        allow get: if isOwner(userId);
+        allow list: if false;
+        allow create: if isOwner(userId) && hasValidSalonId(salonId);
+        allow update: if isExistingOwner(userId) && isSalonIdImmutable();
+        allow delete: if request.auth.uid == userId;
+      }
 
-    /**
-     * @description Rules for salon services.
-     * @path /salons/{salonId}/services/{serviceId}
-     * @principle All data within a salon is accessible for read/write to all authenticated members of that salon.
-     */
-    match /salons/{salonId}/services/{serviceId} {
-      allow read, write: if isSignedIn() && (isOwner(salonId) || isSalonMember(salonId));
-    }
-    
-    /**
-     * @description Rules for appointments within a salon.
-     * @path /salons/{salonId}/appointments/{appointmentId}
-     * @allow An anonymous user can GET a specific appointment for the feedback page.
-     */
-    match /salons/{salonId}/appointments/{appointmentId} {
-        allow get: if true; // Allow GET for any user for feedback page
+      match /services/{serviceId} {
+        allow read, write: if isSignedIn() && (isOwner(salonId) || isSalonMember(salonId));
+      }
+
+      match /appointments/{appointmentId} {
+        allow get: if true;
         allow update: if isValidFeedbackUpdate() || (isSignedIn() && (isOwner(salonId) || isSalonMember(salonId)));
         allow list, create, delete: if isSignedIn() && (isOwner(salonId) || isSalonMember(salonId));
+      }
+
+      match /staff/{staffId} {
+        allow get: if true;
+        allow list, write: if isSignedIn() && (isOwner(salonId) || isSalonMember(salonId));
+      }
+
+      match /customers/{customerId} {
+        allow read, write: if isSignedIn() && (isOwner(salonId) || isSalonMember(salonId));
+      }
+
+      match /reviews/{reviewId} {
+        allow create: if true;
+        allow list: if true;
+        allow get, update, delete: if isSignedIn() && (isOwner(salonId) || isSalonMember(salonId));
+      }
+
+      match /invoices/{invoiceId} {
+        allow get: if true;
+        allow update: if isValidFeedbackUpdate() || (isSignedIn() && (isOwner(salonId) || isSalonMember(salonId)));
+        allow list, create, delete: if isSignedIn() && (isOwner(salonId) || isSalonMember(salonId));
+      }
+
+      match /inventory/{productId} {
+        allow read, write: if isSignedIn() && (isOwner(salonId) || isSalonMember(salonId));
+      }
+
+      match /notifications/{notificationId} {
+        allow read, write: if isSignedIn() && (isOwner(salonId) || isSalonMember(salonId));
+      }
     }
 
-    /**
-     * @description Rules for staff members.
-     * @path /salons/{salonId}/staff/{staffId}
-     * @allow An anonymous user can GET a specific staff member for the feedback page.
-     */
-    match /salons/{salonId}/staff/{staffId} {
-      allow get: if true; // Allow GET for any user for feedback page
-      allow list, write: if isSignedIn() && (isOwner(salonId) || isSalonMember(salonId));
-    }
-
-    /**
-     * @description Rules for customers.
-     * @path /salons/{salonId}/customers/{customerId}
-     * @principle All data within a salon is accessible for read/write to all authenticated members of that salon.
-     */
-    match /salons/{salonId}/customers/{customerId} {
-      allow read, write: if isSignedIn() && (isOwner(salonId) || isSalonMember(salonId));
-    }
-
-    /**
-     * @description Rules for customer reviews.
-     * @path /salons/{salonId}/reviews/{reviewId}
-     * @allow Anyone can create a review. Authenticated users (incl. anonymous) can LIST to check for existence.
-     * @principle Public write access for feedback, but restricted read/management access to salon members.
-     */
-    match /salons/{salonId}/reviews/{reviewId} {
-      allow create: if true; // Public can create reviews
-      allow list: if true; // Allow LIST for anyone to check if review exists
-      allow get, update, delete: if isSignedIn() && (isOwner(salonId) || isSalonMember(salonId));
-    }
-
-    /**
-     * @description Rules for invoices within a salon.
-     * @path /salons/{salonId}/invoices/{invoiceId}
-     * @principle All data within a salon is accessible for read/write to all authenticated members of that salon.
-     */
-    match /salons/{salonId}/invoices/{invoiceId} {
-      allow get: if true; // Allow GET for invoice verification QR code/link
-      allow update: if isValidFeedbackUpdate() || (isSignedIn() && (isOwner(salonId) || isSalonMember(salonId)));
-      allow list, create, delete: if isSignedIn() && (isOwner(salonId) || isSalonMember(salonId));
-    }
-
-    /**
-     * @description Rules for inventory products.
-     * @path /salons/{salonId}/inventory/{productId}
-     * @principle All data within a salon is accessible for read/write to all authenticated members of that salon.
-     */
-    match /salons/{salonId}/inventory/{productId} {
-      allow read, write: if isSignedIn() && (isOwner(salonId) || isSalonMember(salonId));
+    match /audit_logs/{logId} {
+      allow read, write: if isSignedIn();
     }
   }
 }

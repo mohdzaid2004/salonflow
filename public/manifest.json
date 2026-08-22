@@ -1,0 +1,40 @@
+{
+  "name": "SalonFlow — Salon Management SaaS",
+  "short_name": "SalonFlow",
+  "description": "Commercial-grade Salon Management SaaS for bookings, billing, WhatsApp invoices, and customer loyalty.",
+  "start_url": "/dashboard/overview",
+  "display": "standalone",
+  "background_color": "#000000",
+  "theme_color": "#7C3AED",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/favicon.ico",
+      "sizes": "64x64 32x32 24x24 16x16",
+      "type": "image/x-icon"
+    }
+  ],
+  "categories": ["business", "productivity", "utilities"],
+  "shortcuts": [
+    {
+      "name": "Appointments",
+      "url": "/dashboard/appointments",
+      "description": "View appointment schedule and active chair visits"
+    },
+    {
+      "name": "New Booking",
+      "url": "/dashboard/appointments?new=true",
+      "description": "Create a new customer booking"
+    },
+    {
+      "name": "Billing",
+      "url": "/dashboard/billing",
+      "description": "View tax invoices and billing history"
+    },
+    {
+      "name": "Customers",
+      "url": "/dashboard/customers",
+      "description": "Manage client directory and loyalty points"
+    }
+  ]
+}

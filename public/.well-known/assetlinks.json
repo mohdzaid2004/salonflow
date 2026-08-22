@@ -1,0 +1,12 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.salonflow.app",
+      "sha256_cert_fingerprints": [
+        "14:6D:E9:7D:0F:52:AB:E6:EC:9D:E6:6B:61:A3:30:4E:4E:9F:8B:74:4A:4E:1A:1D:9A:89:D0:6B:42:3E:66:77"
+      ]
+    }
+  }
+]

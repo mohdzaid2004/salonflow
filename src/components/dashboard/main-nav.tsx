@@ -12,7 +12,7 @@ import {
   IndianRupee,
   BarChart3,
   Settings,
-  Zap,
+  ShieldCheck,
 } from 'lucide-react';
 import type { Salon } from '@/lib/data';
 
@@ -27,6 +27,7 @@ export const MainNavItems = [
   { href: '/dashboard/reports', label: 'Reports', icon: BarChart3 },
   { href: '/dashboard/settings', label: 'Settings', icon: Settings },
   { href: '/dashboard/home', label: 'Check-In', icon: UserCheck },
+  { href: '/super-admin', label: 'Super Admin', icon: ShieldCheck },
 ];
 
 export function MainNav({ 
@@ -64,6 +65,8 @@ export function MainNav({
               className={`w-4 h-4 shrink-0 transition-colors duration-200 ${
                 isActive 
                   ? 'text-[#A855F7]' 
+                  : link.href === '/super-admin'
+                  ? 'text-purple-400 group-hover:text-purple-300'
                   : link.href === '/dashboard/home'
                   ? 'text-amber-400 group-hover:text-amber-300'
                   : 'text-[#9CA3AF] group-hover:text-[#D1D5DB]'
