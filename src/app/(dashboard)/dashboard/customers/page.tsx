@@ -31,12 +31,14 @@ import type { Customer, Appointment } from '@/lib/data';
 
 interface CustomerViewItem {
   id: string;
+  customerCode: string;
   name: string;
   phone: string;
   email?: string;
   dob?: string;
   visits: number;
   totalSpent: number;
+  loyaltyPoints: number;
   lastVisit: string;
 }
 
@@ -72,23 +74,30 @@ export default function CustomersPage() {
 
   const displayCustomers: CustomerViewItem[] = useMemo(() => {
     if (dbCustomers) {
-      return dbCustomers.map((cust) => {
+      return dbCustomers.map((cust, idx) => {
         const custAppointments = dbAppointments?.filter(
           (a) => a.customerName?.toLowerCase() === cust.name.toLowerCase() || (a as any).customer?.toLowerCase() === cust.name.toLowerCase()
         ) || [];
 
-        const visits = custAppointments.length;
-        const totalSpent = custAppointments.reduce((acc, a) => acc + ((a as any).price || 0), 0);
+        const visits = (cust as any).visits || custAppointments.length;
+        const totalSpent = (cust as any).totalSpent || custAppointments.reduce((acc, a) => acc + ((a as any).price || 0), 0);
+        const loyaltyPoints = (cust as any).loyaltyPoints || Math.round(totalSpent * 0.1);
+
+        // Generate realistic professional customer ID
+        const phoneSuffix = (cust.phone || '').replace(/[^0-9]/g, '').slice(-4);
+        const realisticCode = (cust as any).customerCode || `CUST-2026-${phoneSuffix || String(1001 + idx)}`;
 
         return {
           id: cust.id,
+          customerCode: realisticCode,
           name: cust.name,
           phone: cust.phone || '+91 98000 00000',
           email: cust.email || '',
           dob: cust.dob || '',
           visits,
           totalSpent,
-          lastVisit: custAppointments.length > 0 ? ((custAppointments[0] as any).time || 'Recent') : 'No visits yet',
+          loyaltyPoints,
+          lastVisit: (cust as any).lastVisit || (custAppointments.length > 0 ? ((custAppointments[0] as any).time || 'Recent') : 'No visits yet'),
         };
       });
     }
@@ -99,7 +108,8 @@ export default function CustomersPage() {
     return displayCustomers.filter((cust) => {
       const matchesSearch =
         cust.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        cust.phone.includes(searchQuery);
+        cust.phone.includes(searchQuery) ||
+        cust.customerCode.toLowerCase().includes(searchQuery.toLowerCase());
       return matchesSearch;
     });
   }, [displayCustomers, searchQuery]);
@@ -112,13 +122,19 @@ export default function CustomersPage() {
     }
 
     setIsSubmitting(true);
+    const phoneClean = newPhone.replace(/[^0-9]/g, '');
+    const phoneSuffix = phoneClean.slice(-4);
+    const newCode = `CUST-2026-${phoneSuffix || Math.floor(1000 + Math.random() * 9000)}`;
+
     const newCust: CustomerViewItem = {
       id: String(Date.now()),
+      customerCode: newCode,
       name: newName,
       phone: newPhone || '+91 98000 00000',
       dob: newDob,
       visits: 0,
       totalSpent: 0,
+      loyaltyPoints: 0,
       lastVisit: 'New Client',
     };
 
@@ -128,6 +144,10 @@ export default function CustomersPage() {
         name: newCust.name,
         phone: newCust.phone,
         dob: newCust.dob,
+        customerCode: newCode,
+        loyaltyPoints: 0,
+        totalSpent: 0,
+        visits: 0,
         salonId,
         createdAt: new Date().toISOString(),
       });
@@ -140,8 +160,8 @@ export default function CustomersPage() {
     setNewPhone('');
     setNewDob('');
     toast({
-      title: 'Customer Created',
-      description: `${newCust.name} has been added to your client registry.`,
+      title: 'Customer Registered',
+      description: `${newCust.name} (ID: ${newCode}) added to your client registry.`,
     });
   };
 
@@ -150,30 +170,35 @@ export default function CustomersPage() {
       toast({ title: 'No Data', description: 'No customers available to export.', variant: 'destructive' });
       return;
     }
-    const headers = ['Name,Phone,Total Visits,Total Spent (INR),Last Visit\n'];
-    const rows = displayCustomers.map((c) => `"${c.name}","${c.phone}",${c.visits},${c.totalSpent},"${c.lastVisit}"\n`);
-    const blob = new Blob([...headers, ...rows], { type: 'text/csv;charset=utf-8;' });
+
+    const headers = 'ID,Name,Phone,Visits,Total Spent (INR),Loyalty Points,Last Visit\n';
+    const rows = displayCustomers
+      .map((c) => `"${c.customerCode}","${c.name}","${c.phone}",${c.visits},${c.totalSpent},${c.loyaltyPoints},"${c.lastVisit}"`)
+      .join('\n');
+
+    const blob = new Blob([headers + rows], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
-    link.href = url;
+    link.setAttribute('href', url);
     link.setAttribute('download', `SalonFlow_Customers_${new Date().toISOString().split('T')[0]}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-    toast({ title: 'Export Complete', description: 'Customer registry exported to CSV.' });
+
+    toast({ title: 'Export Complete', description: 'Customer directory exported as CSV.' });
   };
+
+  const totalSpentAll = displayCustomers.reduce((acc, c) => acc + c.totalSpent, 0);
+  const totalVisitsAll = displayCustomers.reduce((acc, c) => acc + c.visits, 0);
 
   const getInitials = (name: string) => {
     return name
       .split(' ')
       .map((n) => n[0])
       .join('')
-      .substring(0, 2)
-      .toUpperCase();
+      .toUpperCase()
+      .substring(0, 2);
   };
-
-  const totalVisitsAll = displayCustomers.reduce((acc, c) => acc + c.visits, 0);
-  const totalSpentAll = displayCustomers.reduce((acc, c) => acc + c.totalSpent, 0);
 
   return (
     <div className="space-y-4 sm:space-y-6 select-none">
@@ -185,7 +210,7 @@ export default function CustomersPage() {
             Customers
           </h1>
           <p className="text-xs sm:text-sm text-slate-500 font-medium mt-0.5">
-            Client registry, appointment history, visit counters, and lifetime spend.
+            Client registry, loyalty rewards balance, visit records, and lifetime value tracking.
           </p>
         </div>
 
@@ -193,10 +218,10 @@ export default function CustomersPage() {
           <button
             type="button"
             onClick={handleExportCSV}
-            className="inline-flex items-center gap-1.5 px-3 sm:px-3.5 py-2 rounded-xl bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-bold shadow-xs transition-all"
+            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 text-xs font-semibold shadow-2xs transition-all"
           >
-            <Download className="w-4 h-4 text-purple-600" />
-            <span className="hidden sm:inline">Export CSV</span>
+            <Download className="w-3.5 h-3.5 text-purple-600" />
+            <span>Export CSV</span>
           </button>
 
           <Dialog open={isAddDialogOpen} onOpenChange={setAddDialogOpen}>
@@ -209,41 +234,38 @@ export default function CustomersPage() {
                 <span>Add Customer</span>
               </button>
             </DialogTrigger>
-            <DialogContent className="max-w-[440px] max-h-[90vh] overflow-y-auto rounded-3xl p-5 sm:p-6 bg-white shadow-2xl">
+            <DialogContent className="max-w-[480px] max-h-[90vh] overflow-y-auto rounded-3xl p-5 sm:p-6 bg-white shadow-2xl">
               <DialogHeader className="pb-2">
                 <DialogTitle className="text-lg font-bold text-slate-900">Add New Customer</DialogTitle>
               </DialogHeader>
 
-              <form onSubmit={handleAddCustomer} className="space-y-3 pt-2">
+              <form onSubmit={handleAddCustomer} className="space-y-3.5 pt-2">
                 <div className="space-y-1">
                   <label className="text-[10px] font-bold text-slate-700 uppercase tracking-wider">
                     Full Name <span className="text-rose-500">*</span>
                   </label>
                   <input
                     type="text"
-                    placeholder="e.g. Priya Sundaram"
+                    placeholder="e.g. Priya Sharma"
                     value={newName}
                     onChange={(e) => setNewName(e.target.value)}
-                    className="w-full h-8 px-3 rounded-xl text-xs bg-slate-50 border border-slate-200 focus:outline-hidden focus:border-purple-600"
+                    className="w-full h-8 px-3 rounded-xl text-xs bg-slate-50 border border-slate-200 text-slate-900 font-semibold focus:outline-hidden focus:border-purple-600"
                     required
                   />
                 </div>
 
                 <div className="space-y-1">
                   <label className="text-[10px] font-bold text-slate-700 uppercase tracking-wider">
-                    Phone Number (10 Digits) <span className="text-rose-500">*</span>
+                    WhatsApp Phone Number <span className="text-rose-500">*</span>
                   </label>
-                  <div className="relative">
-                    <Phone className="w-3.5 h-3.5 text-purple-600 absolute left-2.5 top-1/2 -translate-y-1/2" />
-                    <input
-                      type="tel"
-                      placeholder="9876543210"
-                      value={newPhone}
-                      onChange={(e) => setNewPhone(e.target.value)}
-                      className="w-full h-8 pl-8 pr-3 rounded-xl text-xs bg-slate-50 border border-slate-200 focus:outline-hidden focus:border-purple-600"
-                      required
-                    />
-                  </div>
+                  <input
+                    type="tel"
+                    placeholder="+91 98765 43210"
+                    value={newPhone}
+                    onChange={(e) => setNewPhone(e.target.value)}
+                    className="w-full h-8 px-3 rounded-xl text-xs bg-slate-50 border border-slate-200 text-slate-900 font-semibold focus:outline-hidden focus:border-purple-600"
+                    required
+                  />
                 </div>
 
                 <div className="space-y-1">
@@ -252,7 +274,7 @@ export default function CustomersPage() {
                     type="date"
                     value={newDob}
                     onChange={(e) => setNewDob(e.target.value)}
-                    className="w-full h-8 px-3 rounded-xl text-xs bg-slate-50 border border-slate-200 focus:outline-hidden focus:border-purple-600"
+                    className="w-full h-8 px-3 rounded-xl text-xs bg-slate-50 border border-slate-200 text-slate-900 font-semibold focus:outline-hidden focus:border-purple-600"
                   />
                 </div>
 
@@ -302,10 +324,10 @@ export default function CustomersPage() {
             <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
             <input
               type="text"
-              placeholder="Search by customer name or phone..."
+              placeholder="Search by customer name, ID, or phone..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full h-9 pl-9 pr-3 rounded-xl bg-slate-50 border border-slate-200 text-xs focus:outline-hidden focus:border-purple-600"
+              className="w-full h-9 pl-9 pr-3 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-900 font-semibold focus:outline-hidden focus:border-purple-600"
             />
           </div>
         </div>
@@ -324,7 +346,7 @@ export default function CustomersPage() {
                     </Avatar>
                     <div className="min-w-0">
                       <div className="font-bold text-slate-900 text-sm truncate">{cust.name}</div>
-                      <div className="text-[11px] text-slate-500">{cust.phone}</div>
+                      <div className="text-[11px] text-slate-500 font-mono">{cust.customerCode} • {cust.phone}</div>
                     </div>
                   </div>
 
@@ -342,12 +364,12 @@ export default function CustomersPage() {
                     <span className="font-bold text-slate-900">{cust.visits}</span>
                   </div>
                   <div className="bg-white rounded-lg p-1.5 border border-slate-200/60">
-                    <span className="text-[9px] text-slate-400 block font-semibold">Spent</span>
-                    <span className="font-bold text-purple-700">₹{cust.totalSpent.toLocaleString('en-IN')}</span>
+                    <span className="text-[9px] text-slate-400 block font-semibold">Loyalty</span>
+                    <span className="font-bold text-emerald-600">⭐ {cust.loyaltyPoints}</span>
                   </div>
                   <div className="bg-white rounded-lg p-1.5 border border-slate-200/60">
-                    <span className="text-[9px] text-slate-400 block font-semibold">Last Visit</span>
-                    <span className="font-medium text-slate-700 truncate block text-[10px]">{cust.lastVisit}</span>
+                    <span className="text-[9px] text-slate-400 block font-semibold">Spent</span>
+                    <span className="font-bold text-purple-700">₹{cust.totalSpent.toLocaleString('en-IN')}</span>
                   </div>
                 </div>
               </div>
@@ -367,7 +389,7 @@ export default function CustomersPage() {
                 <th className="pb-3 pl-1">Customer</th>
                 <th className="pb-3">Phone</th>
                 <th className="pb-3">Total Visits</th>
-                <th className="pb-3">Last Visit</th>
+                <th className="pb-3">Loyalty Balance</th>
                 <th className="pb-3">Total Spent</th>
                 <th className="pb-3 text-right pr-1">Actions</th>
               </tr>
@@ -385,13 +407,13 @@ export default function CustomersPage() {
                         </Avatar>
                         <div>
                           <div className="font-semibold text-slate-900">{cust.name}</div>
-                          <div className="text-[10px] text-slate-400">ID: {cust.id}</div>
+                          <div className="text-[10px] text-purple-700 font-mono font-bold">{cust.customerCode}</div>
                         </div>
                       </div>
                     </td>
                     <td className="py-3.5 font-medium text-slate-800">{cust.phone}</td>
                     <td className="py-3.5 font-bold text-slate-900">{cust.visits} visits</td>
-                    <td className="py-3.5 text-slate-500">{cust.lastVisit}</td>
+                    <td className="py-3.5 font-bold text-emerald-600">⭐ {cust.loyaltyPoints} pts</td>
                     <td className="py-3.5 font-bold text-slate-900">₹{cust.totalSpent.toLocaleString('en-IN')}</td>
                     <td className="py-3.5 text-right pr-1">
                       <div className="flex items-center justify-end gap-1.5">
@@ -409,7 +431,7 @@ export default function CustomersPage() {
               ) : (
                 <tr>
                   <td colSpan={6} className="text-center py-8 text-slate-400">
-                    No customers found in database. Click &quot;Add Customer&quot; to add one.
+                    No customers in database yet. Click &quot;Add Customer&quot; above to register one.
                   </td>
                 </tr>
               )}

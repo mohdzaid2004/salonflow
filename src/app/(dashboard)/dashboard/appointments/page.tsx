@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useEffect } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
-import { useCollection, useFirestore, useUser, addDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase';
+import { useCollection, useDoc, useFirestore, useUser, addDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase';
 import { 
   Calendar as CalendarIcon, 
   Clock, 
@@ -71,9 +71,15 @@ export default function AppointmentsPage() {
     return query(collection(firestore, `salons/${salonId}/customers`));
   }, [firestore, salonId]);
 
+  const salonDocRef = useMemo(() => {
+    if (!firestore || !salonId) return null;
+    return doc(firestore, 'salons', salonId);
+  }, [firestore, salonId]);
+
   const { data: dbAppointments } = useCollection<any>(apptQuery);
   const { data: dbServices } = useCollection<Service>(servicesQuery);
   const { data: dbCustomers } = useCollection<Customer>(customersQuery);
+  const { data: salon } = useDoc<any>(salonDocRef);
 
   const [localAppointments, setLocalAppointments] = useState<AppointmentItem[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
@@ -234,7 +240,13 @@ export default function AppointmentsPage() {
     const discountAmount = Math.round((subtotal * discountPercent) / 100);
     const taxAmount = Math.round(((subtotal - discountAmount) * 18) / 100);
     const totalPayable = subtotal - discountAmount + taxAmount;
-    const invoiceNo = `INV-2026-${Math.floor(1000 + Math.random() * 9000)}`;
+    const now = new Date();
+    const datePrefix = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}`;
+    const invoiceNo = `INV-${datePrefix}-${Math.floor(1000 + Math.random() * 9000)}`;
+
+    const pointsEarned = Math.round(totalPayable * 0.1);
+    const matchingCust = dbCustomers?.find(c => c.name.toLowerCase() === payingAppt.customer.toLowerCase() || c.phone === payingAppt.phone);
+    const currentLoyaltyBalance = ((matchingCust as any)?.loyaltyPoints || 0) + pointsEarned;
 
     const newInvoice = {
       invoiceNo,
@@ -248,8 +260,10 @@ export default function AppointmentsPage() {
       total: totalPayable,
       method: paymentMode,
       status: 'Paid',
-      date: new Date().toISOString().split('T')[0],
-      createdAt: new Date().toISOString(),
+      pointsEarned,
+      loyaltyBalance: currentLoyaltyBalance,
+      date: now.toISOString().split('T')[0],
+      createdAt: now.toISOString(),
     };
 
     if (firestore && salonId) {
@@ -265,21 +279,58 @@ export default function AppointmentsPage() {
       updateDocumentNonBlocking(apptRef, {
         status: 'Completed',
         payment: 'Paid',
-        completedAt: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        completedAt: now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
         invoiceNo,
         totalPaid: totalPayable,
         paymentMode,
       });
+
+      // 3. Update customer loyalty balance & lifetime spend
+      if (matchingCust?.id) {
+        const custDocRef = doc(firestore, `salons/${salonId}/customers`, matchingCust.id);
+        updateDocumentNonBlocking(custDocRef, {
+          loyaltyPoints: currentLoyaltyBalance,
+          totalSpent: ((matchingCust as any)?.totalSpent || 0) + totalPayable,
+          visits: ((matchingCust as any)?.visits || 0) + 1,
+          lastVisit: now.toISOString().split('T')[0],
+        });
+      }
     }
 
-    // 3. Automated WhatsApp message dispatch
+    // 4. Automated WhatsApp message dispatch using the EXACT template structure
     const cleanPhone = payingAppt.phone.replace(/[^0-9]/g, '');
     const targetPhone = cleanPhone.length === 10 ? `91${cleanPhone}` : cleanPhone;
     const baseUrl = typeof window !== 'undefined' ? window.location.origin : 'https://salonflow--salonindia-74cbb.us-east4.hosted.app';
-    const invoiceUrl = `${baseUrl}/invoice/${salonId || 'default'}_${payingAppt.id}`;
     const feedbackUrl = `${baseUrl}/feedback/${salonId || 'default'}_${payingAppt.id}`;
+    const salonName = salon?.name || 'SalonFlow';
+    const salonPhone = salon?.phone || '+91 98765 43210';
 
-    const messageText = `Hi ${payingAppt.customer}! 👋\n\nThank you for visiting *SalonFlow*! Your payment of *₹${totalPayable.toLocaleString('en-IN')}* has been received.\n\n🧾 *Invoice No:* ${invoiceNo}\n📄 *View Invoice:* ${invoiceUrl}\n⭐ *Rate Your Experience:* ${feedbackUrl}\n\nThank you for choosing us! 💜`;
+    const messageText = `💜 Thank You for Visiting ${salonName}!
+
+Hi ${payingAppt.customer} 👋
+
+We hope you loved your ${payingAppt.service} experience with us! ✨
+
+Your payment of ₹${totalPayable.toLocaleString('en-IN')} has been successfully received.
+
+🧾 Invoice: ${invoiceNo}
+💳 ${paymentMode} Payment: ₹${totalPayable.toLocaleString('en-IN')}
+🎁 Loyalty Points Earned: ${pointsEarned}
+⭐ Loyalty Balance: ${currentLoyaltyBalance} Points
+
+📎 Your invoice is attached to this message.
+
+We'd love to hear from you! ❤️
+
+⭐ How was your experience?
+👉 ${feedbackUrl}
+
+Your feedback helps us make every visit better. 💫
+
+Thank you for choosing ${salonName}.
+We can't wait to welcome you back! 💜
+
+📞 ${salonPhone}`;
 
     try {
       await fetch('/api/send-whatsapp', {
@@ -295,7 +346,7 @@ export default function AppointmentsPage() {
     setPayingAppt(null);
     toast({
       title: 'Payment Confirmed & Billed',
-      description: `₹${totalPayable.toLocaleString('en-IN')} collected via ${paymentMode}. Invoice ${invoiceNo} stored automatically.`,
+      description: `₹${totalPayable.toLocaleString('en-IN')} collected via ${paymentMode}. Loyalty: +${pointsEarned} pts. Invoice ${invoiceNo} stored.`,
     });
   };
 
