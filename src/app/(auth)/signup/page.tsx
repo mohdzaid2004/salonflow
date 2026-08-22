@@ -280,29 +280,29 @@ export default function SignupPage() {
   };
 
   return (
-    <div className="min-h-screen lg:h-screen w-full bg-[#0B0813] font-sans flex items-center justify-center p-3 sm:p-4 lg:p-6 overflow-y-auto lg:overflow-hidden select-none">
-      <div className="max-w-[1240px] w-full mx-auto grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-center">
+    <div className="min-h-screen w-full bg-[#08070E] font-sans flex items-center justify-center p-3 sm:p-5 lg:p-6 select-none overflow-y-auto">
+      <div className="max-w-[1180px] w-full mx-auto grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-center py-2 sm:py-4">
         
         {/* ================= LEFT SECTION: Dark Luxury Branding ================= */}
-        <div className="lg:col-span-6 flex flex-col justify-between h-full py-2 lg:py-4 px-2 sm:px-4 relative order-2 lg:order-1">
+        <div className="lg:col-span-6 flex flex-col justify-between py-1 lg:py-2 px-2 sm:px-4 relative order-2 lg:order-1">
           
-          {/* Background Salon Image at Bottom */}
-          <div className="absolute inset-x-0 bottom-0 h-80 pointer-events-none -z-0 opacity-40 overflow-hidden rounded-3xl">
+          {/* Subtle Background Salon Image */}
+          <div className="absolute inset-x-0 bottom-0 h-64 pointer-events-none -z-0 opacity-25 overflow-hidden rounded-3xl">
             <img 
               src="https://images.unsplash.com/photo-1560066984-138dadb4c035?q=80&w=1200" 
               alt="Salon Interior" 
               className="w-full h-full object-cover object-bottom mix-blend-screen"
             />
-            <div className="absolute inset-0 bg-gradient-to-t from-[#0B0813] via-[#0B0813]/80 to-transparent" />
+            <div className="absolute inset-0 bg-gradient-to-t from-[#08070E] via-[#08070E]/80 to-transparent" />
           </div>
 
           <div className="relative z-10">
             {/* Top Brand Logo & Pill */}
-            <div className="flex items-center gap-2.5 mb-3">
-              <div className="h-9 w-9 rounded-xl bg-purple-600 flex items-center justify-center shadow-lg shadow-purple-600/30 text-white p-1.5 border border-purple-400/30">
+            <div className="flex items-center gap-2 mb-2.5">
+              <div className="h-8 w-8 rounded-xl bg-purple-600 flex items-center justify-center shadow-lg shadow-purple-600/30 text-white p-1.5 border border-purple-400/30">
                 <Logo className="h-full w-full text-white" />
               </div>
-              <span className="font-headline text-2xl font-extrabold tracking-tight text-white">
+              <span className="font-headline text-xl font-extrabold tracking-tight text-white">
                 Salon<span className="text-purple-400">Flow</span>
               </span>
               <span className="ml-1 inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-purple-950/80 text-purple-300 border border-purple-800/60">
@@ -311,83 +311,83 @@ export default function SignupPage() {
             </div>
 
             {/* Accent Line */}
-            <div className="w-10 h-0.5 bg-purple-600 rounded-full mb-4" />
+            <div className="w-8 h-0.5 bg-purple-600 rounded-full mb-3" />
 
             {/* Main Headline */}
-            <div className="space-y-1 mb-4">
-              <h1 className="text-2xl sm:text-3xl lg:text-[34px] font-extrabold text-white tracking-tight leading-[1.15]">
+            <div className="space-y-1 mb-3">
+              <h1 className="text-2xl sm:text-3xl lg:text-[32px] font-extrabold text-white tracking-tight leading-[1.15]">
                 Manage Your Salon <br />
                 <span className="bg-gradient-to-r from-purple-400 via-indigo-300 to-pink-400 bg-clip-text text-transparent">
                   Smarter & Faster
                 </span>
               </h1>
-              <p className="text-xs sm:text-sm text-zinc-400 leading-relaxed max-w-md pt-1">
-                All-in-one salon management platform for appointments, billing, staff, customers, inventory and business growth.
+              <p className="text-xs text-zinc-400 leading-relaxed max-w-sm pt-0.5">
+                All-in-one salon management platform for appointments, billing, staff, customers, and business growth.
               </p>
             </div>
 
             {/* 4 Dark Glass Feature Cards */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 my-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 my-3">
               
               {/* Feature 1 */}
-              <div className="flex items-start gap-2.5 p-3 rounded-xl bg-white/[0.04] backdrop-blur-md border border-white/[0.08] hover:border-purple-500/40 transition-colors">
-                <div className="p-2 rounded-lg bg-purple-950/60 text-purple-400 border border-purple-800/40 shrink-0">
-                  <Calendar className="w-4 h-4" />
+              <div className="flex items-start gap-2 p-2.5 rounded-xl bg-white/[0.04] backdrop-blur-md border border-white/[0.08] hover:border-purple-500/40 transition-colors">
+                <div className="p-1.5 rounded-lg bg-purple-950/60 text-purple-400 border border-purple-800/40 shrink-0">
+                  <Calendar className="w-3.5 h-3.5" />
                 </div>
                 <div>
-                  <h3 className="text-xs sm:text-sm font-bold text-white">Smart Appointments</h3>
-                  <p className="text-[11px] text-zinc-400 mt-0.5 leading-snug">Manage bookings effortlessly and reduce no-shows.</p>
+                  <h3 className="text-xs font-bold text-white">Smart Appointments</h3>
+                  <p className="text-[10px] text-zinc-400 leading-tight mt-0.5">Manage bookings effortlessly and reduce no-shows.</p>
                 </div>
               </div>
 
               {/* Feature 2 */}
-              <div className="flex items-start gap-2.5 p-3 rounded-xl bg-white/[0.04] backdrop-blur-md border border-white/[0.08] hover:border-purple-500/40 transition-colors">
-                <div className="p-2 rounded-lg bg-purple-950/60 text-purple-400 border border-purple-800/40 shrink-0">
-                  <Users className="w-4 h-4" />
+              <div className="flex items-start gap-2 p-2.5 rounded-xl bg-white/[0.04] backdrop-blur-md border border-white/[0.08] hover:border-purple-500/40 transition-colors">
+                <div className="p-1.5 rounded-lg bg-purple-950/60 text-purple-400 border border-purple-800/40 shrink-0">
+                  <Users className="w-3.5 h-3.5" />
                 </div>
                 <div>
-                  <h3 className="text-xs sm:text-sm font-bold text-white">Customer Management</h3>
-                  <p className="text-[11px] text-zinc-400 mt-0.5 leading-snug">Build stronger relationships and keep customers coming back.</p>
+                  <h3 className="text-xs font-bold text-white">Customer Management</h3>
+                  <p className="text-[10px] text-zinc-400 leading-tight mt-0.5">Build stronger relationships and keep customers loyal.</p>
                 </div>
               </div>
 
               {/* Feature 3 */}
-              <div className="flex items-start gap-2.5 p-3 rounded-xl bg-white/[0.04] backdrop-blur-md border border-white/[0.08] hover:border-purple-500/40 transition-colors">
-                <div className="p-2 rounded-lg bg-purple-950/60 text-purple-400 border border-purple-800/40 shrink-0">
-                  <FileText className="w-4 h-4" />
+              <div className="flex items-start gap-2 p-2.5 rounded-xl bg-white/[0.04] backdrop-blur-md border border-white/[0.08] hover:border-purple-500/40 transition-colors">
+                <div className="p-1.5 rounded-lg bg-purple-950/60 text-purple-400 border border-purple-800/40 shrink-0">
+                  <FileText className="w-3.5 h-3.5" />
                 </div>
                 <div>
-                  <h3 className="text-xs sm:text-sm font-bold text-white">Billing & Reports</h3>
-                  <p className="text-[11px] text-zinc-400 mt-0.5 leading-snug">Generate invoices, track payments and get insightful reports.</p>
+                  <h3 className="text-xs font-bold text-white">Billing & Reports</h3>
+                  <p className="text-[10px] text-zinc-400 leading-tight mt-0.5">Generate GST invoices, track payments and sales reports.</p>
                 </div>
               </div>
 
               {/* Feature 4 */}
-              <div className="flex items-start gap-2.5 p-3 rounded-xl bg-white/[0.04] backdrop-blur-md border border-white/[0.08] hover:border-purple-500/40 transition-colors">
-                <div className="p-2 rounded-lg bg-purple-950/60 text-purple-400 border border-purple-800/40 shrink-0">
-                  <TrendingUp className="w-4 h-4" />
+              <div className="flex items-start gap-2 p-2.5 rounded-xl bg-white/[0.04] backdrop-blur-md border border-white/[0.08] hover:border-purple-500/40 transition-colors">
+                <div className="p-1.5 rounded-lg bg-purple-950/60 text-purple-400 border border-purple-800/40 shrink-0">
+                  <TrendingUp className="w-3.5 h-3.5" />
                 </div>
                 <div>
-                  <h3 className="text-xs sm:text-sm font-bold text-white">Grow Your Business</h3>
-                  <p className="text-[11px] text-zinc-400 mt-0.5 leading-snug">Track performance, analyze trends and grow your revenue.</p>
+                  <h3 className="text-xs font-bold text-white">Grow Your Business</h3>
+                  <p className="text-[10px] text-zinc-400 leading-tight mt-0.5">Track metrics, staff performance, and boost revenue.</p>
                 </div>
               </div>
 
             </div>
 
             {/* Bottom Trust Icons Checklist */}
-            <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 pt-3 border-t border-white/[0.08] text-[11px] font-medium text-zinc-400">
+            <div className="flex flex-wrap items-center gap-x-3.5 gap-y-1 pt-2.5 border-t border-white/[0.08] text-[10px] font-medium text-zinc-400">
               <span className="flex items-center gap-1">
-                <ShieldCheck className="w-3.5 h-3.5 text-purple-400 shrink-0" /> Secure Data
+                <ShieldCheck className="w-3 h-3 text-purple-400 shrink-0" /> Secure Data
               </span>
               <span className="flex items-center gap-1">
-                <Cloud className="w-3.5 h-3.5 text-purple-400 shrink-0" /> Cloud Based
+                <Cloud className="w-3 h-3 text-purple-400 shrink-0" /> Cloud Based
               </span>
               <span className="flex items-center gap-1">
-                <Smartphone className="w-3.5 h-3.5 text-purple-400 shrink-0" /> Mobile Friendly
+                <Smartphone className="w-3 h-3 text-purple-400 shrink-0" /> Mobile Friendly
               </span>
               <span className="flex items-center gap-1">
-                <Zap className="w-3.5 h-3.5 text-purple-400 shrink-0" /> Real-Time Analytics
+                <Zap className="w-3 h-3 text-purple-400 shrink-0" /> Real-Time Analytics
               </span>
             </div>
 
@@ -396,21 +396,21 @@ export default function SignupPage() {
 
         {/* ================= RIGHT SECTION: Pure White Signup Card ================= */}
         <div className="lg:col-span-6 flex justify-center order-1 lg:order-2">
-          <div className="w-full max-w-[480px] bg-white rounded-[28px] p-5 sm:p-7 shadow-2xl text-slate-900 border border-white/20">
+          <div className="w-full max-w-[440px] bg-white rounded-3xl p-5 sm:p-6 shadow-2xl text-slate-900 border border-white/20">
             
             {/* Top Badge */}
-            <div className="flex justify-center mb-2">
-              <div className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-purple-50 border border-purple-100 text-purple-700 text-[11px] font-semibold">
+            <div className="flex justify-center mb-1.5">
+              <div className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-purple-50 border border-purple-100 text-purple-700 text-[10px] font-semibold">
                 <Gift className="w-3 h-3 text-purple-600" /> Start 15-Day Free Trial
               </div>
             </div>
 
             {/* Card Header */}
-            <div className="text-center mb-4">
-              <h2 className="text-xl sm:text-2xl font-extrabold text-slate-900 tracking-tight">
+            <div className="text-center mb-3">
+              <h2 className="text-lg sm:text-xl font-extrabold text-slate-900 tracking-tight">
                 Create your Salon
               </h2>
-              <p className="text-[11px] sm:text-xs text-slate-500 mt-0.5">
+              <p className="text-[11px] text-slate-500 mt-0.5">
                 Get started with your new salon management dashboard.
               </p>
             </div>
@@ -421,7 +421,7 @@ export default function SignupPage() {
               variant="outline"
               onClick={handleGoogleSignup}
               disabled={isGoogleSubmitting || isSubmitting}
-              className="w-full h-10 rounded-xl border-slate-200 hover:bg-slate-50 text-slate-700 font-semibold text-xs gap-2.5 shadow-sm transition-all mb-3.5 bg-white"
+              className="w-full h-9 rounded-xl border-slate-200 hover:bg-slate-50 text-slate-700 font-semibold text-xs gap-2 shadow-sm transition-all mb-2.5 bg-white"
             >
               {isGoogleSubmitting ? (
                 <Loader2 className="w-3.5 h-3.5 animate-spin text-slate-600" />
@@ -449,12 +449,12 @@ export default function SignupPage() {
             </Button>
 
             {/* Divider */}
-            <div className="relative mb-3.5">
+            <div className="relative mb-2.5">
               <div className="absolute inset-0 flex items-center">
                 <span className="w-full border-t border-slate-200" />
               </div>
-              <div className="relative flex justify-center text-[9px] sm:text-[10px] uppercase">
-                <span className="bg-white px-2.5 text-slate-400 font-bold tracking-wider">
+              <div className="relative flex justify-center text-[9px] uppercase">
+                <span className="bg-white px-2 text-slate-400 font-bold tracking-wider">
                   OR CONTINUE WITH EMAIL
                 </span>
               </div>
@@ -462,29 +462,29 @@ export default function SignupPage() {
 
             {/* Main Signup Form */}
             <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-2.5 sm:space-y-3">
+              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-2">
                 
                 {/* 2-Column: Full Name & Salon Name */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                   <FormField
                     control={form.control}
                     name="fullName"
                     render={({ field }) => (
-                      <FormItem className="space-y-1">
-                        <FormLabel className="text-[10px] font-bold text-slate-800 uppercase tracking-wider">
+                      <FormItem className="space-y-0.5">
+                        <FormLabel className="text-[9px] font-bold text-slate-800 uppercase tracking-wider">
                           FULL NAME
                         </FormLabel>
                         <div className="relative">
-                          <User className="w-3.5 h-3.5 text-purple-600 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                          <User className="w-3.5 h-3.5 text-purple-600 absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
                           <FormControl>
                             <Input 
                               placeholder="John Doe" 
-                              className="h-9 rounded-xl bg-white border-slate-200 pl-9 focus-visible:ring-2 focus-visible:ring-purple-600 text-xs placeholder:text-slate-400" 
+                              className="h-8 rounded-xl bg-white border-slate-200 pl-8 focus-visible:ring-2 focus-visible:ring-purple-600 text-xs placeholder:text-slate-400" 
                               {...field} 
                             />
                           </FormControl>
                         </div>
-                        <FormMessage className="text-[10px] text-rose-500" />
+                        <FormMessage className="text-[9px] text-rose-500" />
                       </FormItem>
                     )}
                   />
@@ -493,21 +493,21 @@ export default function SignupPage() {
                     control={form.control}
                     name="salonName"
                     render={({ field }) => (
-                      <FormItem className="space-y-1">
-                        <FormLabel className="text-[10px] font-bold text-slate-800 uppercase tracking-wider">
+                      <FormItem className="space-y-0.5">
+                        <FormLabel className="text-[9px] font-bold text-slate-800 uppercase tracking-wider">
                           SALON NAME
                         </FormLabel>
                         <div className="relative">
-                          <Store className="w-3.5 h-3.5 text-purple-600 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                          <Store className="w-3.5 h-3.5 text-purple-600 absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
                           <FormControl>
                             <Input 
                               placeholder="Envy Studio" 
-                              className="h-9 rounded-xl bg-white border-slate-200 pl-9 focus-visible:ring-2 focus-visible:ring-purple-600 text-xs placeholder:text-slate-400" 
+                              className="h-8 rounded-xl bg-white border-slate-200 pl-8 focus-visible:ring-2 focus-visible:ring-purple-600 text-xs placeholder:text-slate-400" 
                               {...field} 
                             />
                           </FormControl>
                         </div>
-                        <FormMessage className="text-[10px] text-rose-500" />
+                        <FormMessage className="text-[9px] text-rose-500" />
                       </FormItem>
                     )}
                   />
@@ -518,22 +518,22 @@ export default function SignupPage() {
                   control={form.control}
                   name="email"
                   render={({ field }) => (
-                    <FormItem className="space-y-1">
-                      <FormLabel className="text-[10px] font-bold text-slate-800 uppercase tracking-wider">
+                    <FormItem className="space-y-0.5">
+                      <FormLabel className="text-[9px] font-bold text-slate-800 uppercase tracking-wider">
                         EMAIL ADDRESS
                       </FormLabel>
                       <div className="relative">
-                        <Mail className="w-3.5 h-3.5 text-purple-600 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                        <Mail className="w-3.5 h-3.5 text-purple-600 absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
                         <FormControl>
                           <Input 
                             type="email" 
                             placeholder="owner@example.com" 
-                            className="h-9 rounded-xl bg-white border-slate-200 pl-9 focus-visible:ring-2 focus-visible:ring-purple-600 text-xs placeholder:text-slate-400" 
+                            className="h-8 rounded-xl bg-white border-slate-200 pl-8 focus-visible:ring-2 focus-visible:ring-purple-600 text-xs placeholder:text-slate-400" 
                             {...field} 
                           />
                         </FormControl>
                       </div>
-                      <FormMessage className="text-[10px] text-rose-500" />
+                      <FormMessage className="text-[9px] text-rose-500" />
                     </FormItem>
                   )}
                 />
@@ -543,60 +543,60 @@ export default function SignupPage() {
                   control={form.control}
                   name="phone"
                   render={({ field }) => (
-                    <FormItem className="space-y-1">
-                      <FormLabel className="text-[10px] font-bold text-slate-800 uppercase tracking-wider">
+                    <FormItem className="space-y-0.5">
+                      <FormLabel className="text-[9px] font-bold text-slate-800 uppercase tracking-wider">
                         PHONE NUMBER
                       </FormLabel>
                       <div className="flex items-center">
-                        <div className="h-9 px-2.5 rounded-l-xl border border-r-0 border-slate-200 bg-slate-50 flex items-center gap-1 text-[11px] font-semibold text-slate-700 select-none">
+                        <div className="h-8 px-2 rounded-l-xl border border-r-0 border-slate-200 bg-slate-50 flex items-center gap-1 text-[10px] font-semibold text-slate-700 select-none">
                           <span>🇮🇳</span>
                           <span>+91</span>
-                          <ChevronDown className="w-3 h-3 text-slate-400 ml-0.5" />
+                          <ChevronDown className="w-3 h-3 text-slate-400" />
                         </div>
                         <FormControl>
                           <Input
                             type="tel"
                             placeholder="9876543210"
-                            className="h-9 rounded-l-none rounded-r-xl bg-white border-slate-200 focus-visible:ring-2 focus-visible:ring-purple-600 text-xs placeholder:text-slate-400"
+                            className="h-8 rounded-l-none rounded-r-xl bg-white border-slate-200 focus-visible:ring-2 focus-visible:ring-purple-600 text-xs placeholder:text-slate-400"
                             {...field}
                           />
                         </FormControl>
                       </div>
-                      <FormMessage className="text-[10px] text-rose-500" />
+                      <FormMessage className="text-[9px] text-rose-500" />
                     </FormItem>
                   )}
                 />
 
                 {/* 2-Column: Password & Confirm Password */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                   <FormField
                     control={form.control}
                     name="password"
                     render={({ field }) => (
-                      <FormItem className="space-y-1">
-                        <FormLabel className="text-[10px] font-bold text-slate-800 uppercase tracking-wider">
+                      <FormItem className="space-y-0.5">
+                        <FormLabel className="text-[9px] font-bold text-slate-800 uppercase tracking-wider">
                           PASSWORD
                         </FormLabel>
                         <div className="relative">
-                          <Lock className="w-3.5 h-3.5 text-purple-600 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                          <Lock className="w-3.5 h-3.5 text-purple-600 absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
                           <FormControl>
                             <Input
                               type={showPassword ? 'text' : 'password'}
                               placeholder="••••••••••••"
-                              className="h-9 rounded-xl bg-white border-slate-200 pl-9 pr-9 focus-visible:ring-2 focus-visible:ring-purple-600 text-xs placeholder:text-slate-400"
+                              className="h-8 rounded-xl bg-white border-slate-200 pl-8 pr-8 focus-visible:ring-2 focus-visible:ring-purple-600 text-xs placeholder:text-slate-400"
                               {...field}
                             />
                           </FormControl>
                           <button
                             type="button"
                             onClick={() => setShowPassword(!showPassword)}
-                            className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors p-0.5"
+                            className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors p-0.5"
                             tabIndex={-1}
                           >
                             {showPassword ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
                           </button>
                         </div>
-                        <FormMessage className="text-[10px] text-rose-500" />
+                        <FormMessage className="text-[9px] text-rose-500" />
                       </FormItem>
                     )}
                   />
@@ -605,61 +605,61 @@ export default function SignupPage() {
                     control={form.control}
                     name="confirmPassword"
                     render={({ field }) => (
-                      <FormItem className="space-y-1">
-                        <FormLabel className="text-[10px] font-bold text-slate-800 uppercase tracking-wider">
+                      <FormItem className="space-y-0.5">
+                        <FormLabel className="text-[9px] font-bold text-slate-800 uppercase tracking-wider">
                           CONFIRM PASSWORD
                         </FormLabel>
                         <div className="relative">
-                          <Lock className="w-3.5 h-3.5 text-purple-600 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                          <Lock className="w-3.5 h-3.5 text-purple-600 absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
                           <FormControl>
                             <Input
                               type={showConfirmPassword ? 'text' : 'password'}
                               placeholder="••••••••••••"
-                              className="h-9 rounded-xl bg-white border-slate-200 pl-9 pr-9 focus-visible:ring-2 focus-visible:ring-purple-600 text-xs placeholder:text-slate-400"
+                              className="h-8 rounded-xl bg-white border-slate-200 pl-8 pr-8 focus-visible:ring-2 focus-visible:ring-purple-600 text-xs placeholder:text-slate-400"
                               {...field}
                             />
                           </FormControl>
                           <button
                             type="button"
                             onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                            className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors p-0.5"
+                            className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors p-0.5"
                             tabIndex={-1}
                           >
                             {showConfirmPassword ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
                           </button>
                         </div>
-                        <FormMessage className="text-[10px] text-rose-500" />
+                        <FormMessage className="text-[9px] text-rose-500" />
                       </FormItem>
                     )}
                   />
                 </div>
 
                 {/* Password Rule Helper */}
-                <div className="flex items-center gap-1.5 text-[11px] text-slate-500 pt-0.5">
-                  <Check className="w-3.5 h-3.5 text-purple-600 shrink-0 stroke-[3]" />
-                  <span>Use 8+ characters with a mix of letters, numbers & symbols</span>
+                <div className="flex items-center gap-1 text-[10px] text-slate-500 pt-0.5">
+                  <Check className="w-3 h-3 text-purple-600 shrink-0 stroke-[3]" />
+                  <span>Use 8+ characters with a mix of letters & numbers</span>
                 </div>
 
                 {/* Primary CTA Submit Button */}
                 <Button
                   type="submit"
                   disabled={isSubmitting || isGoogleSubmitting}
-                  className="w-full h-10 rounded-xl bg-purple-700 hover:bg-purple-800 text-white font-bold text-sm shadow-lg shadow-purple-600/30 transition-all mt-2.5 flex items-center justify-center gap-2"
+                  className="w-full h-9 rounded-xl bg-purple-700 hover:bg-purple-800 text-white font-bold text-xs shadow-md shadow-purple-600/30 transition-all mt-1.5 flex items-center justify-center gap-2"
                 >
                   {isSubmitting ? (
                     <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Creating your salon...
+                      <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />
+                      Creating salon...
                     </>
                   ) : (
                     <>
-                      Create Account <ArrowRight className="w-4 h-4" />
+                      Create Account <ArrowRight className="w-3.5 h-3.5" />
                     </>
                   )}
                 </Button>
 
                 {/* Login Link */}
-                <p className="text-center text-xs text-slate-600 pt-1.5 font-medium">
+                <p className="text-center text-[11px] text-slate-600 pt-0.5 font-medium">
                   Already have an account?{' '}
                   <Link
                     href="/login"
@@ -673,8 +673,8 @@ export default function SignupPage() {
             </Form>
 
             {/* Bottom Security Trust Text */}
-            <div className="mt-3.5 pt-3 border-t border-slate-100 flex items-center justify-center gap-1.5 text-[11px] font-medium text-slate-400">
-              <Lock className="w-3 h-3 text-slate-400" />
+            <div className="mt-2.5 pt-2 border-t border-slate-100 flex items-center justify-center gap-1.5 text-[10px] font-medium text-slate-400">
+              <Lock className="w-2.5 h-2.5 text-slate-400" />
               <span>Your data is safe and secure with us.</span>
             </div>
 
