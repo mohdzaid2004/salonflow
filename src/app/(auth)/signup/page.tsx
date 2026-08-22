@@ -283,111 +283,97 @@ export default function SignupPage() {
     <div className="min-h-screen w-full bg-[#08070E] font-sans flex items-center justify-center p-3 sm:p-5 lg:p-6 select-none overflow-y-auto">
       <div className="max-w-[1180px] w-full mx-auto grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-center py-2 sm:py-4">
         
-        {/* ================= LEFT SECTION: Dark Luxury Branding ================= */}
-        <div className="lg:col-span-6 flex flex-col justify-between py-1 lg:py-2 px-2 sm:px-4 relative order-2 lg:order-1">
+        {/* ================= LEFT SECTION: Premium High-Contrast SaaS Branding ================= */}
+        <div className="lg:col-span-6 flex flex-col justify-center py-4 lg:py-6 px-3 sm:px-6 relative order-2 lg:order-1">
           
-          {/* Subtle Background Salon Image */}
-          <div className="absolute inset-x-0 bottom-0 h-64 pointer-events-none -z-0 opacity-25 overflow-hidden rounded-3xl">
-            <img 
-              src="https://images.unsplash.com/photo-1560066984-138dadb4c035?q=80&w=1200" 
-              alt="Salon Interior" 
-              className="w-full h-full object-cover object-bottom mix-blend-screen"
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-[#08070E] via-[#08070E]/80 to-transparent" />
-          </div>
+          {/* Subtle Ambient Radial Glows (No messy background image) */}
+          <div className="absolute -top-20 -left-20 w-80 h-80 bg-purple-600/20 rounded-full blur-3xl pointer-events-none" />
+          <div className="absolute -bottom-20 -right-20 w-72 h-72 bg-violet-600/15 rounded-full blur-3xl pointer-events-none" />
 
-          <div className="relative z-10">
+          <div className="relative z-10 space-y-5">
+            
             {/* Top Brand Logo & Pill */}
-            <div className="flex items-center gap-2 mb-2.5">
-              <div className="h-8 w-8 rounded-xl bg-purple-600 flex items-center justify-center shadow-lg shadow-purple-600/30 text-white p-1.5 border border-purple-400/30">
+            <div className="flex items-center gap-2.5">
+              <div className="h-9 w-9 rounded-xl bg-purple-600 flex items-center justify-center shadow-lg shadow-purple-600/40 text-white p-2 border border-purple-400/30">
                 <Logo className="h-full w-full text-white" />
               </div>
-              <span className="font-headline text-xl font-extrabold tracking-tight text-white">
-                Salon<span className="text-purple-400">Flow</span>
-              </span>
-              <span className="ml-1 inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-purple-950/80 text-purple-300 border border-purple-800/60">
-                Pro SaaS
-              </span>
+              <div className="flex items-center gap-2">
+                <span className="font-headline text-2xl font-extrabold tracking-tight text-white">
+                  Salon<span className="text-purple-400">Flow</span>
+                </span>
+                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-purple-950/80 text-purple-300 border border-purple-700/60 shadow-xs">
+                  Pro SaaS
+                </span>
+              </div>
             </div>
 
-            {/* Accent Line */}
-            <div className="w-8 h-0.5 bg-purple-600 rounded-full mb-3" />
-
-            {/* Main Headline */}
-            <div className="space-y-1 mb-3">
-              <h1 className="text-2xl sm:text-3xl lg:text-[32px] font-extrabold text-white tracking-tight leading-[1.15]">
+            {/* Main Hero Headline */}
+            <div className="space-y-2">
+              <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-white tracking-tight leading-tight">
                 Manage Your Salon <br />
-                <span className="bg-gradient-to-r from-purple-400 via-indigo-300 to-pink-400 bg-clip-text text-transparent">
+                <span className="bg-gradient-to-r from-purple-400 via-violet-300 to-pink-400 bg-clip-text text-transparent">
                   Smarter & Faster
                 </span>
               </h1>
-              <p className="text-xs text-zinc-400 leading-relaxed max-w-sm pt-0.5">
-                All-in-one salon management platform for appointments, billing, staff, customers, and business growth.
+              <p className="text-sm text-slate-300 leading-relaxed max-w-md">
+                The all-in-one salon operating system for bookings, billing, automated WhatsApp invoices, and customer loyalty.
               </p>
             </div>
 
-            {/* 4 Dark Glass Feature Cards */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 my-3">
+            {/* 3 High-Contrast Feature Benefit Cards */}
+            <div className="space-y-3 pt-1">
               
               {/* Feature 1 */}
-              <div className="flex items-start gap-2 p-2.5 rounded-xl bg-white/[0.04] backdrop-blur-md border border-white/[0.08] hover:border-purple-500/40 transition-colors">
-                <div className="p-1.5 rounded-lg bg-purple-950/60 text-purple-400 border border-purple-800/40 shrink-0">
-                  <Calendar className="w-3.5 h-3.5" />
+              <div className="flex items-start gap-3 p-3.5 rounded-2xl bg-slate-900/90 border border-slate-800 hover:border-purple-500/50 shadow-lg transition-all">
+                <div className="p-2 rounded-xl bg-purple-950/80 text-purple-400 border border-purple-700/40 shrink-0">
+                  <Calendar className="w-4 h-4" />
                 </div>
                 <div>
-                  <h3 className="text-xs font-bold text-white">Smart Appointments</h3>
-                  <p className="text-[10px] text-zinc-400 leading-tight mt-0.5">Manage bookings effortlessly and reduce no-shows.</p>
+                  <h3 className="text-sm font-bold text-white">Smart Appointments & In-Chair Checkout</h3>
+                  <p className="text-xs text-slate-400 leading-relaxed mt-0.5">
+                    Schedule with intuitive clock picker, start chair visits, and complete with instant billing.
+                  </p>
                 </div>
               </div>
 
               {/* Feature 2 */}
-              <div className="flex items-start gap-2 p-2.5 rounded-xl bg-white/[0.04] backdrop-blur-md border border-white/[0.08] hover:border-purple-500/40 transition-colors">
-                <div className="p-1.5 rounded-lg bg-purple-950/60 text-purple-400 border border-purple-800/40 shrink-0">
-                  <Users className="w-3.5 h-3.5" />
+              <div className="flex items-start gap-3 p-3.5 rounded-2xl bg-slate-900/90 border border-slate-800 hover:border-purple-500/50 shadow-lg transition-all">
+                <div className="p-2 rounded-xl bg-purple-950/80 text-purple-400 border border-purple-700/40 shrink-0">
+                  <FileText className="w-4 h-4" />
                 </div>
                 <div>
-                  <h3 className="text-xs font-bold text-white">Customer Management</h3>
-                  <p className="text-[10px] text-zinc-400 leading-tight mt-0.5">Build stronger relationships and keep customers loyal.</p>
+                  <h3 className="text-sm font-bold text-white">Automated WhatsApp Invoices & PDF</h3>
+                  <p className="text-xs text-slate-400 leading-relaxed mt-0.5">
+                    Deliver GST invoices directly to customer WhatsApp chats with zero manual effort.
+                  </p>
                 </div>
               </div>
 
               {/* Feature 3 */}
-              <div className="flex items-start gap-2 p-2.5 rounded-xl bg-white/[0.04] backdrop-blur-md border border-white/[0.08] hover:border-purple-500/40 transition-colors">
-                <div className="p-1.5 rounded-lg bg-purple-950/60 text-purple-400 border border-purple-800/40 shrink-0">
-                  <FileText className="w-3.5 h-3.5" />
+              <div className="flex items-start gap-3 p-3.5 rounded-2xl bg-slate-900/90 border border-slate-800 hover:border-purple-500/50 shadow-lg transition-all">
+                <div className="p-2 rounded-xl bg-purple-950/80 text-purple-400 border border-purple-700/40 shrink-0">
+                  <Users className="w-4 h-4" />
                 </div>
                 <div>
-                  <h3 className="text-xs font-bold text-white">Billing & Reports</h3>
-                  <p className="text-[10px] text-zinc-400 leading-tight mt-0.5">Generate GST invoices, track payments and sales reports.</p>
-                </div>
-              </div>
-
-              {/* Feature 4 */}
-              <div className="flex items-start gap-2 p-2.5 rounded-xl bg-white/[0.04] backdrop-blur-md border border-white/[0.08] hover:border-purple-500/40 transition-colors">
-                <div className="p-1.5 rounded-lg bg-purple-950/60 text-purple-400 border border-purple-800/40 shrink-0">
-                  <TrendingUp className="w-3.5 h-3.5" />
-                </div>
-                <div>
-                  <h3 className="text-xs font-bold text-white">Grow Your Business</h3>
-                  <p className="text-[10px] text-zinc-400 leading-tight mt-0.5">Track metrics, staff performance, and boost revenue.</p>
+                  <h3 className="text-sm font-bold text-white">Customer Loyalty & 5-Star Reviews</h3>
+                  <p className="text-xs text-slate-400 leading-relaxed mt-0.5">
+                    Reward repeat clients with live loyalty balance points and boost Google ratings automatically.
+                  </p>
                 </div>
               </div>
 
             </div>
 
-            {/* Bottom Trust Icons Checklist */}
-            <div className="flex flex-wrap items-center gap-x-3.5 gap-y-1 pt-2.5 border-t border-white/[0.08] text-[10px] font-medium text-zinc-400">
-              <span className="flex items-center gap-1">
-                <ShieldCheck className="w-3 h-3 text-purple-400 shrink-0" /> Secure Data
+            {/* Social Proof & Trust Strip */}
+            <div className="flex flex-wrap items-center justify-between gap-2 pt-3 border-t border-slate-800/80 text-xs font-semibold text-slate-400">
+              <span className="flex items-center gap-1.5 text-amber-400">
+                <span>⭐</span> <span className="text-white font-bold">4.9/5</span> from 500+ Salons
               </span>
               <span className="flex items-center gap-1">
-                <Cloud className="w-3 h-3 text-purple-400 shrink-0" /> Cloud Based
+                <ShieldCheck className="w-3.5 h-3.5 text-purple-400" /> 100% Cloud Secured
               </span>
               <span className="flex items-center gap-1">
-                <Smartphone className="w-3 h-3 text-purple-400 shrink-0" /> Mobile Friendly
-              </span>
-              <span className="flex items-center gap-1">
-                <Zap className="w-3 h-3 text-purple-400 shrink-0" /> Real-Time Analytics
+                <Zap className="w-3.5 h-3.5 text-emerald-400" /> Real-Time Sync
               </span>
             </div>
 
