@@ -98,11 +98,15 @@ export default function OverviewPage() {
 
         <div className="flex items-center gap-2">
           <Link
-            href="/dashboard/appointments"
-            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-purple-700 hover:bg-purple-800 text-white text-xs font-bold shadow-sm shadow-purple-600/20 transition-all"
+            href="/dashboard/appointments?new=true"
+            title="Press N to create a new booking"
+            className="group inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-purple-700 hover:bg-purple-800 text-white text-xs font-bold shadow-sm shadow-purple-600/20 transition-all"
           >
             <Plus className="w-4 h-4" />
             <span>New Booking</span>
+            <span className="hidden sm:inline-flex items-center justify-center px-1.5 py-0.5 rounded-md bg-white/20 text-[10px] font-mono font-medium text-white/90">
+              N
+            </span>
           </Link>
           <Link
             href="/dashboard/billing"

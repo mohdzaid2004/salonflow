@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { 
   Calendar as CalendarIcon, 
   Clock, 
@@ -16,7 +17,8 @@ import {
   ChevronLeft,
   ChevronRight,
   Sparkles,
-  Phone
+  Phone,
+  Command
 } from 'lucide-react';
 import {
   Dialog,
@@ -67,10 +69,17 @@ export default function AppointmentsPage() {
 
   const { data: dbAppointments } = useCollection<any>(apptQuery);
 
+  const searchParams = useSearchParams();
   const [localAppointments, setLocalAppointments] = useState<AppointmentItem[]>(INITIAL_APPOINTMENTS);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('All');
   const [isNewDialogOpen, setNewDialogOpen] = useState(false);
+
+  useEffect(() => {
+    if (searchParams.get('new') === 'true') {
+      setNewDialogOpen(true);
+    }
+  }, [searchParams]);
 
   // New Appointment Form State
   const [formCustomer, setFormCustomer] = useState('');
@@ -190,10 +199,14 @@ export default function AppointmentsPage() {
             <DialogTrigger asChild>
               <button
                 type="button"
-                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-purple-700 hover:bg-purple-800 text-white text-xs font-bold shadow-sm shadow-purple-600/20 transition-all"
+                title="Press N to create a new booking"
+                className="group inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-purple-700 hover:bg-purple-800 text-white text-xs font-bold shadow-sm shadow-purple-600/20 transition-all"
               >
                 <Plus className="w-4 h-4" />
                 <span>New Appointment</span>
+                <span className="hidden sm:inline-flex items-center justify-center px-1.5 py-0.5 rounded-md bg-white/20 text-[10px] font-mono font-medium text-white/90">
+                  N
+                </span>
               </button>
             </DialogTrigger>
             <DialogContent className="max-w-[480px] max-h-[88vh] overflow-y-auto rounded-3xl p-6 bg-white shadow-2xl">

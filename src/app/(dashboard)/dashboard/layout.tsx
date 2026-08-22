@@ -14,6 +14,7 @@ import { signOut } from 'firebase/auth';
 import type { Salon } from '@/lib/data';
 import { SubscriptionBanner } from '@/components/dashboard/subscription-banner';
 import { AIAssistantModal } from '@/components/dashboard/ai-assistant-modal';
+import { GlobalShortcuts } from '@/components/dashboard/global-shortcuts';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
 export default function DashboardLayout({
@@ -272,6 +273,9 @@ export default function DashboardLayout({
 
           {/* Google AI Studio Powered SalonFlow AI Assistant */}
           <AIAssistantModal />
+
+          {/* Global Keyboard Shortcut Handler (N for New Booking) */}
+          <GlobalShortcuts />
         </div>
 
       </div>
