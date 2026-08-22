@@ -12,6 +12,7 @@ import { Loader2, Menu, X, Bell, Crown, Sparkles } from 'lucide-react';
 import { doc } from 'firebase/firestore';
 import type { Salon } from '@/lib/data';
 import { SubscriptionBanner } from '@/components/dashboard/subscription-banner';
+import { AIAssistantModal } from '@/components/dashboard/ai-assistant-modal';
 
 export default function DashboardLayout({
   children,
@@ -223,6 +224,9 @@ export default function DashboardLayout({
           <main className="flex-1 p-4 sm:p-6 lg:p-8 max-w-7xl w-full mx-auto">
             {children}
           </main>
+
+          {/* Google AI Studio Powered SalonFlow AI Assistant */}
+          <AIAssistantModal />
         </div>
 
       </div>
