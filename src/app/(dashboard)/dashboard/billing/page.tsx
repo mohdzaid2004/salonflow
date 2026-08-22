@@ -16,7 +16,8 @@ import {
   Printer,
   Smartphone,
   Eye,
-  QrCode
+  QrCode,
+  Share2
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import {
@@ -135,7 +136,36 @@ export default function BillingPage() {
     });
   }, [invoices, searchQuery, statusFilter]);
 
-  const handleCreateBill = (e: React.FormEvent) => {
+  const handleSendWhatsAppInvoice = async (inv: InvoiceItem) => {
+    const cleanPhone = inv.phone.replace(/[^0-9]/g, '');
+    const targetPhone = cleanPhone.length === 10 ? `91${cleanPhone}` : cleanPhone;
+    const baseUrl = typeof window !== 'undefined' ? window.location.origin : 'https://salonflow--salonindia-74cbb.us-east4.hosted.app';
+    const invoiceUrl = `${baseUrl}/invoice/${salonId || 'default'}_${inv.id}`;
+    const feedbackUrl = `${baseUrl}/feedback/${salonId || 'default'}_${inv.id}`;
+
+    const messageText = `Hi ${inv.customer}! 👋\n\nThank you for visiting *SalonFlow*! Your payment of *₹${inv.total.toLocaleString('en-IN')}* has been received.\n\n🧾 *Invoice No:* ${inv.invoiceNo}\n📄 *View Invoice:* ${invoiceUrl}\n⭐ *Rate Your Experience:* ${feedbackUrl}\n\nThank you for choosing us! 💜`;
+
+    try {
+      const res = await fetch('/api/send-whatsapp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phone: targetPhone, message: messageText }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        toast({ title: 'WhatsApp Sent', description: `Invoice & feedback link sent to ${inv.phone}.` });
+        return;
+      }
+    } catch (e) {
+      // Fallback direct open
+    }
+
+    const waUrl = `https://wa.me/${targetPhone}?text=${encodeURIComponent(messageText)}`;
+    window.open(waUrl, '_blank');
+    toast({ title: 'Opening WhatsApp', description: `Pre-filled invoice message ready for ${inv.customer}.` });
+  };
+
+  const handleCreateBill = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!clientName.trim()) {
       toast({ title: 'Error', description: 'Customer name is required', variant: 'destructive' });
@@ -173,10 +203,16 @@ export default function BillingPage() {
     setClientName('');
     setClientPhone('');
     setSelectedServiceName('');
+
     toast({
       title: 'Invoice Generated & Paid',
       description: `Invoice ${newInv.invoiceNo} for ₹${newInv.total.toLocaleString('en-IN')} via ${newInv.method}.`,
     });
+
+    // Automated WhatsApp message with digital bill & 5-star feedback link
+    if (newInv.phone && newInv.phone.replace(/[^0-9]/g, '').length >= 10) {
+      handleSendWhatsAppInvoice(newInv);
+    }
   };
 
   const totalCollected = invoices.filter(i => i.status === 'Paid').reduce((acc, i) => acc + i.total, 0);
@@ -192,7 +228,7 @@ export default function BillingPage() {
             Billing
           </h1>
           <p className="text-xs sm:text-sm text-slate-500 font-medium mt-0.5">
-            Express salon checkout register, GST tax invoices, and transaction records.
+            Express salon checkout register, GST tax invoices, and automated WhatsApp bills.
           </p>
         </div>
 
@@ -240,7 +276,7 @@ export default function BillingPage() {
 
                   {/* Phone */}
                   <div className="sm:col-span-2 space-y-1">
-                    <label className="text-[10px] font-bold text-slate-700 uppercase tracking-wider">Phone</label>
+                    <label className="text-[10px] font-bold text-slate-700 uppercase tracking-wider">WhatsApp Phone</label>
                     <input
                       type="tel"
                       placeholder="+91 98765 43210"
@@ -344,7 +380,7 @@ export default function BillingPage() {
                   disabled={isSubmitting}
                   className="w-full h-9 rounded-xl bg-purple-700 hover:bg-purple-800 text-white font-bold text-xs shadow-md shadow-purple-600/20 transition-all mt-4 disabled:opacity-50"
                 >
-                  {isSubmitting ? 'Generating Invoice...' : `Collect ₹${totalPayable.toLocaleString('en-IN')} & Print Bill`}
+                  {isSubmitting ? 'Generating Invoice...' : `Collect ₹${totalPayable.toLocaleString('en-IN')} & Send WhatsApp`}
                 </button>
               </form>
             </DialogContent>
@@ -456,7 +492,7 @@ export default function BillingPage() {
                   </button>
                   <button
                     type="button"
-                    onClick={() => toast({ title: 'WhatsApp Sent', description: `Invoice sent to ${inv.phone}` })}
+                    onClick={() => handleSendWhatsAppInvoice(inv)}
                     className="flex-1 py-1.5 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs font-bold flex items-center justify-center gap-1.5 shadow-2xs"
                   >
                     <Smartphone className="w-3.5 h-3.5 text-emerald-600" /> WhatsApp
@@ -520,7 +556,7 @@ export default function BillingPage() {
                         </button>
                         <button
                           type="button"
-                          onClick={() => toast({ title: 'WhatsApp Sent', description: `Invoice sent to ${inv.phone}` })}
+                          onClick={() => handleSendWhatsAppInvoice(inv)}
                           className="p-1.5 rounded-lg border border-emerald-200 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 shadow-2xs"
                           title="Send on WhatsApp"
                         >
