@@ -8,7 +8,20 @@ import { UserNav } from '@/components/dashboard/user-nav';
 import { Logo } from '@/components/logo';
 import { useDoc, useFirestore, useUser, useAuth } from '@/firebase';
 import { HeaderActionsProvider } from '@/components/dashboard/header-actions-context';
-import { Loader2, Menu, X, Bell, LogOut, Settings as SettingsIcon, ShieldCheck } from 'lucide-react';
+import { 
+  Loader2, 
+  Menu, 
+  X, 
+  Bell, 
+  LogOut, 
+  Settings as SettingsIcon, 
+  LayoutGrid, 
+  Calendar, 
+  UserCheck, 
+  IndianRupee, 
+  MoreHorizontal,
+  ChevronRight
+} from 'lucide-react';
 import { doc } from 'firebase/firestore';
 import { signOut } from 'firebase/auth';
 import type { Salon } from '@/lib/data';
@@ -101,7 +114,7 @@ export default function DashboardLayout({
 
   return (
     <HeaderActionsProvider>
-      <div className="min-h-screen bg-[#FAF9FD] text-slate-900 flex flex-col md:flex-row">
+      <div className="min-h-screen bg-[#FAF9FD] text-slate-900 flex flex-col md:flex-row antialiased">
         
         {/* Desktop Fixed Left Sidebar (Pure Black #000000, Border #1F1F1F, 100vh Height) */}
         <aside className="hidden md:flex flex-col justify-between fixed top-0 left-0 w-[240px] h-screen bg-[#000000] border-r border-[#1F1F1F] z-30 select-none">
@@ -166,13 +179,13 @@ export default function DashboardLayout({
         </aside>
 
         {/* Mobile Header Bar */}
-        <div className="md:hidden sticky top-0 z-40 flex h-12 items-center justify-between border-b border-[#1F1F1F] bg-[#000000] px-4">
+        <div className="md:hidden sticky top-0 z-40 flex h-13 items-center justify-between border-b border-[#1F1F1F] bg-[#000000] px-4 select-none">
           <div className="flex items-center gap-2.5">
             <button
               type="button"
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="p-1.5 rounded-xl border border-[#27272A] bg-[#121214] text-[#D1D5DB] shadow-xs"
-              aria-label="Toggle menu"
+              className="p-2 rounded-xl border border-[#27272A] bg-[#121214] text-[#D1D5DB] active:bg-[#1C1917]"
+              aria-label="Toggle navigation drawer"
             >
               {mobileMenuOpen ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
             </button>
@@ -191,8 +204,8 @@ export default function DashboardLayout({
 
         {/* Mobile Drawer Overlay */}
         {mobileMenuOpen && (
-          <div className="fixed inset-0 z-50 md:hidden bg-black/70 backdrop-blur-xs flex">
-            <div className="w-[250px] h-full bg-[#000000] border-r border-[#1F1F1F] shadow-2xl flex flex-col justify-between p-4 overflow-y-auto animate-in slide-in-from-left duration-200">
+          <div className="fixed inset-0 z-50 md:hidden bg-black/70 backdrop-blur-xs flex animate-in fade-in duration-150">
+            <div className="w-[260px] max-w-[80vw] h-full bg-[#000000] border-r border-[#1F1F1F] shadow-2xl flex flex-col justify-between p-4 overflow-y-auto animate-in slide-in-from-left duration-200">
               <div>
                 <div className="flex items-center justify-between pb-3 border-b border-[#1F1F1F] mb-3">
                   <div className="flex items-center gap-2">
@@ -204,9 +217,9 @@ export default function DashboardLayout({
                   <button
                     type="button"
                     onClick={() => setMobileMenuOpen(false)}
-                    className="p-1 text-[#9CA3AF] hover:text-[#D1D5DB]"
+                    className="p-1.5 rounded-lg text-[#9CA3AF] hover:text-[#D1D5DB]"
                   >
-                    <X className="w-5 h-5" />
+                    <X className="w-4 h-4" />
                   </button>
                 </div>
                 <MainNav salon={salon} onItemClick={() => setMobileMenuOpen(false)} />
@@ -227,7 +240,7 @@ export default function DashboardLayout({
                 <button
                   type="button"
                   onClick={handleLogout}
-                  className="p-1 text-[#9CA3AF] hover:text-[#EF4444]"
+                  className="p-1.5 text-[#9CA3AF] hover:text-[#EF4444]"
                 >
                   <LogOut className="w-4 h-4" />
                 </button>
@@ -238,7 +251,7 @@ export default function DashboardLayout({
         )}
 
         {/* Main Content Area (Offset by 240px on desktop) */}
-        <div className="flex-1 md:ml-[240px] flex flex-col min-h-screen bg-[#FAF9FD] min-w-0">
+        <div className="flex-1 md:ml-[240px] flex flex-col min-h-screen bg-[#FAF9FD] min-w-0 pb-20 md:pb-6">
           
           {/* Top Sticky Header on Desktop — ONLY for Dashboard Overview */}
           {isDashboardOverview && (
@@ -275,12 +288,72 @@ export default function DashboardLayout({
           <SubscriptionBanner salon={salon} />
 
           {/* Page Body — Pulled Up with Minimal Compact Top Spacing */}
-          <main className="flex-1 p-4 sm:p-5 lg:p-6 pt-3 sm:pt-4 max-w-7xl w-full mx-auto">
+          <main className="flex-1 p-3.5 sm:p-5 lg:p-6 pt-2.5 sm:pt-4 max-w-7xl w-full mx-auto">
             {children}
           </main>
 
           {/* Global Keyboard Shortcut Handler (N for New Booking) */}
           <GlobalShortcuts />
+        </div>
+
+        {/* Bottom Navigation Bar for Phones (< md) */}
+        <div className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-[#000000] border-t border-[#1F1F1F] px-2 py-1.5 flex items-center justify-around select-none">
+          <Link
+            href="/dashboard/overview"
+            className={`flex flex-col items-center justify-center py-1 px-2.5 rounded-xl transition-all ${
+              pathname === '/dashboard' || pathname === '/dashboard/overview'
+                ? 'text-[#A855F7]'
+                : 'text-[#9CA3AF] hover:text-[#D1D5DB]'
+            }`}
+          >
+            <LayoutGrid className="w-4 h-4" />
+            <span className="text-[10px] font-semibold mt-0.5">Overview</span>
+          </Link>
+
+          <Link
+            href="/dashboard/appointments"
+            className={`flex flex-col items-center justify-center py-1 px-2.5 rounded-xl transition-all ${
+              pathname.startsWith('/dashboard/appointments')
+                ? 'text-[#A855F7]'
+                : 'text-[#9CA3AF] hover:text-[#D1D5DB]'
+            }`}
+          >
+            <Calendar className="w-4 h-4" />
+            <span className="text-[10px] font-semibold mt-0.5">Bookings</span>
+          </Link>
+
+          <Link
+            href="/dashboard/home"
+            className={`flex flex-col items-center justify-center py-1 px-2.5 rounded-xl transition-all ${
+              pathname === '/dashboard/home'
+                ? 'text-[#A855F7]'
+                : 'text-[#9CA3AF] hover:text-[#D1D5DB]'
+            }`}
+          >
+            <UserCheck className="w-4 h-4" />
+            <span className="text-[10px] font-semibold mt-0.5">Check-In</span>
+          </Link>
+
+          <Link
+            href="/dashboard/billing"
+            className={`flex flex-col items-center justify-center py-1 px-2.5 rounded-xl transition-all ${
+              pathname.startsWith('/dashboard/billing')
+                ? 'text-[#A855F7]'
+                : 'text-[#9CA3AF] hover:text-[#D1D5DB]'
+            }`}
+          >
+            <IndianRupee className="w-4 h-4" />
+            <span className="text-[10px] font-semibold mt-0.5">Billing</span>
+          </Link>
+
+          <button
+            type="button"
+            onClick={() => setMobileMenuOpen(true)}
+            className="flex flex-col items-center justify-center py-1 px-2.5 rounded-xl text-[#9CA3AF] hover:text-[#D1D5DB] transition-all"
+          >
+            <MoreHorizontal className="w-4 h-4" />
+            <span className="text-[10px] font-semibold mt-0.5">More</span>
+          </button>
         </div>
 
       </div>
