@@ -136,7 +136,7 @@ export default function OverviewPage() {
     };
   }, [dbAppointments, dbInvoices]);
 
-  const displayName = user?.displayName || 'Mohammed Zaid';
+  const displayName = user?.displayName || user?.email?.split('@')[0] || 'Salon Manager';
 
   return (
     <div className="space-y-6 select-none">
