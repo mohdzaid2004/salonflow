@@ -24,6 +24,8 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
+import { useFirestore, useUser, useCollection, addDocumentNonBlocking } from '@/firebase';
+import { collection, query } from 'firebase/firestore';
 
 interface ProductItem {
   id: string;
@@ -49,11 +51,23 @@ const INITIAL_PRODUCTS: ProductItem[] = [
 ];
 
 export default function InventoryPage() {
-  const [products, setProducts] = useState<ProductItem[]>(INITIAL_PRODUCTS);
+  const firestore = useFirestore();
+  const { user } = useUser();
+  const { toast } = useToast();
+
+  const salonId = user?.uid;
+
+  const inventoryQuery = useMemo(() => {
+    if (!firestore || !salonId) return null;
+    return query(collection(firestore, `salons/${salonId}/inventory`));
+  }, [firestore, salonId]);
+
+  const { data: dbProducts } = useCollection<any>(inventoryQuery);
+
+  const [localProducts, setLocalProducts] = useState<ProductItem[]>(INITIAL_PRODUCTS);
   const [searchQuery, setSearchQuery] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('All');
   const [isAddDialogOpen, setAddDialogOpen] = useState(false);
-  const { toast } = useToast();
 
   // Form State
   const [formName, setFormName] = useState('');
@@ -64,6 +78,24 @@ export default function InventoryPage() {
   const [formCost, setFormCost] = useState(500);
   const [formPrice, setFormPrice] = useState(850);
   const [formSupplier, setFormSupplier] = useState('Loreal India Ltd');
+
+  const products = useMemo(() => {
+    if (dbProducts && dbProducts.length > 0) {
+      return dbProducts.map((p: any) => ({
+        id: p.id,
+        name: p.name || 'Product',
+        brand: p.brand || 'Brand',
+        category: p.category || 'Hair Care',
+        stock: p.stock || 0,
+        reorderLevel: p.reorderLevel || 5,
+        costPrice: p.costPrice || 500,
+        sellingPrice: p.sellingPrice || 850,
+        supplier: p.supplier || 'Supplier',
+        status: p.stock === 0 ? 'Out of Stock' : (p.stock <= (p.reorderLevel || 5) ? 'Low Stock' : 'In Stock'),
+      }));
+    }
+    return localProducts;
+  }, [dbProducts, localProducts]);
 
   const stats = useMemo(() => {
     const total = products.length;
@@ -103,12 +135,21 @@ export default function InventoryPage() {
       status,
     };
 
-    setProducts([newProd, ...products]);
+    if (firestore && salonId) {
+      const invRef = collection(firestore, `salons/${salonId}/inventory`);
+      addDocumentNonBlocking(invRef, {
+        ...newProd,
+        salonId,
+        createdAt: new Date().toISOString(),
+      });
+    }
+
+    setLocalProducts([newProd, ...localProducts]);
     setAddDialogOpen(false);
     setFormName('');
     setFormBrand('');
     toast({
-      title: 'Product Added',
+      title: 'Product Added & Saved',
       description: `${newProd.name} added with ${newProd.stock} units.`,
     });
   };

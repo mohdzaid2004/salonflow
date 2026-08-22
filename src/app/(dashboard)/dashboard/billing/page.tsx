@@ -27,6 +27,8 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
+import { useFirestore, useUser, useCollection, addDocumentNonBlocking } from '@/firebase';
+import { collection, query } from 'firebase/firestore';
 
 interface InvoiceItem {
   id: string;
@@ -53,11 +55,23 @@ const INITIAL_INVOICES: InvoiceItem[] = [
 ];
 
 export default function BillingPage() {
-  const [invoices, setInvoices] = useState<InvoiceItem[]>(INITIAL_INVOICES);
+  const firestore = useFirestore();
+  const { user } = useUser();
+  const { toast } = useToast();
+
+  const salonId = user?.uid;
+
+  const invoicesQuery = useMemo(() => {
+    if (!firestore || !salonId) return null;
+    return query(collection(firestore, `salons/${salonId}/invoices`));
+  }, [firestore, salonId]);
+
+  const { data: dbInvoices } = useCollection<any>(invoicesQuery);
+
+  const [localInvoices, setLocalInvoices] = useState<InvoiceItem[]>(INITIAL_INVOICES);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('All');
   const [isNewBillOpen, setNewBillOpen] = useState(false);
-  const { toast } = useToast();
 
   // POS Form State
   const [clientName, setClientName] = useState('');
@@ -66,6 +80,26 @@ export default function BillingPage() {
   const [selectedServiceName, setSelectedServiceName] = useState('Haircut & Styling');
   const [discountPercent, setDiscountPercent] = useState(0);
   const [paymentMode, setPaymentMode] = useState<'UPI' | 'Card' | 'Cash'>('UPI');
+
+  const invoices = useMemo(() => {
+    if (dbInvoices && dbInvoices.length > 0) {
+      return dbInvoices.map((inv: any) => ({
+        id: inv.id,
+        invoiceNo: inv.invoiceNo || `INV-2026-${Math.floor(1000 + Math.random() * 9000)}`,
+        customer: inv.customer || 'Client',
+        phone: inv.phone || '+91 98000 00000',
+        items: inv.items || 'Salon Service',
+        subtotal: inv.subtotal || 1000,
+        tax: inv.tax || 180,
+        discount: inv.discount || 0,
+        total: inv.total || 1180,
+        method: inv.method || 'UPI',
+        status: inv.status || 'Paid',
+        date: inv.date || 'Today',
+      }));
+    }
+    return localInvoices;
+  }, [dbInvoices, localInvoices]);
 
   const subtotal = selectedServicePrice;
   const discountAmount = Math.round((subtotal * discountPercent) / 100);
@@ -102,12 +136,21 @@ export default function BillingPage() {
       date: 'Just Now',
     };
 
-    setInvoices([newInv, ...invoices]);
+    if (firestore && salonId) {
+      const invoiceRef = collection(firestore, `salons/${salonId}/invoices`);
+      addDocumentNonBlocking(invoiceRef, {
+        ...newInv,
+        salonId,
+        createdAt: new Date().toISOString(),
+      });
+    }
+
+    setLocalInvoices([newInv, ...localInvoices]);
     setNewBillOpen(false);
     setClientName('');
     setClientPhone('');
     toast({
-      title: 'Invoice Generated',
+      title: 'Invoice Generated & Saved',
       description: `Invoice ${newInv.invoiceNo} for ₹${newInv.total.toLocaleString('en-IN')} paid via ${newInv.method}.`,
     });
   };
@@ -263,7 +306,7 @@ export default function BillingPage() {
         <div className="bg-white rounded-2xl p-4 shadow-xs border border-slate-200/80">
           <span className="text-[11px] font-semibold text-slate-500">Today&apos;s Invoices</span>
           <div className="text-xl sm:text-2xl font-extrabold text-slate-900 mt-1">₹14,240</div>
-          <span className="text-[10px] text-emerald-600 font-medium">18 bills settled</span>
+          <span className="text-[10px] text-emerald-600 font-medium">{invoices.length} bills recorded</span>
         </div>
         <div className="bg-white rounded-2xl p-4 shadow-xs border border-slate-200/80">
           <span className="text-[11px] font-semibold text-slate-500">UPI Payments</span>

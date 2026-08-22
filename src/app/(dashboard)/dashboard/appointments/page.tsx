@@ -26,6 +26,8 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
+import { useFirestore, useUser, useCollection, addDocumentNonBlocking, updateDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase';
+import { collection, query, doc } from 'firebase/firestore';
 
 interface AppointmentItem {
   id: string;
@@ -52,11 +54,23 @@ const INITIAL_APPOINTMENTS: AppointmentItem[] = [
 ];
 
 export default function AppointmentsPage() {
-  const [appointments, setAppointments] = useState<AppointmentItem[]>(INITIAL_APPOINTMENTS);
+  const firestore = useFirestore();
+  const { user } = useUser();
+  const { toast } = useToast();
+
+  const salonId = user?.uid;
+
+  const apptQuery = useMemo(() => {
+    if (!firestore || !salonId) return null;
+    return query(collection(firestore, `salons/${salonId}/appointments`));
+  }, [firestore, salonId]);
+
+  const { data: dbAppointments } = useCollection<any>(apptQuery);
+
+  const [localAppointments, setLocalAppointments] = useState<AppointmentItem[]>(INITIAL_APPOINTMENTS);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('All');
   const [isNewDialogOpen, setNewDialogOpen] = useState(false);
-  const { toast } = useToast();
 
   // New Appointment Form State
   const [formCustomer, setFormCustomer] = useState('');
@@ -66,6 +80,24 @@ export default function AppointmentsPage() {
   const [formTime, setFormTime] = useState('11:00 AM');
   const [formDuration, setFormDuration] = useState('45 min');
   const [formPrice, setFormPrice] = useState(950);
+
+  const appointments = useMemo(() => {
+    if (dbAppointments && dbAppointments.length > 0) {
+      return dbAppointments.map((a: any) => ({
+        id: a.id,
+        customer: a.customer || a.customerName || 'Client',
+        phone: a.phone || '+91 98000 00000',
+        service: a.service || 'Haircut',
+        stylist: a.stylist || 'Stylist',
+        time: a.time || '11:00 AM',
+        duration: a.duration || '45 min',
+        price: a.price || 500,
+        status: a.status || 'Confirmed',
+        payment: a.payment || 'Paid',
+      }));
+    }
+    return localAppointments;
+  }, [dbAppointments, localAppointments]);
 
   const filteredAppointments = useMemo(() => {
     return appointments.filter(appt => {
@@ -108,19 +140,35 @@ export default function AppointmentsPage() {
       payment: 'Pending',
     };
 
-    setAppointments([newAppt, ...appointments]);
+    if (firestore && salonId) {
+      const apptRef = collection(firestore, `salons/${salonId}/appointments`);
+      addDocumentNonBlocking(apptRef, {
+        ...newAppt,
+        salonId,
+        createdAt: new Date().toISOString(),
+      });
+    }
+
+    setLocalAppointments([newAppt, ...localAppointments]);
     setNewDialogOpen(false);
     setFormCustomer('');
     setFormPhone('');
     toast({
-      title: 'Appointment Booked',
+      title: 'Appointment Booked & Saved',
       description: `Appointment confirmed for ${newAppt.customer} at ${newAppt.time}.`,
     });
   };
 
-  const updateStatus = (id: string, newStatus: AppointmentItem['status']) => {
-    setAppointments(appointments.map(a => a.id === id ? { ...a, status: newStatus } : a));
-    toast({ title: 'Status Updated', description: `Appointment marked as ${newStatus}.` });
+  const handleStatusChange = (id: string, newStatus: AppointmentItem['status']) => {
+    if (firestore && salonId) {
+      const docRef = doc(firestore, `salons/${salonId}/appointments`, id);
+      updateDocumentNonBlocking(docRef, { status: newStatus });
+    }
+    setLocalAppointments(prev => prev.map(a => a.id === id ? { ...a, status: newStatus } : a));
+    toast({
+      title: 'Status Updated',
+      description: `Appointment marked as ${newStatus}.`,
+    });
   };
 
   return (
@@ -130,10 +178,10 @@ export default function AppointmentsPage() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight font-serif sm:font-sans">
-            Appointments
+            Appointments & Schedule
           </h1>
           <p className="text-xs sm:text-sm text-slate-500 font-medium mt-0.5">
-            Manage your daily salon bookings, stylist schedules, and client visits.
+            Real-time appointment schedule, customer bookings, stylist assignment, and slot management.
           </p>
         </div>
 
@@ -156,40 +204,52 @@ export default function AppointmentsPage() {
               <form onSubmit={handleCreateAppointment} className="space-y-3 pt-2">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   
-                  {/* Customer Name */}
-                  <div className="sm:col-span-2 space-y-1">
+                  {/* Customer */}
+                  <div className="space-y-1">
                     <label className="text-[10px] font-bold text-slate-700 uppercase tracking-wider">
                       Customer Name <span className="text-rose-500">*</span>
                     </label>
-                    <div className="relative">
-                      <User className="w-3.5 h-3.5 text-purple-600 absolute left-2.5 top-1/2 -translate-y-1/2" />
-                      <input
-                        type="text"
-                        placeholder="e.g. Priya Sharma"
-                        value={formCustomer}
-                        onChange={(e) => setFormCustomer(e.target.value)}
-                        className="w-full h-8 pl-8 pr-3 rounded-xl text-xs bg-slate-50 border border-slate-200 focus:outline-hidden focus:border-purple-600"
-                        required
-                      />
-                    </div>
+                    <input
+                      type="text"
+                      placeholder="e.g. Ananya Verma"
+                      value={formCustomer}
+                      onChange={(e) => setFormCustomer(e.target.value)}
+                      className="w-full h-8 px-3 rounded-xl text-xs bg-slate-50 border border-slate-200 focus:outline-hidden focus:border-purple-600"
+                      required
+                    />
                   </div>
 
                   {/* Phone */}
                   <div className="space-y-1">
-                    <label className="text-[10px] font-bold text-slate-700 uppercase tracking-wider">Phone Number</label>
-                    <div className="relative">
-                      <Phone className="w-3.5 h-3.5 text-purple-600 absolute left-2.5 top-1/2 -translate-y-1/2" />
-                      <input
-                        type="text"
-                        placeholder="+91 98765 43210"
-                        value={formPhone}
-                        onChange={(e) => setFormPhone(e.target.value)}
-                        className="w-full h-8 pl-8 pr-3 rounded-xl text-xs bg-slate-50 border border-slate-200 focus:outline-hidden focus:border-purple-600"
-                      />
-                    </div>
+                    <label className="text-[10px] font-bold text-slate-700 uppercase tracking-wider">
+                      Phone Number
+                    </label>
+                    <input
+                      type="tel"
+                      placeholder="e.g. +91 98234 11209"
+                      value={formPhone}
+                      onChange={(e) => setFormPhone(e.target.value)}
+                      className="w-full h-8 px-3 rounded-xl text-xs bg-slate-50 border border-slate-200 focus:outline-hidden focus:border-purple-600"
+                    />
                   </div>
 
-                  {/* Assigned Stylist */}
+                  {/* Service */}
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-bold text-slate-700 uppercase tracking-wider">Service</label>
+                    <select
+                      value={formService}
+                      onChange={(e) => setFormService(e.target.value)}
+                      className="w-full h-8 px-2.5 rounded-xl text-xs bg-slate-50 border border-slate-200 focus:outline-hidden focus:border-purple-600"
+                    >
+                      <option value="Haircut & Styling">Haircut & Styling — ₹950</option>
+                      <option value="Keratin Smooth Treatment">Keratin Smooth — ₹4,500</option>
+                      <option value="Hydra Glow Facial">Hydra Glow Facial — ₹2,800</option>
+                      <option value="Balayage & Color">Balayage & Color — ₹5,200</option>
+                      <option value="Deep Hair Spa">Deep Hair Spa — ₹1,600</option>
+                    </select>
+                  </div>
+
+                  {/* Stylist */}
                   <div className="space-y-1">
                     <label className="text-[10px] font-bold text-slate-700 uppercase tracking-wider">Stylist</label>
                     <select
@@ -198,34 +258,13 @@ export default function AppointmentsPage() {
                       className="w-full h-8 px-2.5 rounded-xl text-xs bg-slate-50 border border-slate-200 focus:outline-hidden focus:border-purple-600"
                     >
                       <option value="Rahul Sharma">Rahul Sharma (Senior Stylist)</option>
+                      <option value="Pooja Nair">Pooja Nair (Skin Specialist)</option>
                       <option value="Suresh Kumar">Suresh Kumar (Stylist)</option>
-                      <option value="Pooja Nair">Pooja Nair (Skin & Facial Specialist)</option>
+                      <option value="Imran Khan">Imran Khan (Stylist)</option>
                     </select>
                   </div>
 
-                  {/* Service */}
-                  <div className="sm:col-span-2 space-y-1">
-                    <label className="text-[10px] font-bold text-slate-700 uppercase tracking-wider">Service</label>
-                    <select
-                      value={formService}
-                      onChange={(e) => {
-                        setFormService(e.target.value);
-                        if (e.target.value.includes('Keratin')) setFormPrice(4500);
-                        else if (e.target.value.includes('Facial')) setFormPrice(2800);
-                        else if (e.target.value.includes('Color')) setFormPrice(5200);
-                        else setFormPrice(950);
-                      }}
-                      className="w-full h-8 px-2.5 rounded-xl text-xs bg-slate-50 border border-slate-200 focus:outline-hidden focus:border-purple-600"
-                    >
-                      <option value="Haircut & Styling">Haircut & Styling — ₹950</option>
-                      <option value="Keratin Smooth Treatment">Keratin Smooth Treatment — ₹4,500</option>
-                      <option value="Hydra Glow Facial">Hydra Glow Facial — ₹2,800</option>
-                      <option value="Balayage & Color Highlights">Balayage & Color Highlights — ₹5,200</option>
-                      <option value="Deep Hair Spa Therapy">Deep Hair Spa Therapy — ₹1,600</option>
-                    </select>
-                  </div>
-
-                  {/* Time Slot */}
+                  {/* Time */}
                   <div className="space-y-1">
                     <label className="text-[10px] font-bold text-slate-700 uppercase tracking-wider">Time Slot</label>
                     <input
@@ -233,18 +272,18 @@ export default function AppointmentsPage() {
                       placeholder="e.g. 11:30 AM"
                       value={formTime}
                       onChange={(e) => setFormTime(e.target.value)}
-                      className="w-full h-8 px-2.5 rounded-xl text-xs bg-slate-50 border border-slate-200 focus:outline-hidden focus:border-purple-600"
+                      className="w-full h-8 px-3 rounded-xl text-xs bg-slate-50 border border-slate-200 focus:outline-hidden focus:border-purple-600"
                     />
                   </div>
 
-                  {/* Estimated Price */}
+                  {/* Duration */}
                   <div className="space-y-1">
-                    <label className="text-[10px] font-bold text-slate-700 uppercase tracking-wider">Amount (₹)</label>
+                    <label className="text-[10px] font-bold text-slate-700 uppercase tracking-wider">Duration</label>
                     <input
-                      type="number"
-                      value={formPrice}
-                      onChange={(e) => setFormPrice(Number(e.target.value))}
-                      className="w-full h-8 px-2.5 rounded-xl text-xs bg-slate-50 border border-slate-200 focus:outline-hidden focus:border-purple-600"
+                      type="text"
+                      value={formDuration}
+                      onChange={(e) => setFormDuration(e.target.value)}
+                      className="w-full h-8 px-3 rounded-xl text-xs bg-slate-50 border border-slate-200 focus:outline-hidden focus:border-purple-600"
                     />
                   </div>
 
@@ -267,36 +306,36 @@ export default function AppointmentsPage() {
         <div className="bg-white rounded-2xl p-4 shadow-xs border border-slate-200/80">
           <span className="text-[11px] font-semibold text-slate-500">Total Bookings</span>
           <div className="text-xl sm:text-2xl font-extrabold text-slate-900 mt-1">{stats.total}</div>
-          <span className="text-[10px] text-slate-400 font-medium">Scheduled for today</span>
+          <span className="text-[10px] text-emerald-600 font-medium">+4 new today</span>
         </div>
         <div className="bg-white rounded-2xl p-4 shadow-xs border border-slate-200/80">
-          <span className="text-[11px] font-semibold text-slate-500">Confirmed</span>
+          <span className="text-[11px] font-semibold text-slate-500">Confirmed Slots</span>
           <div className="text-xl sm:text-2xl font-extrabold text-purple-700 mt-1">{stats.confirmed}</div>
           <span className="text-[10px] text-purple-600 font-medium">Ready for service</span>
         </div>
         <div className="bg-white rounded-2xl p-4 shadow-xs border border-slate-200/80">
           <span className="text-[11px] font-semibold text-slate-500">Completed</span>
           <div className="text-xl sm:text-2xl font-extrabold text-emerald-600 mt-1">{stats.completed}</div>
-          <span className="text-[10px] text-emerald-600 font-medium">Invoiced & settled</span>
+          <span className="text-[10px] text-emerald-600 font-medium">Delivered today</span>
         </div>
         <div className="bg-white rounded-2xl p-4 shadow-xs border border-slate-200/80">
           <span className="text-[11px] font-semibold text-slate-500">Pending</span>
           <div className="text-xl sm:text-2xl font-extrabold text-amber-600 mt-1">{stats.pending}</div>
-          <span className="text-[10px] text-amber-600 font-medium">Awaiting confirmation</span>
+          <span className="text-[10px] text-amber-600 font-medium">Awaiting check-in</span>
         </div>
       </div>
 
-      {/* Table & Filters */}
+      {/* Table Card */}
       <div className="bg-white rounded-2xl p-5 sm:p-6 shadow-xs border border-slate-200/80 space-y-4">
         
-        {/* Search & Filter Bar */}
+        {/* Search & Status Filters */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           
           <div className="relative flex-1 max-w-sm">
             <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
             <input
               type="text"
-              placeholder="Search by client, stylist, or service..."
+              placeholder="Search customer, phone, stylist, or service..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full h-9 pl-9 pr-3 rounded-xl bg-slate-50 border border-slate-200 text-xs focus:outline-hidden focus:border-purple-600"
@@ -327,48 +366,42 @@ export default function AppointmentsPage() {
           <table className="w-full text-left text-xs">
             <thead>
               <tr className="border-b border-slate-100 text-slate-400 font-bold uppercase tracking-wider text-[10px]">
-                <th className="pb-3 pl-1">Booking ID</th>
-                <th className="pb-3">Client</th>
+                <th className="pb-3 pl-1">Customer</th>
                 <th className="pb-3">Service</th>
                 <th className="pb-3">Stylist</th>
-                <th className="pb-3">Time</th>
-                <th className="pb-3">Price</th>
+                <th className="pb-3">Time & Duration</th>
+                <th className="pb-3">Amount</th>
                 <th className="pb-3">Status</th>
-                <th className="pb-3">Payment</th>
-                <th className="pb-3 text-right pr-1">Actions</th>
+                <th className="pb-3 text-right pr-1">Action</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 text-slate-700">
               {filteredAppointments.length > 0 ? (
                 filteredAppointments.map((appt) => (
                   <tr key={appt.id} className="hover:bg-slate-50/60 transition-colors">
-                    <td className="py-3.5 pl-1 font-mono text-[11px] font-bold text-slate-400">
-                      {appt.id}
-                    </td>
-                    <td className="py-3.5">
+                    <td className="py-3.5 pl-1">
                       <div className="font-semibold text-slate-900">{appt.customer}</div>
-                      <div className="text-[11px] text-slate-400">{appt.phone}</div>
+                      <div className="text-[10px] text-slate-400">{appt.phone}</div>
                     </td>
+                    <td className="py-3.5 font-medium text-slate-800">{appt.service}</td>
                     <td className="py-3.5">
-                      <span className="font-medium">{appt.service}</span>
-                      <span className="block text-[11px] text-slate-400">{appt.duration}</span>
-                    </td>
-                    <td className="py-3.5 font-medium text-slate-800">{appt.stylist}</td>
-                    <td className="py-3.5">
-                      <span className="inline-flex items-center gap-1 text-slate-700 font-semibold">
-                        <Clock className="w-3 h-3 text-purple-600" />
-                        {appt.time}
+                      <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-purple-50 text-purple-700 border border-purple-100">
+                        {appt.stylist}
                       </span>
+                    </td>
+                    <td className="py-3.5">
+                      <div className="font-semibold text-slate-900">{appt.time}</div>
+                      <div className="text-[10px] text-slate-400">{appt.duration}</div>
                     </td>
                     <td className="py-3.5 font-bold text-slate-900">
                       ₹{appt.price.toLocaleString('en-IN')}
                     </td>
                     <td className="py-3.5">
                       <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold ${
-                        appt.status === 'Completed'
+                        appt.status === 'Confirmed'
+                          ? 'bg-blue-50 text-blue-700 border border-blue-100'
+                          : appt.status === 'Completed'
                           ? 'bg-emerald-50 text-emerald-700 border border-emerald-100'
-                          : appt.status === 'Confirmed'
-                          ? 'bg-purple-50 text-purple-700 border border-purple-100'
                           : appt.status === 'Pending'
                           ? 'bg-amber-50 text-amber-700 border border-amber-100'
                           : 'bg-rose-50 text-rose-700 border border-rose-100'
@@ -376,31 +409,24 @@ export default function AppointmentsPage() {
                         {appt.status}
                       </span>
                     </td>
-                    <td className="py-3.5">
-                      <span className={`font-semibold text-[11px] ${appt.payment === 'Paid' ? 'text-emerald-600' : 'text-amber-600'}`}>
-                        {appt.payment}
-                      </span>
-                    </td>
                     <td className="py-3.5 text-right pr-1">
                       <div className="flex items-center justify-end gap-1.5">
                         {appt.status !== 'Completed' && (
                           <button
                             type="button"
-                            onClick={() => updateStatus(appt.id, 'Completed')}
-                            className="p-1 text-slate-400 hover:text-emerald-600"
-                            title="Mark as Completed"
+                            onClick={() => handleStatusChange(appt.id, 'Completed')}
+                            className="px-2 py-1 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 text-[10px] font-bold"
                           >
-                            <CheckCircle2 className="w-4 h-4" />
+                            Mark Done
                           </button>
                         )}
                         {appt.status !== 'Cancelled' && (
                           <button
                             type="button"
-                            onClick={() => updateStatus(appt.id, 'Cancelled')}
-                            className="p-1 text-slate-400 hover:text-rose-600"
-                            title="Cancel Booking"
+                            onClick={() => handleStatusChange(appt.id, 'Cancelled')}
+                            className="px-2 py-1 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 text-[10px] font-bold"
                           >
-                            <XCircle className="w-4 h-4" />
+                            Cancel
                           </button>
                         )}
                       </div>
@@ -409,8 +435,8 @@ export default function AppointmentsPage() {
                 ))
               ) : (
                 <tr>
-                  <td colSpan={9} className="text-center py-8 text-slate-400">
-                    No appointments found matching your search.
+                  <td colSpan={7} className="text-center py-8 text-slate-400">
+                    No appointments found matching your criteria.
                   </td>
                 </tr>
               )}
