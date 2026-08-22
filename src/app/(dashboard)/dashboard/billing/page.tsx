@@ -13,8 +13,8 @@ import {
   Sparkles
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { useFirestore, useUser, useCollection } from '@/firebase';
-import { collection, query } from 'firebase/firestore';
+import { useFirestore, useUser, useCollection, useDoc } from '@/firebase';
+import { collection, query, doc } from 'firebase/firestore';
 
 interface InvoiceItem {
   id: string;
@@ -29,6 +29,8 @@ interface InvoiceItem {
   method: 'UPI' | 'Card' | 'Cash';
   status: 'Paid' | 'Pending';
   date: string;
+  pointsEarned?: number;
+  loyaltyBalance?: number;
 }
 
 export default function BillingPage() {
@@ -43,7 +45,13 @@ export default function BillingPage() {
     return query(collection(firestore, `salons/${salonId}/invoices`));
   }, [firestore, salonId]);
 
+  const salonDocRef = useMemo(() => {
+    if (!firestore || !salonId) return null;
+    return doc(firestore, 'salons', salonId);
+  }, [firestore, salonId]);
+
   const { data: dbInvoices } = useCollection<any>(invoicesQuery);
+  const { data: salon } = useDoc<any>(salonDocRef);
 
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('All');
@@ -63,6 +71,8 @@ export default function BillingPage() {
         method: inv.method || 'UPI',
         status: inv.status || 'Paid',
         date: inv.date || 'Today',
+        pointsEarned: inv.pointsEarned || Math.round((Number(inv.total) || 500) * 0.1),
+        loyaltyBalance: inv.loyaltyBalance || Math.round((Number(inv.total) || 500) * 0.1),
       }));
     }
     return [];
@@ -83,16 +93,54 @@ export default function BillingPage() {
     const cleanPhone = inv.phone.replace(/[^0-9]/g, '');
     const targetPhone = cleanPhone.length === 10 ? `91${cleanPhone}` : cleanPhone;
     const baseUrl = typeof window !== 'undefined' ? window.location.origin : 'https://salonflow--salonindia-74cbb.us-east4.hosted.app';
-    const invoiceUrl = `${baseUrl}/invoice/${salonId || 'default'}_${inv.id}`;
     const feedbackUrl = `${baseUrl}/feedback/${salonId || 'default'}_${inv.id}`;
+    const invoicePdfUrl = `${baseUrl}/api/invoices/${salonId || 'default'}_${inv.id}/pdf`;
+    const salonName = salon?.name || 'SalonFlow';
+    const salonPhone = salon?.phone || '+91 98765 43210';
+    const salonAddress = salon?.address || '';
 
-    const messageText = `Hi ${inv.customer}! 👋\n\nThank you for visiting *SalonFlow*! Your payment of *₹${inv.total.toLocaleString('en-IN')}* has been received.\n\n🧾 *Invoice No:* ${inv.invoiceNo}\n📄 *View Invoice:* ${invoiceUrl}\n⭐ *Rate Your Experience:* ${feedbackUrl}\n\nThank you for choosing us! 💜`;
+    const messageText = `💜 Thank You for Visiting ${salonName}!
+
+Hi ${inv.customer} 👋
+
+We hope you enjoyed your ${inv.items} experience with us! ✨
+
+Your payment of ₹${inv.total.toLocaleString('en-IN')} has been successfully received. 🎉
+
+🧾 Invoice: ${inv.invoiceNo}
+💳 Payment: ${inv.method}
+💰 Amount Paid: ₹${inv.total.toLocaleString('en-IN')}
+
+🎁 Loyalty Points Earned: ${inv.pointsEarned || Math.round(inv.total * 0.1)}
+⭐ Loyalty Balance: ${inv.loyaltyBalance || Math.round(inv.total * 0.1)} Points
+
+📎 Your invoice is attached to this WhatsApp message.
+
+⭐ How was your experience?
+
+We'd love to hear your feedback.
+It only takes a few seconds. ❤️
+
+👉 Rate Your Experience:
+${feedbackUrl}
+
+Your feedback helps us improve and serve you better. 💫
+
+Thank you for choosing ${salonName}! ❤️
+
+We look forward to welcoming you again.
+
+${salonAddress ? `📍 ${salonAddress}\n` : ''}📞 ${salonPhone}`;
 
     try {
       const res = await fetch('/api/send-whatsapp', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ phone: targetPhone, message: messageText }),
+        body: JSON.stringify({ 
+          phone: targetPhone, 
+          message: messageText,
+          mediaUrl: invoicePdfUrl 
+        }),
       });
       const data = await res.json();
       if (data.success) {

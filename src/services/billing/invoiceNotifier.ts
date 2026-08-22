@@ -1,5 +1,4 @@
 import { getTwilioClient, getTwilioConfig, formatWhatsAppNumber } from './config';
-import { format } from 'date-fns';
 import type { Service } from '@/lib/data';
 
 export interface WhatsAppNotificationPayload {
@@ -19,11 +18,35 @@ export interface WhatsAppNotificationPayload {
   salonPhone: string;
 }
 
+function sanitizeMessage(text: string): string {
+  if (!text) return '';
+  let cleaned = text.replace(/data:application\/[a-zA-Z0-9+.-]+;base64,[A-Za-z0-9+/=]+/g, '');
+  cleaned = cleaned.replace(/data:[a-zA-Z0-9+.-]+\/[a-zA-Z0-9+.-]+;base64,[A-Za-z0-9+/=]+/g, '');
+  cleaned = cleaned.replace(/JVBERi0[A-Za-z0-9+/=]{20,}/g, '');
+  cleaned = cleaned.replace(/%PDF-[0-9.]{1,5}[A-Za-z0-9+/=\s]{20,}/g, '');
+  return cleaned.trim();
+}
+
 /**
- * Sends a structured, professional WhatsApp confirmation message with invoice PDF attachment.
+ * Sends a structured, professional WhatsApp confirmation message with invoice PDF document attachment.
  */
 export async function sendWhatsAppInvoiceNotification(payload: WhatsAppNotificationPayload): Promise<{ success: boolean; messageSid?: string; error?: string }> {
-  const { salonId, salonName, customerPhone, customerName, invoiceNumber, grandTotal, pointsEarned, pdfUrl, feedbackUrl, paymentMethod, currentPoints, services, salonAddress, salonPhone } = payload;
+  const { 
+    salonId, 
+    salonName, 
+    customerPhone, 
+    customerName, 
+    invoiceNumber, 
+    grandTotal, 
+    pointsEarned, 
+    pdfUrl, 
+    feedbackUrl, 
+    paymentMethod, 
+    currentPoints, 
+    services, 
+    salonAddress, 
+    salonPhone 
+  } = payload;
 
   const formattedTo = formatWhatsAppNumber(customerPhone);
   if (!formattedTo) {
@@ -45,36 +68,61 @@ export async function sendWhatsAppInvoiceNotification(payload: WhatsAppNotificat
     formattedFrom = `whatsapp:${formattedFrom.startsWith('+') ? '' : '+'}${formattedFrom}`;
   }
 
-  const formattedAmount = new Intl.NumberFormat('en-IN', { minimumFractionDigits: 2 }).format(grandTotal);
-  const paymentDate = format(new Date(), 'dd-MM-yyyy');
-  const paymentTime = format(new Date(), 'hh:mm a');
+  const formattedAmount = `₹${new Intl.NumberFormat('en-IN', { maximumFractionDigits: 0 }).format(grandTotal)}`;
+  const serviceName = (services && services.length > 0) ? services.map(s => s.name).join(', ') : 'Salon Service';
 
-  const serviceListStr = (services && services.length > 0)
-    ? services.map(s => `- ${s.name}: ₹${s.price}`).join('\n')
-    : '- Service(s)';
+  // Build the clean customer-facing message without any Base64 strings or raw binary data
+  const rawMessage = `💜 Thank You for Visiting ${salonName}!
 
-  // Build the user-defined structured message template
-  const messageBody = 
-    `💇 Thank you for visiting ${salonName}!\n\n` +
-    `Hi ${customerName},\n\n` +
-    `Your payment has been received successfully.\n\n` +
-    `🧾 Invoice: ${invoiceNumber}\n` +
-    `💰 Amount Paid: ₹${formattedAmount}\n` +
-    `💳 Payment Method: ${paymentMethod}\n\n` +
-    `📎 Invoice:\n` +
-    `${pdfUrl}\n\n` +
-    `⭐ We'd love your feedback:\n` +
-    `${feedbackUrl}\n\n` +
-    `Thank you for choosing ${salonName}!`;
+Hi ${customerName} 👋
+
+We hope you enjoyed your ${serviceName} experience with us! ✨
+
+Your payment of ${formattedAmount} has been successfully received. 🎉
+
+🧾 Invoice: ${invoiceNumber}
+💳 Payment: ${paymentMethod}
+💰 Amount Paid: ${formattedAmount}
+
+🎁 Loyalty Points Earned: ${pointsEarned}
+⭐ Loyalty Balance: ${currentPoints} Points
+
+📎 Your invoice is attached to this WhatsApp message.
+
+⭐ How was your experience?
+
+We'd love to hear your feedback.
+It only takes a few seconds. ❤️
+
+👉 Rate Your Experience:
+${feedbackUrl}
+
+Your feedback helps us improve and serve you better. 💫
+
+Thank you for choosing ${salonName}! ❤️
+
+We look forward to welcoming you again.
+
+📍 ${salonAddress || 'India'}
+📞 ${salonPhone || ''}`;
+
+  const messageBody = sanitizeMessage(rawMessage);
 
   try {
-    console.log(`[Invoice Notifier] Dispatching Twilio WhatsApp message to ${formattedTo} with PDF attachment...`);
-    const response = await client.messages.create({
+    const messageParams: any = {
       body: messageBody,
       to: formattedTo,
       from: formattedFrom,
-      mediaUrl: [pdfUrl] // Attach PDF invoice URL
-    });
+    };
+
+    // Attach PDF only if it's a valid public HTTPS URL
+    if (pdfUrl && pdfUrl.startsWith('https://')) {
+      messageParams.mediaUrl = [pdfUrl];
+      console.log(`[Invoice Notifier] Attaching HTTPS PDF to Twilio message: ${pdfUrl}`);
+    }
+
+    console.log(`[Invoice Notifier] Dispatching Twilio WhatsApp message to ${formattedTo}...`);
+    const response = await client.messages.create(messageParams);
 
     console.log(`[Invoice Notifier] WhatsApp notification dispatched successfully. SID: ${response.sid}`);
     return { success: true, messageSid: response.sid };

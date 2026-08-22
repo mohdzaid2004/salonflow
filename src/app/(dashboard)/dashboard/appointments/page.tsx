@@ -297,46 +297,58 @@ export default function AppointmentsPage() {
       }
     }
 
-    // 4. Automated WhatsApp message dispatch using the EXACT template structure
+    // 4. Automated WhatsApp message dispatch using the EXACT template structure with PDF attachment
     const cleanPhone = payingAppt.phone.replace(/[^0-9]/g, '');
     const targetPhone = cleanPhone.length === 10 ? `91${cleanPhone}` : cleanPhone;
     const baseUrl = typeof window !== 'undefined' ? window.location.origin : 'https://salonflow--salonindia-74cbb.us-east4.hosted.app';
     const feedbackUrl = `${baseUrl}/feedback/${salonId || 'default'}_${payingAppt.id}`;
+    const invoicePdfUrl = `${baseUrl}/api/invoices/${salonId || 'default'}_${payingAppt.id}/pdf`;
     const salonName = salon?.name || 'SalonFlow';
     const salonPhone = salon?.phone || '+91 98765 43210';
+    const salonAddress = salon?.address || '';
 
     const messageText = `💜 Thank You for Visiting ${salonName}!
 
 Hi ${payingAppt.customer} 👋
 
-We hope you loved your ${payingAppt.service} experience with us! ✨
+We hope you enjoyed your ${payingAppt.service} experience with us! ✨
 
-Your payment of ₹${totalPayable.toLocaleString('en-IN')} has been successfully received.
+Your payment of ₹${totalPayable.toLocaleString('en-IN')} has been successfully received. 🎉
 
 🧾 Invoice: ${invoiceNo}
-💳 ${paymentMode} Payment: ₹${totalPayable.toLocaleString('en-IN')}
+💳 Payment: ${paymentMode}
+💰 Amount Paid: ₹${totalPayable.toLocaleString('en-IN')}
+
 🎁 Loyalty Points Earned: ${pointsEarned}
 ⭐ Loyalty Balance: ${currentLoyaltyBalance} Points
 
-📎 Your invoice is attached to this message.
-
-We'd love to hear from you! ❤️
+📎 Your invoice is attached to this WhatsApp message.
 
 ⭐ How was your experience?
-👉 ${feedbackUrl}
 
-Your feedback helps us make every visit better. 💫
+We'd love to hear your feedback.
+It only takes a few seconds. ❤️
 
-Thank you for choosing ${salonName}.
-We can't wait to welcome you back! 💜
+👉 Rate Your Experience:
+${feedbackUrl}
 
-📞 ${salonPhone}`;
+Your feedback helps us improve and serve you better. 💫
+
+Thank you for choosing ${salonName}! ❤️
+
+We look forward to welcoming you again.
+
+${salonAddress ? `📍 ${salonAddress}\n` : ''}📞 ${salonPhone}`;
 
     try {
       await fetch('/api/send-whatsapp', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ phone: targetPhone, message: messageText }),
+        body: JSON.stringify({ 
+          phone: targetPhone, 
+          message: messageText,
+          mediaUrl: invoicePdfUrl 
+        }),
       });
     } catch (e) {
       // Non-fatal

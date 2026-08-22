@@ -160,15 +160,16 @@ export async function POST(req: Request) {
     let downloadUrl = '';
     let storagePath = '';
     let isBase64Fallback = false;
+    const origin = req.headers.get('origin') || (req.headers.get('host') ? `https://${req.headers.get('host')}` : 'https://salonflow--salonindia-74cbb.us-east4.hosted.app');
     try {
       const uploadRes = await uploadInvoicePDF(salonId, invoiceNumber, pdfBuffer);
       downloadUrl = uploadRes.downloadUrl;
       storagePath = uploadRes.storagePath;
     } catch (uploadErr) {
-      console.warn('[Invoice API Route] Storage upload failed, falling back to base64 inline PDF delivery:', uploadErr);
-      downloadUrl = `data:application/pdf;base64,${pdfBuffer.toString('base64')}`;
+      console.warn('[Invoice API Route] Storage upload failed, using HTTPS PDF streaming route:', uploadErr);
+      downloadUrl = `${origin}/api/invoices/${salonId}_${appointmentId}/pdf`;
       storagePath = '';
-      isBase64Fallback = true;
+      isBase64Fallback = false;
     }
 
     // 8. Calculations (inclusive 18% GST)
