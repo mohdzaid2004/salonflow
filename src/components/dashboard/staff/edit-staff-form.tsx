@@ -14,7 +14,7 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-import { Loader2, CheckCircle, User, Phone } from 'lucide-react';
+import { Loader2, CheckCircle, User, Phone, IdCard, Calendar, MapPin, Briefcase } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import {
   useFirestore,
@@ -138,21 +138,13 @@ export function EditStaffForm({
             name="role"
             render={({ field }) => (
               <FormItem className="space-y-0.5">
-                <FormLabel className="text-[10px] font-bold text-slate-700 uppercase tracking-wider">Role</FormLabel>
-                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                <FormLabel className="text-[10px] font-bold text-slate-700 uppercase tracking-wider">Role / Designation</FormLabel>
+                <div className="relative">
+                  <Briefcase className="w-3.5 h-3.5 text-purple-600 absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
                   <FormControl>
-                    <SelectTrigger className="h-8 rounded-xl text-xs bg-slate-50/50 border-slate-200">
-                      <SelectValue placeholder="Select role" />
-                    </SelectTrigger>
+                    <Input placeholder="e.g. Hair Stylist, Beautician" className="h-8 pl-8 rounded-xl text-xs bg-slate-50/50 border-slate-200" {...field} />
                   </FormControl>
-                  <SelectContent className="rounded-xl text-xs">
-                    {PREDEFINED_ROLES.map((role) => (
-                      <SelectItem key={role} value={role} className="text-xs">
-                        {role}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                </div>
                 <FormMessage className="text-[10px] text-rose-500" />
               </FormItem>
             )}

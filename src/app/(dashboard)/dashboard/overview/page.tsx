@@ -1,9 +1,9 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useMemo } from 'react';
 import Link from 'next/link';
-import { useCollection, useFirestore, useUser, addDocumentNonBlocking } from '@/firebase';
-import { collection, query, doc } from 'firebase/firestore';
+import { useCollection, useFirestore, useUser } from '@/firebase';
+import { collection, query } from 'firebase/firestore';
 import { 
   PieChart, 
   Pie, 
@@ -15,27 +15,18 @@ import {
   YAxis, 
   CartesianGrid, 
   Tooltip,
-  AreaChart,
-  Area
 } from 'recharts';
 import { 
   IndianRupee, 
   Calendar, 
   TrendingUp, 
-  ChevronDown, 
-  Clock, 
-  CheckCircle2, 
   AlertCircle, 
   Scissors, 
   ArrowUpRight, 
-  UserCheck, 
   CreditCard, 
   Sparkles, 
-  Plus,
-  RefreshCw,
-  Database
+  Plus
 } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
 
 const SERVICE_COLORS = [
   '#7C3AED', // Hair
@@ -46,35 +37,10 @@ const SERVICE_COLORS = [
   '#F59E0B', // Makeup
 ];
 
-const STARTER_SERVICES = [
-  { name: 'Signature Haircut & Styling', category: 'Hair', duration: '45 mins', price: 950, assignedStaff: 'Rahul Sharma' },
-  { name: 'Keratin Smooth & Protein', category: 'Hair', duration: '90 mins', price: 4500, assignedStaff: 'Rahul Sharma' },
-  { name: 'Hydra Glow Deep Facial', category: 'Facial', duration: '60 mins', price: 2800, assignedStaff: 'Pooja Nair' },
-  { name: 'Balayage & Color Highlights', category: 'Hair Color', duration: '120 mins', price: 5200, assignedStaff: 'Rahul Sharma' },
-  { name: 'Deep Hair Spa & Scalp Therapy', category: 'Spa', duration: '50 mins', price: 1600, assignedStaff: 'Suresh Kumar' },
-];
-
-const STARTER_STAFF = [
-  { name: 'Rahul Sharma', role: 'Senior Stylist', specialization: 'Keratin & Hair Color' },
-  { name: 'Pooja Nair', role: 'Beautician & Skin Specialist', specialization: 'Hydra Facials & Bridal' },
-  { name: 'Suresh Kumar', role: 'Hair Stylist', specialization: 'Precision Cuts & Grooming' },
-];
-
-const STARTER_APPOINTMENTS = [
-  { customer: 'Ananya Verma', phone: '+91 98234 11209', service: 'Keratin Smooth & Protein', stylist: 'Rahul Sharma', time: '10:00 AM', duration: '90 min', price: 4500, status: 'Completed', payment: 'Paid' },
-  { customer: 'Vikram Mehta', phone: '+91 98450 77123', service: 'Signature Haircut & Styling', stylist: 'Suresh Kumar', time: '11:30 AM', duration: '45 min', price: 950, status: 'Completed', payment: 'Paid' },
-  { customer: 'Priya Sundaram', phone: '+91 97112 44901', service: 'Hydra Glow Deep Facial', stylist: 'Pooja Nair', time: '01:15 PM', duration: '60 min', price: 2800, status: 'Confirmed', payment: 'Paid' },
-  { customer: 'Rohan Gupta', phone: '+91 99018 33219', service: 'Deep Hair Spa & Scalp Therapy', stylist: 'Rahul Sharma', time: '02:00 PM', duration: '50 min', price: 1600, status: 'Confirmed', payment: 'Pending' },
-  { customer: 'Kavita Patel', phone: '+91 98765 43210', service: 'Balayage & Color Highlights', stylist: 'Rahul Sharma', time: '03:30 PM', duration: '120 min', price: 5200, status: 'Confirmed', payment: 'Paid' },
-];
-
 export default function OverviewPage() {
   const { user } = useUser();
   const firestore = useFirestore();
-  const { toast } = useToast();
   const salonId = user?.uid;
-
-  const [isSeeding, setIsSeeding] = useState(false);
 
   // Live Firestore Queries
   const apptQuery = useMemo(() => {
@@ -87,21 +53,14 @@ export default function OverviewPage() {
     return query(collection(firestore, `salons/${salonId}/invoices`));
   }, [firestore, salonId]);
 
-  const servicesQuery = useMemo(() => {
-    if (!firestore || !salonId) return null;
-    return query(collection(firestore, `salons/${salonId}/services`));
-  }, [firestore, salonId]);
-
   const { data: dbAppointments } = useCollection<any>(apptQuery);
   const { data: dbInvoices } = useCollection<any>(invoicesQuery);
-  const { data: dbServices } = useCollection<any>(servicesQuery);
 
   // Compute live dynamic metrics
   const { todayRevenue, monthRevenue, todayApptsCount, pendingRevenue, trendData, serviceData, todayQueue } = useMemo(() => {
     const appointments = dbAppointments || [];
     const invoices = dbInvoices || [];
 
-    // If completely empty database, return initial zero stats or real items
     if (appointments.length === 0 && invoices.length === 0) {
       return {
         todayRevenue: 0,
@@ -151,7 +110,7 @@ export default function OverviewPage() {
     // Group service breakdown dynamically
     const serviceMap: { [key: string]: number } = {};
     appointments.forEach((appt: any) => {
-      const sName = appt.service || 'Haircut';
+      const sName = appt.service || 'General Service';
       const cost = Number(appt.price) || 500;
       serviceMap[sName] = (serviceMap[sName] || 0) + cost;
     });
@@ -177,41 +136,7 @@ export default function OverviewPage() {
     };
   }, [dbAppointments, dbInvoices]);
 
-  const handleSeedData = async () => {
-    if (!firestore || !salonId) return;
-    setIsSeeding(true);
-    try {
-      // 1. Seed Services
-      const servRef = collection(firestore, `salons/${salonId}/services`);
-      for (const s of STARTER_SERVICES) {
-        addDocumentNonBlocking(servRef, { ...s, salonId });
-      }
-
-      // 2. Seed Staff
-      const staffRef = collection(firestore, `salons/${salonId}/staff`);
-      for (const st of STARTER_STAFF) {
-        addDocumentNonBlocking(staffRef, { ...st, salonId });
-      }
-
-      // 3. Seed Appointments
-      const appRef = collection(firestore, `salons/${salonId}/appointments`);
-      for (const ap of STARTER_APPOINTMENTS) {
-        addDocumentNonBlocking(appRef, { ...ap, salonId, createdAt: new Date().toISOString() });
-      }
-
-      toast({
-        title: 'Salon Seed Data Created',
-        description: 'Starter services, staff, and appointments have been written to live Cloud Firestore.',
-      });
-    } catch (e: any) {
-      toast({ title: 'Error', description: 'Could not seed data', variant: 'destructive' });
-    } finally {
-      setIsSeeding(false);
-    }
-  };
-
   const displayName = user?.displayName || 'Mohammed Zaid';
-  const hasData = (dbAppointments && dbAppointments.length > 0) || (dbInvoices && dbInvoices.length > 0);
 
   return (
     <div className="space-y-6 select-none">
@@ -228,18 +153,6 @@ export default function OverviewPage() {
         </div>
 
         <div className="flex items-center gap-2">
-          {!hasData && (
-            <button
-              type="button"
-              onClick={handleSeedData}
-              disabled={isSeeding}
-              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-purple-50 hover:bg-purple-100 border border-purple-200 text-purple-700 text-xs font-bold transition-all"
-            >
-              <Database className="w-3.5 h-3.5" />
-              <span>{isSeeding ? 'Writing to Firestore...' : 'Seed Starter Data'}</span>
-            </button>
-          )}
-
           <Link
             href="/dashboard/appointments?new=true"
             title="Press N to create a new booking"
