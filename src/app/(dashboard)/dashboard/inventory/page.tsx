@@ -10,6 +10,7 @@ import {
   Layers, 
   Building2,
   Trash2,
+  Pencil,
   Tag
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
@@ -20,7 +21,24 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
-import { useFirestore, useUser, useCollection, addDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import { 
+  useFirestore, 
+  useUser, 
+  useCollection, 
+  addDocumentNonBlocking, 
+  updateDocumentNonBlocking, 
+  deleteDocumentNonBlocking 
+} from '@/firebase';
 import { collection, query, doc } from 'firebase/firestore';
 
 interface InventoryItem {
@@ -53,9 +71,12 @@ export default function InventoryPage() {
   const [localProducts, setLocalProducts] = useState<InventoryItem[]>([]);
   const [categoryFilter, setCategoryFilter] = useState('All');
   const [isAddDialogOpen, setAddDialogOpen] = useState(false);
+  const [isEditDialogOpen, setEditDialogOpen] = useState(false);
+  const [isDeleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [selectedProduct, setSelectedProduct] = useState<InventoryItem | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Form State
+  // Add Form State
   const [formName, setFormName] = useState('');
   const [formBrand, setFormBrand] = useState('');
   const [formCategory, setFormCategory] = useState('');
@@ -64,6 +85,16 @@ export default function InventoryPage() {
   const [formCost, setFormCost] = useState(300);
   const [formPrice, setFormPrice] = useState(550);
   const [formSupplier, setFormSupplier] = useState('');
+
+  // Edit Form State
+  const [editName, setEditName] = useState('');
+  const [editBrand, setEditBrand] = useState('');
+  const [editCategory, setEditCategory] = useState('');
+  const [editStock, setEditStock] = useState(10);
+  const [editReorder, setEditReorder] = useState(3);
+  const [editCost, setEditCost] = useState(300);
+  const [editPrice, setEditPrice] = useState(550);
+  const [editSupplier, setEditSupplier] = useState('');
 
   const displayProducts: InventoryItem[] = useMemo(() => {
     if (dbInventory) {
@@ -108,239 +139,297 @@ export default function InventoryPage() {
     });
   }, [displayProducts, categoryFilter]);
 
-  const stats = useMemo(() => {
-    const totalItems = displayProducts.reduce((acc, p) => acc + p.stock, 0);
-    const lowStock = displayProducts.filter((p) => p.status === 'Low Stock').length;
-    const outOfStock = displayProducts.filter((p) => p.status === 'Out of Stock').length;
-    const totalValue = displayProducts.reduce((acc, p) => acc + (p.stock * p.sellingPrice), 0);
-    return { totalItems, lowStock, outOfStock, totalValue };
-  }, [displayProducts]);
+  // Telemetry Aggregations
+  const totalStockUnits = displayProducts.reduce((acc, p) => acc + p.stock, 0);
+  const totalValuation = displayProducts.reduce((acc, p) => acc + p.stock * p.costPrice, 0);
+  const lowStockCount = displayProducts.filter((p) => p.status === 'Low Stock' || p.status === 'Out of Stock').length;
 
-  const handleAddProduct = (e: React.FormEvent) => {
+  const handleAddProduct = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formName.trim()) {
-      toast({ title: 'Error', description: 'Product name is required', variant: 'destructive' });
+      toast({ title: 'Validation Error', description: 'Product name is required.', variant: 'destructive' });
       return;
     }
 
     setIsSubmitting(true);
-    let status: 'In Stock' | 'Low Stock' | 'Out of Stock' = 'In Stock';
-    if (formStock === 0) status = 'Out of Stock';
-    else if (formStock <= formReorder) status = 'Low Stock';
 
-    const newProduct: InventoryItem = {
-      id: String(Date.now()),
-      name: formName,
-      brand: formBrand,
-      category: formCategory || 'General',
-      stock: formStock,
-      minStock: formReorder,
-      costPrice: formCost,
-      sellingPrice: formPrice,
-      supplier: formSupplier,
-      status,
+    const newProductData = {
+      salonId,
+      name: formName.trim(),
+      brand: formBrand.trim(),
+      category: formCategory.trim() || 'General',
+      stock: Number(formStock) || 0,
+      minStock: Number(formReorder) || 3,
+      costPrice: Number(formCost) || 0,
+      sellingPrice: Number(formPrice) || 0,
+      supplier: formSupplier.trim(),
+      createdAt: new Date().toISOString(),
     };
 
     if (firestore && salonId) {
-      const inventoryRef = collection(firestore, `salons/${salonId}/inventory`);
-      addDocumentNonBlocking(inventoryRef, {
-        name: newProduct.name,
-        brand: newProduct.brand,
-        category: newProduct.category,
-        stock: newProduct.stock,
-        minStock: newProduct.minStock,
-        costPrice: newProduct.costPrice,
-        sellingPrice: newProduct.sellingPrice,
-        supplier: newProduct.supplier,
-        salonId,
-        createdAt: new Date().toISOString(),
-      });
+      addDocumentNonBlocking(collection(firestore, `salons/${salonId}/inventory`), newProductData);
+    } else {
+      setLocalProducts((prev) => [
+        {
+          id: String(Date.now()),
+          ...newProductData,
+          status: (Number(formStock) || 0) <= (Number(formReorder) || 3) ? 'Low Stock' : 'In Stock',
+        },
+        ...prev,
+      ]);
     }
 
-    setLocalProducts([newProduct, ...localProducts]);
-    setAddDialogOpen(false);
-    setIsSubmitting(false);
+    toast({
+      title: 'Product Added',
+      description: `${formName} added to salon stock.`,
+    });
+
     setFormName('');
     setFormBrand('');
     setFormCategory('');
+    setFormStock(10);
+    setFormReorder(3);
+    setFormCost(300);
+    setFormPrice(550);
     setFormSupplier('');
-    toast({
-      title: 'Product Added',
-      description: `${newProduct.name} has been added to inventory.`,
-    });
+    setIsSubmitting(false);
+    setAddDialogOpen(false);
   };
 
-  const handleDeleteProduct = (productId: string, productName: string) => {
-    if (!firestore || !salonId) return;
-    const docRef = doc(firestore, `salons/${salonId}/inventory`, productId);
-    deleteDocumentNonBlocking(docRef);
+  const handleOpenEdit = (p: InventoryItem) => {
+    setSelectedProduct(p);
+    setEditName(p.name);
+    setEditBrand(p.brand || '');
+    setEditCategory(p.category);
+    setEditStock(p.stock);
+    setEditReorder(p.minStock);
+    setEditCost(p.costPrice);
+    setEditPrice(p.sellingPrice);
+    setEditSupplier(p.supplier || '');
+    setEditDialogOpen(true);
+  };
+
+  const handleSaveEdit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedProduct) return;
+    if (!editName.trim()) {
+      toast({ title: 'Validation Error', description: 'Product name is required.', variant: 'destructive' });
+      return;
+    }
+
+    if (firestore && salonId) {
+      const prodRef = doc(firestore, `salons/${salonId}/inventory`, selectedProduct.id);
+      updateDocumentNonBlocking(prodRef, {
+        name: editName.trim(),
+        brand: editBrand.trim(),
+        category: editCategory.trim() || 'General',
+        stock: Number(editStock) || 0,
+        minStock: Number(editReorder) || 3,
+        costPrice: Number(editCost) || 0,
+        sellingPrice: Number(editPrice) || 0,
+        supplier: editSupplier.trim(),
+        updatedAt: new Date().toISOString(),
+      });
+    }
+
+    toast({
+      title: 'Product Updated',
+      description: `${editName} stock updated successfully.`,
+    });
+
+    setEditDialogOpen(false);
+  };
+
+  const handleOpenDelete = (p: InventoryItem) => {
+    setSelectedProduct(p);
+    setDeleteDialogOpen(true);
+  };
+
+  const handleConfirmDelete = () => {
+    if (!selectedProduct) return;
+
+    if (firestore && salonId) {
+      const prodRef = doc(firestore, `salons/${salonId}/inventory`, selectedProduct.id);
+      deleteDocumentNonBlocking(prodRef);
+    } else {
+      setLocalProducts((prev) => prev.filter((p) => p.id !== selectedProduct.id));
+    }
+
     toast({
       title: 'Product Removed',
-      description: `${productName} has been removed from inventory.`,
+      description: `${selectedProduct.name} removed from inventory.`,
     });
+
+    setDeleteDialogOpen(false);
   };
 
   return (
-    <div className="space-y-4 sm:space-y-6 select-none">
+    <div className="space-y-4 max-w-7xl mx-auto">
       
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
+      {/* Top Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-4 rounded-2xl border border-slate-200/80 shadow-xs">
         <div>
-          <h1 className="text-xl sm:text-2xl lg:text-3xl font-extrabold text-slate-900 tracking-tight font-serif sm:font-sans">
-            Inventory & Stock
+          <div className="flex items-center gap-2">
+            <span className="px-2 py-0.5 rounded-md bg-purple-50 text-purple-700 border border-purple-100 text-[10px] font-bold tracking-wider uppercase flex items-center gap-1">
+              <Package className="w-3 h-3" /> Backbar & Retail Stock
+            </span>
+          </div>
+          <h1 className="text-xl sm:text-2xl font-extrabold text-slate-900 tracking-tight mt-0.5">
+            Inventory
           </h1>
-          <p className="text-xs sm:text-sm text-slate-500 font-medium mt-0.5">
-            Manage professional salon retail products, backbar consumables, and stock levels.
-          </p>
         </div>
 
-        <div className="flex items-center gap-3">
-          <Dialog open={isAddDialogOpen} onOpenChange={setAddDialogOpen}>
-            <DialogTrigger asChild>
-              <button
-                type="button"
-                className="inline-flex items-center gap-1.5 px-3.5 sm:px-4 py-2 rounded-xl bg-purple-700 hover:bg-purple-800 text-white text-xs font-bold shadow-sm shadow-purple-600/20 transition-all"
-              >
-                <Plus className="w-4 h-4" />
-                <span>Add Product</span>
-              </button>
-            </DialogTrigger>
-            <DialogContent className="max-w-[480px] max-h-[90vh] overflow-y-auto rounded-3xl p-5 sm:p-6 bg-white shadow-2xl">
-              <DialogHeader className="pb-2">
-                <DialogTitle className="text-lg font-bold text-slate-900">Add Inventory Product</DialogTitle>
-              </DialogHeader>
+        <Dialog open={isAddDialogOpen} onOpenChange={setAddDialogOpen}>
+          <DialogTrigger asChild>
+            <button
+              type="button"
+              className="h-9 px-4 rounded-xl bg-purple-700 hover:bg-purple-800 text-white text-xs font-bold transition-all flex items-center gap-1.5 shadow-sm"
+            >
+              <Plus className="w-4 h-4" />
+              <span>Add Product</span>
+            </button>
+          </DialogTrigger>
+          <DialogContent className="max-w-[440px] rounded-3xl p-5 bg-white border border-slate-200 text-slate-900 space-y-4">
+            <DialogHeader>
+              <DialogTitle className="text-base font-extrabold text-slate-900">
+                Add Inventory Product
+              </DialogTitle>
+            </DialogHeader>
 
-              <form onSubmit={handleAddProduct} className="space-y-3 pt-2">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div className="space-y-1 sm:col-span-2">
-                    <label className="text-[10px] font-bold text-slate-700 uppercase tracking-wider">
-                      Product Name <span className="text-rose-500">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      placeholder="e.g. Professional Hair Mask 200ml"
-                      value={formName}
-                      onChange={(e) => setFormName(e.target.value)}
-                      className="w-full h-8 px-3 rounded-xl text-xs bg-slate-50 border border-slate-200 focus:outline-hidden focus:border-purple-600"
-                      required
-                    />
-                  </div>
+            <form onSubmit={handleAddProduct} className="space-y-3">
+              <div>
+                <label className="text-xs font-bold text-slate-800 block mb-1">Product Name *</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. L'Oréal Professional Shampoo 500ml"
+                  value={formName}
+                  onChange={(e) => setFormName(e.target.value)}
+                  className="w-full h-9 px-3 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 font-semibold text-xs focus:outline-hidden focus:border-purple-600"
+                />
+              </div>
 
-                  <div className="space-y-1">
-                    <label className="text-[10px] font-bold text-slate-700 uppercase tracking-wider">Brand</label>
-                    <input
-                      type="text"
-                      placeholder="e.g. L'Oréal, Schwarzkopf"
-                      value={formBrand}
-                      onChange={(e) => setFormBrand(e.target.value)}
-                      className="w-full h-8 px-3 rounded-xl text-xs bg-slate-50 border border-slate-200 focus:outline-hidden focus:border-purple-600"
-                    />
-                  </div>
-
-                  <div className="space-y-1">
-                    <label className="text-[10px] font-bold text-slate-700 uppercase tracking-wider">Category</label>
-                    <input
-                      type="text"
-                      placeholder="e.g. Hair Care, Skin Care"
-                      value={formCategory}
-                      onChange={(e) => setFormCategory(e.target.value)}
-                      className="w-full h-8 px-3 rounded-xl text-xs bg-slate-50 border border-slate-200 focus:outline-hidden focus:border-purple-600"
-                    />
-                  </div>
-
-                  <div className="space-y-1">
-                    <label className="text-[10px] font-bold text-slate-700 uppercase tracking-wider">Current Stock</label>
-                    <input
-                      type="number"
-                      value={formStock}
-                      onChange={(e) => setFormStock(Number(e.target.value))}
-                      className="w-full h-8 px-3 rounded-xl text-xs bg-slate-50 border border-slate-200 focus:outline-hidden focus:border-purple-600"
-                    />
-                  </div>
-
-                  <div className="space-y-1">
-                    <label className="text-[10px] font-bold text-slate-700 uppercase tracking-wider">Reorder Level</label>
-                    <input
-                      type="number"
-                      value={formReorder}
-                      onChange={(e) => setFormReorder(Number(e.target.value))}
-                      className="w-full h-8 px-3 rounded-xl text-xs bg-slate-50 border border-slate-200 focus:outline-hidden focus:border-purple-600"
-                    />
-                  </div>
-
-                  <div className="space-y-1">
-                    <label className="text-[10px] font-bold text-slate-700 uppercase tracking-wider">Cost Price (₹)</label>
-                    <input
-                      type="number"
-                      value={formCost}
-                      onChange={(e) => setFormCost(Number(e.target.value))}
-                      className="w-full h-8 px-3 rounded-xl text-xs bg-slate-50 border border-slate-200 focus:outline-hidden focus:border-purple-600"
-                    />
-                  </div>
-
-                  <div className="space-y-1">
-                    <label className="text-[10px] font-bold text-slate-700 uppercase tracking-wider">Retail Price (₹)</label>
-                    <input
-                      type="number"
-                      value={formPrice}
-                      onChange={(e) => setFormPrice(Number(e.target.value))}
-                      className="w-full h-8 px-3 rounded-xl text-xs bg-slate-50 border border-slate-200 focus:outline-hidden focus:border-purple-600"
-                    />
-                  </div>
-
-                  <div className="space-y-1 sm:col-span-2">
-                    <label className="text-[10px] font-bold text-slate-700 uppercase tracking-wider">Supplier / Vendor</label>
-                    <input
-                      type="text"
-                      placeholder="e.g. Beauty Essentials India Pvt Ltd"
-                      value={formSupplier}
-                      onChange={(e) => setFormSupplier(e.target.value)}
-                      className="w-full h-8 px-3 rounded-xl text-xs bg-slate-50 border border-slate-200 focus:outline-hidden focus:border-purple-600"
-                    />
-                  </div>
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className="text-xs font-bold text-slate-800 block mb-1">Brand</label>
+                  <input
+                    type="text"
+                    placeholder="e.g. L'Oréal"
+                    value={formBrand}
+                    onChange={(e) => setFormBrand(e.target.value)}
+                    className="w-full h-9 px-3 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 font-semibold text-xs focus:outline-hidden focus:border-purple-600"
+                  />
                 </div>
+                <div>
+                  <label className="text-xs font-bold text-slate-800 block mb-1">Category</label>
+                  <input
+                    type="text"
+                    placeholder="e.g. Hair Care"
+                    value={formCategory}
+                    onChange={(e) => setFormCategory(e.target.value)}
+                    className="w-full h-9 px-3 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 font-semibold text-xs focus:outline-hidden focus:border-purple-600"
+                  />
+                </div>
+              </div>
 
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className="text-xs font-bold text-slate-800 block mb-1">Initial Stock Units</label>
+                  <input
+                    type="number"
+                    min="0"
+                    value={formStock}
+                    onChange={(e) => setFormStock(Number(e.target.value))}
+                    className="w-full h-9 px-3 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 font-semibold text-xs focus:outline-hidden focus:border-purple-600"
+                  />
+                </div>
+                <div>
+                  <label className="text-xs font-bold text-slate-800 block mb-1">Reorder Level</label>
+                  <input
+                    type="number"
+                    min="1"
+                    value={formReorder}
+                    onChange={(e) => setFormReorder(Number(e.target.value))}
+                    className="w-full h-9 px-3 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 font-semibold text-xs focus:outline-hidden focus:border-purple-600"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className="text-xs font-bold text-slate-800 block mb-1">Cost Price (₹)</label>
+                  <input
+                    type="number"
+                    min="0"
+                    value={formCost}
+                    onChange={(e) => setFormCost(Number(e.target.value))}
+                    className="w-full h-9 px-3 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 font-semibold text-xs focus:outline-hidden focus:border-purple-600"
+                  />
+                </div>
+                <div>
+                  <label className="text-xs font-bold text-slate-800 block mb-1">Selling Price (₹)</label>
+                  <input
+                    type="number"
+                    min="0"
+                    value={formPrice}
+                    onChange={(e) => setFormPrice(Number(e.target.value))}
+                    className="w-full h-9 px-3 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 font-semibold text-xs focus:outline-hidden focus:border-purple-600"
+                  />
+                </div>
+              </div>
+
+              <div className="pt-2">
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className="w-full h-9 rounded-xl bg-purple-700 hover:bg-purple-800 text-white font-bold text-xs shadow-md shadow-purple-600/20 transition-all mt-4 disabled:opacity-50"
+                  className="w-full h-10 rounded-xl bg-purple-700 hover:bg-purple-800 text-white font-bold text-xs transition-all shadow-sm disabled:opacity-50"
                 >
-                  {isSubmitting ? 'Saving Product...' : 'Add to Inventory'}
+                  {isSubmitting ? 'Saving...' : 'Add to Inventory'}
                 </button>
-              </form>
-            </DialogContent>
-          </Dialog>
+              </div>
+            </form>
+          </DialogContent>
+        </Dialog>
+      </div>
+
+      {/* 3 Telemetry Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        <div className="bg-white rounded-2xl p-4 border border-slate-200/80 shadow-xs space-y-1">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-semibold text-slate-500">Total Stock Units</span>
+            <Package className="w-4 h-4 text-purple-600" />
+          </div>
+          <div className="text-2xl font-extrabold text-slate-900 font-mono">{totalStockUnits}</div>
+          <div className="text-[11px] text-slate-400 font-medium">Across {displayProducts.length} product SKUs</div>
+        </div>
+
+        <div className="bg-white rounded-2xl p-4 border border-slate-200/80 shadow-xs space-y-1">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-semibold text-slate-500">Inventory Valuation</span>
+            <IndianRupee className="w-4 h-4 text-purple-600" />
+          </div>
+          <div className="text-2xl font-extrabold text-purple-700 font-mono">
+            ₹{totalValuation.toLocaleString('en-IN')}
+          </div>
+          <div className="text-[11px] text-slate-400 font-medium">Calculated at landed cost</div>
+        </div>
+
+        <div className="bg-white rounded-2xl p-4 border border-slate-200/80 shadow-xs space-y-1">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-semibold text-slate-500">Low Stock Alerts</span>
+            <AlertTriangle className={`w-4 h-4 ${lowStockCount > 0 ? 'text-amber-500' : 'text-slate-400'}`} />
+          </div>
+          <div className={`text-2xl font-extrabold font-mono ${lowStockCount > 0 ? 'text-amber-600' : 'text-slate-900'}`}>
+            {lowStockCount}
+          </div>
+          <div className="text-[11px] text-slate-400 font-medium">Below reorder threshold</div>
         </div>
       </div>
 
-      {/* 4 Stat Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-        <div className="bg-white rounded-2xl p-3.5 sm:p-4 shadow-xs border border-slate-200/80">
-          <span className="text-[11px] font-semibold text-slate-500">Total Stock Units</span>
-          <div className="text-xl sm:text-2xl font-extrabold text-slate-900 mt-0.5">{stats.totalItems} Units</div>
-          <span className="text-[10px] text-emerald-600 font-medium">In warehouse & shelves</span>
-        </div>
-        <div className="bg-white rounded-2xl p-3.5 sm:p-4 shadow-xs border border-slate-200/80">
-          <span className="text-[11px] font-semibold text-slate-500">Low Stock Alert</span>
-          <div className="text-xl sm:text-2xl font-extrabold text-amber-600 mt-0.5">{stats.lowStock} Items</div>
-          <span className="text-[10px] text-amber-600 font-medium">Reorder required soon</span>
-        </div>
-        <div className="bg-white rounded-2xl p-3.5 sm:p-4 shadow-xs border border-slate-200/80">
-          <span className="text-[11px] font-semibold text-slate-500">Out of Stock</span>
-          <div className="text-xl sm:text-2xl font-extrabold text-rose-600 mt-0.5">{stats.outOfStock} Items</div>
-          <span className="text-[10px] text-rose-600 font-medium">Needs vendor restock</span>
-        </div>
-        <div className="bg-white rounded-2xl p-3.5 sm:p-4 shadow-xs border border-slate-200/80">
-          <span className="text-[11px] font-semibold text-slate-500">Total Stock Value</span>
-          <div className="text-xl sm:text-2xl font-extrabold text-purple-700 mt-0.5">₹{stats.totalValue.toLocaleString('en-IN')}</div>
-          <span className="text-[10px] text-slate-400 font-medium">Retail stock worth</span>
-        </div>
-      </div>
-
-      {/* Main Table / Mobile Card Container */}
-      <div className="bg-white rounded-2xl p-4 sm:p-6 shadow-xs border border-slate-200/80 space-y-4">
+      {/* Stock Table & Content */}
+      <div className="bg-white rounded-2xl p-4 border border-slate-200/80 shadow-xs space-y-4">
         
-        {/* Dynamic Category Filter Bar */}
+        {/* Category Pills */}
         {dynamicCategories.length > 1 && (
           <div className="flex items-center gap-1.5 overflow-x-auto pb-1">
             {dynamicCategories.map((cat) => (
@@ -400,13 +489,20 @@ export default function InventoryPage() {
                   </div>
                 </div>
 
-                <div className="flex items-center justify-end pt-2 border-t border-slate-200/60">
+                <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-200/60">
                   <button
                     type="button"
-                    onClick={() => handleDeleteProduct(p.id, p.name)}
+                    onClick={() => handleOpenEdit(p)}
+                    className="px-3 py-1.5 rounded-lg border border-slate-200 bg-white text-slate-700 hover:text-purple-700 text-xs font-bold flex items-center gap-1.5 shadow-2xs"
+                  >
+                    <Pencil className="w-3.5 h-3.5" /> Edit
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleOpenDelete(p)}
                     className="px-3 py-1.5 rounded-lg bg-rose-50 border border-rose-200 text-rose-700 text-xs font-bold flex items-center gap-1.5 shadow-2xs"
                   >
-                    <Trash2 className="w-3.5 h-3.5 text-rose-600" /> Remove Product
+                    <Trash2 className="w-3.5 h-3.5 text-rose-600" /> Remove
                   </button>
                 </div>
               </div>
@@ -463,14 +559,24 @@ export default function InventoryPage() {
                       </span>
                     </td>
                     <td className="py-3.5 text-right pr-1">
-                      <button
-                        type="button"
-                        onClick={() => handleDeleteProduct(p.id, p.name)}
-                        className="p-1.5 rounded-lg border border-rose-200 bg-rose-50 hover:bg-rose-100 text-rose-600 shadow-2xs"
-                        title="Delete Product"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
+                      <div className="flex items-center justify-end gap-1.5">
+                        <button
+                          type="button"
+                          onClick={() => handleOpenEdit(p)}
+                          className="p-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-600 hover:text-purple-700 transition-colors"
+                          title="Edit Product"
+                        >
+                          <Pencil className="w-3.5 h-3.5" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleOpenDelete(p)}
+                          className="p-1.5 rounded-lg border border-rose-200 bg-rose-50 hover:bg-rose-100 text-rose-600 transition-colors"
+                          title="Delete Product"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))
@@ -486,6 +592,135 @@ export default function InventoryPage() {
         </div>
 
       </div>
+
+      {/* Edit Product Dialog */}
+      {selectedProduct && (
+        <Dialog open={isEditDialogOpen} onOpenChange={setEditDialogOpen}>
+          <DialogContent className="max-w-[440px] rounded-3xl p-5 bg-white border border-slate-200 text-slate-900 space-y-4">
+            <DialogHeader>
+              <DialogTitle className="text-base font-extrabold text-slate-900">
+                Edit Product Details
+              </DialogTitle>
+            </DialogHeader>
+
+            <form onSubmit={handleSaveEdit} className="space-y-3">
+              <div>
+                <label className="text-xs font-bold text-slate-800 block mb-1">Product Name *</label>
+                <input
+                  type="text"
+                  required
+                  value={editName}
+                  onChange={(e) => setEditName(e.target.value)}
+                  className="w-full h-9 px-3 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 font-semibold text-xs focus:outline-hidden focus:border-purple-600"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className="text-xs font-bold text-slate-800 block mb-1">Brand</label>
+                  <input
+                    type="text"
+                    value={editBrand}
+                    onChange={(e) => setEditBrand(e.target.value)}
+                    className="w-full h-9 px-3 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 font-semibold text-xs focus:outline-hidden focus:border-purple-600"
+                  />
+                </div>
+                <div>
+                  <label className="text-xs font-bold text-slate-800 block mb-1">Category</label>
+                  <input
+                    type="text"
+                    value={editCategory}
+                    onChange={(e) => setEditCategory(e.target.value)}
+                    className="w-full h-9 px-3 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 font-semibold text-xs focus:outline-hidden focus:border-purple-600"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className="text-xs font-bold text-slate-800 block mb-1">Stock Units</label>
+                  <input
+                    type="number"
+                    min="0"
+                    value={editStock}
+                    onChange={(e) => setEditStock(Number(e.target.value))}
+                    className="w-full h-9 px-3 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 font-semibold text-xs focus:outline-hidden focus:border-purple-600"
+                  />
+                </div>
+                <div>
+                  <label className="text-xs font-bold text-slate-800 block mb-1">Reorder Level</label>
+                  <input
+                    type="number"
+                    min="1"
+                    value={editReorder}
+                    onChange={(e) => setEditReorder(Number(e.target.value))}
+                    className="w-full h-9 px-3 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 font-semibold text-xs focus:outline-hidden focus:border-purple-600"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className="text-xs font-bold text-slate-800 block mb-1">Cost Price (₹)</label>
+                  <input
+                    type="number"
+                    min="0"
+                    value={editCost}
+                    onChange={(e) => setEditCost(Number(e.target.value))}
+                    className="w-full h-9 px-3 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 font-semibold text-xs focus:outline-hidden focus:border-purple-600"
+                  />
+                </div>
+                <div>
+                  <label className="text-xs font-bold text-slate-800 block mb-1">Selling Price (₹)</label>
+                  <input
+                    type="number"
+                    min="0"
+                    value={editPrice}
+                    onChange={(e) => setEditPrice(Number(e.target.value))}
+                    className="w-full h-9 px-3 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 font-semibold text-xs focus:outline-hidden focus:border-purple-600"
+                  />
+                </div>
+              </div>
+
+              <div className="pt-2">
+                <button
+                  type="submit"
+                  className="w-full h-10 rounded-xl bg-purple-700 hover:bg-purple-800 text-white font-bold text-xs transition-all shadow-sm"
+                >
+                  Save Changes
+                </button>
+              </div>
+            </form>
+          </DialogContent>
+        </Dialog>
+      )}
+
+      {/* Delete Product Alert Dialog */}
+      {selectedProduct && (
+        <AlertDialog open={isDeleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+          <AlertDialogContent className="max-w-[400px] rounded-3xl p-5 bg-white border border-slate-200 text-slate-900 space-y-3">
+            <AlertDialogHeader>
+              <AlertDialogTitle className="text-base font-extrabold text-slate-900">
+                Remove Product from Inventory?
+              </AlertDialogTitle>
+              <AlertDialogDescription className="text-xs text-slate-500">
+                Are you sure you want to remove <strong className="text-slate-900">{selectedProduct.name}</strong>? This product will be deleted from your stock list.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter className="pt-2 flex items-center justify-end gap-2">
+              <AlertDialogCancel className="h-9 px-3 rounded-xl border border-slate-200 text-xs font-bold text-slate-700">
+                Cancel
+              </AlertDialogCancel>
+              <AlertDialogAction
+                onClick={handleConfirmDelete}
+                className="h-9 px-4 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold"
+              >
+                Remove Product
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      )}
 
     </div>
   );

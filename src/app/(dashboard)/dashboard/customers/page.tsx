@@ -14,7 +14,8 @@ import {
   Eye,
   Trash2,
   TrendingUp,
-  UserCheck
+  UserCheck,
+  Pencil
 } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { useToast } from '@/hooks/use-toast';
@@ -25,8 +26,25 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
-import { useFirestore, useUser, useCollection, addDocumentNonBlocking } from '@/firebase';
-import { collection, query } from 'firebase/firestore';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import { 
+  useFirestore, 
+  useUser, 
+  useCollection, 
+  addDocumentNonBlocking, 
+  updateDocumentNonBlocking, 
+  deleteDocumentNonBlocking 
+} from '@/firebase';
+import { collection, query, doc } from 'firebase/firestore';
 import type { Customer, Appointment } from '@/lib/data';
 
 interface CustomerViewItem {
@@ -64,13 +82,23 @@ export default function CustomersPage() {
 
   const [localCustomers, setLocalCustomers] = useState<CustomerViewItem[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
+  
+  // Dialog States
   const [isAddDialogOpen, setAddDialogOpen] = useState(false);
+  const [isEditDialogOpen, setEditDialogOpen] = useState(false);
+  const [isDeleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [selectedCustomer, setSelectedCustomer] = useState<CustomerViewItem | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Form State
+  // Add Form State
   const [newName, setNewName] = useState('');
   const [newPhone, setNewPhone] = useState('');
   const [newDob, setNewDob] = useState('');
+
+  // Edit Form State
+  const [editName, setEditName] = useState('');
+  const [editPhone, setEditPhone] = useState('');
+  const [editDob, setEditDob] = useState('');
 
   const displayCustomers: CustomerViewItem[] = useMemo(() => {
     if (dbCustomers) {
@@ -105,226 +133,286 @@ export default function CustomersPage() {
   }, [dbCustomers, dbAppointments, localCustomers]);
 
   const filteredCustomers = useMemo(() => {
-    return displayCustomers.filter((cust) => {
-      const matchesSearch =
-        cust.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        cust.phone.includes(searchQuery) ||
-        cust.customerCode.toLowerCase().includes(searchQuery.toLowerCase());
-      return matchesSearch;
+    return displayCustomers.filter((c) => {
+      const q = searchQuery.toLowerCase();
+      return (
+        c.name.toLowerCase().includes(q) ||
+        c.phone.includes(q) ||
+        c.customerCode.toLowerCase().includes(q)
+      );
     });
   }, [displayCustomers, searchQuery]);
 
-  const handleAddCustomer = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newName.trim()) {
-      toast({ title: 'Error', description: 'Customer name is required', variant: 'destructive' });
-      return;
-    }
-
-    setIsSubmitting(true);
-    const phoneClean = newPhone.replace(/[^0-9]/g, '');
-    const phoneSuffix = phoneClean.slice(-4);
-    const newCode = `CUST-2026-${phoneSuffix || Math.floor(1000 + Math.random() * 9000)}`;
-
-    const newCust: CustomerViewItem = {
-      id: String(Date.now()),
-      customerCode: newCode,
-      name: newName,
-      phone: newPhone || '+91 98000 00000',
-      dob: newDob,
-      visits: 0,
-      totalSpent: 0,
-      loyaltyPoints: 0,
-      lastVisit: 'New Client',
-    };
-
-    if (firestore && salonId) {
-      const customerRef = collection(firestore, `salons/${salonId}/customers`);
-      addDocumentNonBlocking(customerRef, {
-        name: newCust.name,
-        phone: newCust.phone,
-        dob: newCust.dob,
-        customerCode: newCode,
-        loyaltyPoints: 0,
-        totalSpent: 0,
-        visits: 0,
-        salonId,
-        createdAt: new Date().toISOString(),
-      });
-    }
-
-    setLocalCustomers([newCust, ...localCustomers]);
-    setAddDialogOpen(false);
-    setIsSubmitting(false);
-    setNewName('');
-    setNewPhone('');
-    setNewDob('');
-    toast({
-      title: 'Customer Registered',
-      description: `${newCust.name} (ID: ${newCode}) added to your client registry.`,
-    });
-  };
-
-  const handleExportCSV = () => {
-    if (displayCustomers.length === 0) {
-      toast({ title: 'No Data', description: 'No customers available to export.', variant: 'destructive' });
-      return;
-    }
-
-    const headers = 'ID,Name,Phone,Visits,Total Spent (INR),Loyalty Points,Last Visit\n';
-    const rows = displayCustomers
-      .map((c) => `"${c.customerCode}","${c.name}","${c.phone}",${c.visits},${c.totalSpent},${c.loyaltyPoints},"${c.lastVisit}"`)
-      .join('\n');
-
-    const blob = new Blob([headers + rows], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.setAttribute('href', url);
-    link.setAttribute('download', `SalonFlow_Customers_${new Date().toISOString().split('T')[0]}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-
-    toast({ title: 'Export Complete', description: 'Customer directory exported as CSV.' });
-  };
-
-  const totalSpentAll = displayCustomers.reduce((acc, c) => acc + c.totalSpent, 0);
-  const totalVisitsAll = displayCustomers.reduce((acc, c) => acc + c.visits, 0);
+  // Telemetry Aggregations
+  const totalCustomers = displayCustomers.length;
+  const activeMembers = displayCustomers.filter((c) => c.visits > 0).length;
+  const totalRevenue = displayCustomers.reduce((acc, c) => acc + c.totalSpent, 0);
 
   const getInitials = (name: string) => {
     return name
       .split(' ')
       .map((n) => n[0])
       .join('')
-      .toUpperCase()
-      .substring(0, 2);
+      .substring(0, 2)
+      .toUpperCase();
+  };
+
+  const handleAddCustomer = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newName.trim()) {
+      toast({ title: 'Validation Error', description: 'Customer name is required.', variant: 'destructive' });
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    const phoneSuffix = newPhone.replace(/[^0-9]/g, '').slice(-4);
+    const newCustomerCode = `CUST-2026-${phoneSuffix || Math.floor(1000 + Math.random() * 9000)}`;
+
+    const newCustomerData = {
+      salonId,
+      customerCode: newCustomerCode,
+      name: newName.trim(),
+      phone: newPhone.trim() || '+91 98000 00000',
+      dob: newDob || '',
+      visits: 0,
+      totalSpent: 0,
+      loyaltyPoints: 0,
+      createdAt: new Date().toISOString(),
+    };
+
+    if (firestore && salonId) {
+      addDocumentNonBlocking(collection(firestore, `salons/${salonId}/customers`), newCustomerData);
+    } else {
+      setLocalCustomers((prev) => [
+        {
+          id: String(Date.now()),
+          ...newCustomerData,
+          lastVisit: 'No visits yet',
+        },
+        ...prev,
+      ]);
+    }
+
+    toast({
+      title: 'Customer Added',
+      description: `${newName} has been registered with ID ${newCustomerCode}.`,
+    });
+
+    setNewName('');
+    setNewPhone('');
+    setNewDob('');
+    setIsSubmitting(false);
+    setAddDialogOpen(false);
+  };
+
+  const handleOpenEdit = (cust: CustomerViewItem) => {
+    setSelectedCustomer(cust);
+    setEditName(cust.name);
+    setEditPhone(cust.phone);
+    setEditDob(cust.dob || '');
+    setEditDialogOpen(true);
+  };
+
+  const handleSaveEdit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedCustomer) return;
+    if (!editName.trim()) {
+      toast({ title: 'Validation Error', description: 'Customer name is required.', variant: 'destructive' });
+      return;
+    }
+
+    if (firestore && salonId) {
+      const custRef = doc(firestore, `salons/${salonId}/customers`, selectedCustomer.id);
+      updateDocumentNonBlocking(custRef, {
+        name: editName.trim(),
+        phone: editPhone.trim(),
+        dob: editDob,
+        updatedAt: new Date().toISOString(),
+      });
+    }
+
+    toast({
+      title: 'Customer Updated',
+      description: `${editName} details saved successfully.`,
+    });
+
+    setEditDialogOpen(false);
+  };
+
+  const handleOpenDelete = (cust: CustomerViewItem) => {
+    setSelectedCustomer(cust);
+    setDeleteDialogOpen(true);
+  };
+
+  const handleConfirmDelete = () => {
+    if (!selectedCustomer) return;
+
+    if (firestore && salonId) {
+      const custRef = doc(firestore, `salons/${salonId}/customers`, selectedCustomer.id);
+      deleteDocumentNonBlocking(custRef);
+    } else {
+      setLocalCustomers((prev) => prev.filter((c) => c.id !== selectedCustomer.id));
+    }
+
+    toast({
+      title: 'Customer Removed',
+      description: `${selectedCustomer.name} has been removed from customer directory.`,
+    });
+
+    setDeleteDialogOpen(false);
+  };
+
+  const handleExportCSV = () => {
+    const headers = ['Customer Code,Name,Phone,Date of Birth,Visits,Total Spent,Loyalty Points\n'];
+    const rows = displayCustomers.map((c) =>
+      `"${c.customerCode}","${c.name}","${c.phone}","${c.dob || 'N/A'}",${c.visits},${c.totalSpent},${c.loyaltyPoints}`
+    );
+    const blob = new Blob([headers.concat(rows.join('\n')).join('')], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `SalonFlow_Customers_${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    toast({ title: 'Export Complete', description: 'Customer directory CSV downloaded.' });
   };
 
   return (
-    <div className="space-y-4 sm:space-y-6 select-none">
+    <div className="space-y-4 max-w-7xl mx-auto">
       
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
+      {/* Top Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-4 rounded-2xl border border-slate-200/80 shadow-xs">
         <div>
-          <h1 className="text-xl sm:text-2xl lg:text-3xl font-extrabold text-slate-900 tracking-tight font-serif sm:font-sans">
+          <div className="flex items-center gap-2">
+            <span className="px-2 py-0.5 rounded-md bg-purple-50 text-purple-700 border border-purple-100 text-[10px] font-bold tracking-wider uppercase flex items-center gap-1">
+              <Users className="w-3 h-3" /> Directory & Loyalty
+            </span>
+          </div>
+          <h1 className="text-xl sm:text-2xl font-extrabold text-slate-900 tracking-tight mt-0.5">
             Customers
           </h1>
-          <p className="text-xs sm:text-sm text-slate-500 font-medium mt-0.5">
-            Client registry, loyalty rewards balance, visit records, and lifetime value tracking.
-          </p>
         </div>
 
         <div className="flex items-center gap-2">
           <button
             type="button"
             onClick={handleExportCSV}
-            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 text-xs font-semibold shadow-2xs transition-all"
+            className="h-9 px-3 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-bold transition-colors flex items-center gap-1.5 shadow-2xs"
+            title="Export CSV"
           >
-            <Download className="w-3.5 h-3.5 text-purple-600" />
-            <span>Export CSV</span>
+            <Download className="w-3.5 h-3.5" />
+            <span className="hidden sm:inline">Export</span>
           </button>
 
           <Dialog open={isAddDialogOpen} onOpenChange={setAddDialogOpen}>
             <DialogTrigger asChild>
               <button
                 type="button"
-                className="inline-flex items-center gap-1.5 px-3.5 sm:px-4 py-2 rounded-xl bg-purple-700 hover:bg-purple-800 text-white text-xs font-bold shadow-sm shadow-purple-600/20 transition-all"
+                className="h-9 px-4 rounded-xl bg-purple-700 hover:bg-purple-800 text-white text-xs font-bold transition-all flex items-center gap-1.5 shadow-sm"
               >
                 <Plus className="w-4 h-4" />
                 <span>Add Customer</span>
               </button>
             </DialogTrigger>
-            <DialogContent className="max-w-[480px] max-h-[90vh] overflow-y-auto rounded-3xl p-5 sm:p-6 bg-white shadow-2xl">
-              <DialogHeader className="pb-2">
-                <DialogTitle className="text-lg font-bold text-slate-900">Add New Customer</DialogTitle>
+            <DialogContent className="max-w-[420px] rounded-3xl p-5 bg-white border border-slate-200 text-slate-900 space-y-4">
+              <DialogHeader>
+                <DialogTitle className="text-base font-extrabold text-slate-900">
+                  Register New Customer
+                </DialogTitle>
               </DialogHeader>
 
-              <form onSubmit={handleAddCustomer} className="space-y-3.5 pt-2">
-                <div className="space-y-1">
-                  <label className="text-[10px] font-bold text-slate-700 uppercase tracking-wider">
-                    Full Name <span className="text-rose-500">*</span>
-                  </label>
+              <form onSubmit={handleAddCustomer} className="space-y-3.5">
+                <div>
+                  <label className="text-xs font-bold text-slate-800 block mb-1">Customer Full Name *</label>
                   <input
                     type="text"
+                    required
                     placeholder="e.g. Priya Sharma"
                     value={newName}
                     onChange={(e) => setNewName(e.target.value)}
-                    className="w-full h-8 px-3 rounded-xl text-xs bg-slate-50 border border-slate-200 text-slate-900 font-semibold focus:outline-hidden focus:border-purple-600"
-                    required
+                    className="w-full h-10 px-3 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 font-semibold text-xs focus:outline-hidden focus:border-purple-600"
                   />
                 </div>
 
-                <div className="space-y-1">
-                  <label className="text-[10px] font-bold text-slate-700 uppercase tracking-wider">
-                    WhatsApp Phone Number <span className="text-rose-500">*</span>
-                  </label>
+                <div>
+                  <label className="text-xs font-bold text-slate-800 block mb-1">Phone Number (10 digits) *</label>
                   <input
                     type="tel"
+                    required
                     placeholder="+91 98765 43210"
                     value={newPhone}
                     onChange={(e) => setNewPhone(e.target.value)}
-                    className="w-full h-8 px-3 rounded-xl text-xs bg-slate-50 border border-slate-200 text-slate-900 font-semibold focus:outline-hidden focus:border-purple-600"
-                    required
+                    className="w-full h-10 px-3 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 font-semibold text-xs focus:outline-hidden focus:border-purple-600"
                   />
                 </div>
 
-                <div className="space-y-1">
-                  <label className="text-[10px] font-bold text-slate-700 uppercase tracking-wider">Date of Birth</label>
+                <div>
+                  <label className="text-xs font-bold text-slate-800 block mb-1">Date of Birth (Optional)</label>
                   <input
                     type="date"
                     value={newDob}
                     onChange={(e) => setNewDob(e.target.value)}
-                    className="w-full h-8 px-3 rounded-xl text-xs bg-slate-50 border border-slate-200 text-slate-900 font-semibold focus:outline-hidden focus:border-purple-600"
+                    className="w-full h-10 px-3 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 font-semibold text-xs focus:outline-hidden focus:border-purple-600"
                   />
                 </div>
 
-                <button
-                  type="submit"
-                  disabled={isSubmitting}
-                  className="w-full h-9 rounded-xl bg-purple-700 hover:bg-purple-800 text-white font-bold text-xs shadow-md shadow-purple-600/20 transition-all mt-4 disabled:opacity-50"
-                >
-                  {isSubmitting ? 'Saving Customer...' : 'Save Customer'}
-                </button>
+                <div className="pt-2">
+                  <button
+                    type="submit"
+                    disabled={isSubmitting}
+                    className="w-full h-10 rounded-xl bg-purple-700 hover:bg-purple-800 text-white font-bold text-xs transition-all shadow-sm disabled:opacity-50"
+                  >
+                    {isSubmitting ? 'Registering...' : 'Save & Add Customer'}
+                  </button>
+                </div>
               </form>
             </DialogContent>
           </Dialog>
         </div>
       </div>
 
-      {/* 4 Clean Dynamic Stat Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-        <div className="bg-white rounded-2xl p-3.5 sm:p-4 shadow-xs border border-slate-200/80">
-          <span className="text-[11px] font-semibold text-slate-500">Total Customers</span>
-          <div className="text-xl sm:text-2xl font-extrabold text-slate-900 mt-0.5">{displayCustomers.length}</div>
-          <span className="text-[10px] text-emerald-600 font-medium">Recorded in directory</span>
+      {/* 3 Telemetry Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        <div className="bg-white rounded-2xl p-4 border border-slate-200/80 shadow-xs space-y-1">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-semibold text-slate-500">Total Registered</span>
+            <Users className="w-4 h-4 text-purple-600" />
+          </div>
+          <div className="text-2xl font-extrabold text-slate-900 font-mono">{totalCustomers}</div>
+          <div className="text-[11px] text-slate-400 font-medium">Verified customer accounts</div>
         </div>
-        <div className="bg-white rounded-2xl p-3.5 sm:p-4 shadow-xs border border-slate-200/80">
-          <span className="text-[11px] font-semibold text-slate-500">Total Client Visits</span>
-          <div className="text-xl sm:text-2xl font-extrabold text-purple-700 mt-0.5">{totalVisitsAll}</div>
-          <span className="text-[10px] text-purple-600 font-medium">Completed appointments</span>
+
+        <div className="bg-white rounded-2xl p-4 border border-slate-200/80 shadow-xs space-y-1">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-semibold text-slate-500">Active Repeat Clients</span>
+            <TrendingUp className="w-4 h-4 text-emerald-600" />
+          </div>
+          <div className="text-2xl font-extrabold text-emerald-600 font-mono">{activeMembers}</div>
+          <div className="text-[11px] text-slate-400 font-medium">Visited 1+ times</div>
         </div>
-        <div className="bg-white rounded-2xl p-3.5 sm:p-4 shadow-xs border border-slate-200/80">
-          <span className="text-[11px] font-semibold text-slate-500">Active Database</span>
-          <div className="text-xl sm:text-2xl font-extrabold text-blue-600 mt-0.5">{displayCustomers.length > 0 ? '100%' : '0%'}</div>
-          <span className="text-[10px] text-blue-600 font-medium">Live synchronization</span>
-        </div>
-        <div className="bg-white rounded-2xl p-3.5 sm:p-4 shadow-xs border border-slate-200/80">
-          <span className="text-[11px] font-semibold text-slate-500">Total Client Value</span>
-          <div className="text-xl sm:text-2xl font-extrabold text-slate-900 mt-0.5">₹{totalSpentAll.toLocaleString('en-IN')}</div>
-          <span className="text-[10px] text-slate-400 font-medium">Cumulative billings</span>
+
+        <div className="bg-white rounded-2xl p-4 border border-slate-200/80 shadow-xs space-y-1">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-semibold text-slate-500">Total Client Spend</span>
+            <IndianRupee className="w-4 h-4 text-purple-600" />
+          </div>
+          <div className="text-2xl font-extrabold text-purple-700 font-mono">
+            ₹{totalRevenue.toLocaleString('en-IN')}
+          </div>
+          <div className="text-[11px] text-slate-400 font-medium">Lifetime sales contribution</div>
         </div>
       </div>
 
-      {/* Main Table / Mobile Card Container */}
-      <div className="bg-white rounded-2xl p-4 sm:p-6 shadow-xs border border-slate-200/80 space-y-4">
+      {/* Customer Registry Content Area */}
+      <div className="bg-white rounded-2xl p-4 border border-slate-200/80 shadow-xs space-y-4">
         
         {/* Search Bar */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div className="flex items-center justify-between gap-3">
           <div className="relative flex-1 max-w-sm">
-            <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+            <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
             <input
               type="text"
-              placeholder="Search by customer name, ID, or phone..."
+              placeholder="Search by name, phone, or customer code..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full h-9 pl-9 pr-3 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-900 font-semibold focus:outline-hidden focus:border-purple-600"
@@ -350,12 +438,30 @@ export default function CustomersPage() {
                     </div>
                   </div>
 
-                  <Link
-                    href={`/dashboard/appointments?new=true&customer=${encodeURIComponent(cust.name)}`}
-                    className="px-2.5 py-1 rounded-lg bg-purple-700 text-white text-[11px] font-bold flex items-center gap-1 shadow-2xs"
-                  >
-                    <CalendarPlus className="w-3 h-3" /> Book
-                  </Link>
+                  <div className="flex items-center gap-1">
+                    <Link
+                      href={`/dashboard/appointments?new=true&customer=${encodeURIComponent(cust.name)}`}
+                      className="px-2.5 py-1 rounded-lg bg-purple-700 text-white text-[11px] font-bold flex items-center gap-1 shadow-2xs"
+                    >
+                      <CalendarPlus className="w-3 h-3" /> Book
+                    </Link>
+                    <button
+                      type="button"
+                      onClick={() => handleOpenEdit(cust)}
+                      className="p-1 rounded-lg border border-slate-200 bg-white text-slate-600 hover:text-purple-700 transition-colors"
+                      title="Edit Customer"
+                    >
+                      <Pencil className="w-3.5 h-3.5" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleOpenDelete(cust)}
+                      className="p-1 rounded-lg border border-rose-200 bg-rose-50 text-rose-600 hover:bg-rose-100 transition-colors"
+                      title="Delete Customer"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
                 </div>
 
                 <div className="grid grid-cols-3 gap-2 text-center pt-2 border-t border-slate-200/60 text-xs">
@@ -424,6 +530,22 @@ export default function CustomersPage() {
                         >
                           <CalendarPlus className="w-3 h-3" /> Book
                         </Link>
+                        <button
+                          type="button"
+                          onClick={() => handleOpenEdit(cust)}
+                          className="p-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-600 hover:text-purple-700 transition-colors"
+                          title="Edit Customer"
+                        >
+                          <Pencil className="w-3.5 h-3.5" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleOpenDelete(cust)}
+                          className="p-1.5 rounded-lg border border-rose-200 bg-rose-50 hover:bg-rose-100 text-rose-600 transition-colors"
+                          title="Delete Customer"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
                       </div>
                     </td>
                   </tr>
@@ -431,7 +553,7 @@ export default function CustomersPage() {
               ) : (
                 <tr>
                   <td colSpan={6} className="text-center py-8 text-slate-400">
-                    No customers in database yet. Click &quot;Add Customer&quot; above to register one.
+                    No customers found matching &quot;{searchQuery}&quot;.
                   </td>
                 </tr>
               )}
@@ -440,6 +562,99 @@ export default function CustomersPage() {
         </div>
 
       </div>
+
+      {/* Edit Customer Dialog */}
+      {selectedCustomer && (
+        <Dialog open={isEditDialogOpen} onOpenChange={setEditDialogOpen}>
+          <DialogContent className="max-w-[420px] rounded-3xl p-5 bg-white border border-slate-200 text-slate-900 space-y-4">
+            <DialogHeader>
+              <DialogTitle className="text-base font-extrabold text-slate-900">
+                Edit Customer Details
+              </DialogTitle>
+            </DialogHeader>
+
+            <form onSubmit={handleSaveEdit} className="space-y-3.5">
+              <div>
+                <label className="text-xs font-bold text-slate-800 block mb-1">Customer Code</label>
+                <input
+                  type="text"
+                  disabled
+                  value={selectedCustomer.customerCode}
+                  className="w-full h-10 px-3 rounded-xl bg-slate-100 border border-slate-200 text-purple-700 font-mono font-bold text-xs"
+                />
+              </div>
+
+              <div>
+                <label className="text-xs font-bold text-slate-800 block mb-1">Customer Full Name *</label>
+                <input
+                  type="text"
+                  required
+                  value={editName}
+                  onChange={(e) => setEditName(e.target.value)}
+                  className="w-full h-10 px-3 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 font-semibold text-xs focus:outline-hidden focus:border-purple-600"
+                />
+              </div>
+
+              <div>
+                <label className="text-xs font-bold text-slate-800 block mb-1">Phone Number *</label>
+                <input
+                  type="tel"
+                  required
+                  value={editPhone}
+                  onChange={(e) => setEditPhone(e.target.value)}
+                  className="w-full h-10 px-3 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 font-semibold text-xs focus:outline-hidden focus:border-purple-600"
+                />
+              </div>
+
+              <div>
+                <label className="text-xs font-bold text-slate-800 block mb-1">Date of Birth</label>
+                <input
+                  type="date"
+                  value={editDob}
+                  onChange={(e) => setEditDob(e.target.value)}
+                  className="w-full h-10 px-3 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 font-semibold text-xs focus:outline-hidden focus:border-purple-600"
+                />
+              </div>
+
+              <div className="pt-2">
+                <button
+                  type="submit"
+                  className="w-full h-10 rounded-xl bg-purple-700 hover:bg-purple-800 text-white font-bold text-xs transition-all shadow-sm"
+                >
+                  Save Changes
+                </button>
+              </div>
+            </form>
+          </DialogContent>
+        </Dialog>
+      )}
+
+      {/* Delete Customer Alert Dialog */}
+      {selectedCustomer && (
+        <AlertDialog open={isDeleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+          <AlertDialogContent className="max-w-[400px] rounded-3xl p-5 bg-white border border-slate-200 text-slate-900 space-y-3">
+            <AlertDialogHeader>
+              <AlertDialogTitle className="text-base font-extrabold text-slate-900">
+                Delete Customer Account?
+              </AlertDialogTitle>
+              <AlertDialogDescription className="text-xs text-slate-500">
+                Are you sure you want to delete <strong className="text-slate-900">{selectedCustomer.name}</strong> ({selectedCustomer.customerCode})? This action cannot be undone. Historical invoices will remain intact.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter className="pt-2 flex items-center justify-end gap-2">
+              <AlertDialogCancel className="h-9 px-3 rounded-xl border border-slate-200 text-xs font-bold text-slate-700">
+                Cancel
+              </AlertDialogCancel>
+              <AlertDialogAction
+                onClick={handleConfirmDelete}
+                className="h-9 px-4 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold"
+              >
+                Delete Customer
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      )}
 
     </div>
   );

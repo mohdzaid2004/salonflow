@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useEffect } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
-import { useCollection, useDoc, useFirestore, useUser, addDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase';
+import { useCollection, useDoc, useFirestore, useUser, addDocumentNonBlocking, updateDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase';
 import { 
   Calendar as CalendarIcon, 
   Clock, 
@@ -19,7 +19,8 @@ import {
   CreditCard,
   Smartphone,
   Tag,
-  Check
+  Check,
+  Trash2
 } from 'lucide-react';
 import { collection, query, doc } from 'firebase/firestore';
 import type { Service, Customer } from '@/lib/data';
@@ -31,6 +32,16 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { AnalogClockPicker } from '@/components/ui/analog-clock-picker';
 
 interface AppointmentItem {
@@ -98,6 +109,30 @@ export default function AppointmentsPage() {
   const [paymentMode, setPaymentMode] = useState<'UPI' | 'Card' | 'Cash'>('UPI');
   const [discountPercent, setDiscountPercent] = useState(0);
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
+
+  // Cancel / Delete Modal State
+  const [isCancelDialogOpen, setCancelDialogOpen] = useState(false);
+  const [selectedApptToCancel, setSelectedApptToCancel] = useState<AppointmentItem | null>(null);
+
+  const handleOpenCancel = (appt: AppointmentItem) => {
+    setSelectedApptToCancel(appt);
+    setCancelDialogOpen(true);
+  };
+
+  const handleConfirmCancel = () => {
+    if (!selectedApptToCancel) return;
+    if (firestore && salonId) {
+      const apptRef = doc(firestore, `salons/${salonId}/appointments`, selectedApptToCancel.id);
+      deleteDocumentNonBlocking(apptRef);
+    } else {
+      setLocalAppointments(prev => prev.filter(a => a.id !== selectedApptToCancel.id));
+    }
+    toast({
+      title: 'Booking Cancelled',
+      description: `Appointment for ${selectedApptToCancel.customer} has been cancelled.`,
+    });
+    setCancelDialogOpen(false);
+  };
 
   // New Appointment Form State
   const [formCustomer, setFormCustomer] = useState('');
@@ -734,10 +769,19 @@ ${salonAddress ? `📍 ${salonAddress}\n` : ''}📞 ${salonPhone}`;
                   )}
 
                   {appt.status === 'Completed' && (
-                    <span className="text-[11px] font-bold text-emerald-700 flex items-center gap-1 py-1">
+                    <span className="flex-1 text-[11px] font-bold text-emerald-700 flex items-center gap-1 py-1">
                       <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" /> Billed & Paid
                     </span>
                   )}
+
+                  <button
+                    type="button"
+                    onClick={() => handleOpenCancel(appt)}
+                    className="p-1.5 rounded-lg border border-rose-200 bg-rose-50 hover:bg-rose-100 text-rose-600 transition-colors shadow-2xs"
+                    title="Cancel Booking"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
                 </div>
               </div>
             ))
@@ -821,6 +865,15 @@ ${salonAddress ? `📍 ${salonAddress}\n` : ''}📞 ${salonPhone}`;
                             <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" /> Billed & Paid
                           </span>
                         )}
+
+                        <button
+                          type="button"
+                          onClick={() => handleOpenCancel(appt)}
+                          className="p-1.5 rounded-lg border border-rose-200 bg-rose-50 hover:bg-rose-100 text-rose-600 transition-colors shadow-2xs"
+                          title="Cancel Booking"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
                       </div>
                     </td>
                   </tr>
@@ -837,6 +890,33 @@ ${salonAddress ? `📍 ${salonAddress}\n` : ''}📞 ${salonPhone}`;
         </div>
 
       </div>
+
+      {/* Cancel Appointment Alert Dialog */}
+      {selectedApptToCancel && (
+        <AlertDialog open={isCancelDialogOpen} onOpenChange={setCancelDialogOpen}>
+          <AlertDialogContent className="max-w-[400px] rounded-3xl p-5 bg-white border border-slate-200 text-slate-900 space-y-3">
+            <AlertDialogHeader>
+              <AlertDialogTitle className="text-base font-extrabold text-slate-900">
+                Cancel Appointment Booking?
+              </AlertDialogTitle>
+              <AlertDialogDescription className="text-xs text-slate-500">
+                Are you sure you want to cancel the booking for <strong className="text-slate-900">{selectedApptToCancel.customer}</strong> ({selectedApptToCancel.service} at {selectedApptToCancel.time})?
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter className="pt-2 flex items-center justify-end gap-2">
+              <AlertDialogCancel className="h-9 px-3 rounded-xl border border-slate-200 text-xs font-bold text-slate-700">
+                Keep Booking
+              </AlertDialogCancel>
+              <AlertDialogAction
+                onClick={handleConfirmCancel}
+                className="h-9 px-4 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold"
+              >
+                Cancel Booking
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      )}
 
     </div>
   );
