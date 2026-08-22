@@ -459,14 +459,11 @@ export default function HomePage() {
       {/* Create Bill Dialog */}
       <Dialog open={showCreateBillDialog} onOpenChange={setShowCreateBillDialog}>
         <DialogContent 
-          className="max-w-2xl max-h-[90dvh] overflow-y-auto rounded-3xl p-6 bg-white shadow-2xl"
+          className="max-w-md max-h-[92dvh] overflow-y-auto rounded-3xl p-5 sm:p-6 bg-white shadow-2xl border border-slate-200"
           onPointerDownOutside={(e) => e.preventDefault()}
         >
-          <DialogHeader>
-            <DialogTitle className="text-xl font-bold text-slate-900">Create Bill for {selectedCustomer?.name}</DialogTitle>
-            <DialogDescription className="text-xs text-slate-500">
-              Select services, staff, discounts and payment method for this visit.
-            </DialogDescription>
+          <DialogHeader className="pb-1">
+            <DialogTitle className="text-xl font-bold text-slate-900">Create Bill & Check-in</DialogTitle>
           </DialogHeader>
           {selectedCustomer && services && staff && (
             <CreateBillForm

@@ -8,7 +8,6 @@ import { Button } from '@/components/ui/button';
 import {
   Form,
   FormControl,
-  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -22,7 +21,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
-import { Loader2, Star, ChevronsUpDown, X, CheckCircle, MessageCircle } from 'lucide-react';
+import { Loader2, X, CheckCircle, Smartphone } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import {
   useFirestore,
@@ -47,7 +46,6 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
 } from '@/components/ui/dropdown-menu';
-import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 
 export function CreateBillForm({
@@ -81,14 +79,14 @@ export function CreateBillForm({
 
   const billFormSchema = useMemo(() => {
     return z.object({
-      serviceIds: z.array(z.string()).min(1, 'At least one service is required.'),
+      serviceIds: z.array(z.string()).min(1, 'Please select at least one service.'),
       staffId: z.string().min(1, 'Please select a staff member.'),
       paymentMethod: z.enum(['Cash', 'Card', 'UPI'], { required_error: 'Please select a payment method.'}),
       redeemPoints: z.coerce.number().min(0, "Cannot redeem negative points."),
       finalAmount: z.coerce.number(),
       sendWhatsApp: z.boolean(),
     }).refine((data) => {
-        if (!loyaltyEnabled) return true; // if loyalty is off, no validation needed
+        if (!loyaltyEnabled) return true;
         return data.redeemPoints <= customerPoints;
     }, {
         message: `Cannot redeem more than ${customerPoints} available points.`,
@@ -101,7 +99,7 @@ export function CreateBillForm({
         }, 0);
         return data.redeemPoints <= serviceTotal;
     }, {
-        message: "Cannot redeem more points than the service total.",
+        message: "Cannot redeem more points than service total.",
         path: ["redeemPoints"],
     });
   }, [customerPoints, services, loyaltyEnabled]);
@@ -112,7 +110,8 @@ export function CreateBillForm({
     resolver: zodResolver(billFormSchema),
     defaultValues: {
       serviceIds: appointment?.serviceIds || [],
-      staffId: appointment?.staffId || '',
+      staffId: appointment?.staffId || (staff.length > 0 ? staff[0].id : ''),
+      paymentMethod: 'Cash',
       redeemPoints: 0,
       finalAmount: 0,
       sendWhatsApp: true,
@@ -131,18 +130,15 @@ export function CreateBillForm({
     }, 0);
   }, [watchServiceIds, services]);
 
-
   useEffect(() => {
-    const redeemPoints = watchRedeemPoints || 0;
-    const finalAmount = serviceTotal - redeemPoints;
-    form.setValue('finalAmount', Math.max(0, finalAmount));
+    const redeemPoints = Number(watchRedeemPoints) || 0;
+    const finalAmount = Math.max(0, serviceTotal - redeemPoints);
+    form.setValue('finalAmount', finalAmount);
   }, [serviceTotal, watchRedeemPoints, form]);
-  
 
   const sendWhatsAppMessage = async (appointment: Appointment, invoiceNumber: string, invoiceUrl: string) => {
     if (!salonId) return;
 
-    // Map serviceIds to service names and prices
     const selectedServices = (appointment.serviceIds || []).map(id => {
       const s = services.find(srv => srv.id === id);
       return s ? `- ${s.name}: ₹${s.price}` : null;
@@ -161,7 +157,7 @@ export function CreateBillForm({
 
     const message = `💇 Thank You for Visiting ${salon?.name || 'our salon'}!\n\n` +
       `Hi ${appointment.customerName},\n\n` +
-      `Your payment has been received successfully. 🎉\n\n` +
+      `Your bill has been created and payment confirmed. 🎉\n\n` +
       `━━━━━━━━━━━━━━━━━━\n` +
       `🧾 Invoice Details\n` +
       `━━━━━━━━━━━━━━━━━━\n` +
@@ -170,32 +166,22 @@ export function CreateBillForm({
       `Time       : ${paymentTime}\n\n` +
       `💇 Service(s):\n` +
       `${serviceList}\n\n` +
-      `💰 Total Amount : ₹${appointment.amountPaid}\n` +
+      `💰 Total to Pay : ₹${appointment.amountPaid}\n` +
       `💳 Payment Mode : ${appointment.paymentMethod}\n\n` +
       `🎁 Loyalty Points Earned : ${pointsEarned}\n` +
       `⭐ Current Balance : ${currentPoints} Points\n\n` +
-      `📎 Your PDF Invoice is attached to this message.\n` +
-      `${invoiceUrl ? `👉 View / Download PDF: ${invoiceUrl}\n` : ''}\n` +
+      `${invoiceUrl ? `👉 View Invoice: ${invoiceUrl}\n` : ''}\n` +
       `━━━━━━━━━━━━━━━━━━\n` +
       `⭐ Rate Your Experience\n` +
       `━━━━━━━━━━━━━━━━━━\n\n` +
-      `We hope you loved your visit!\n\n` +
-      `Please take 30 seconds to rate your experience.\n\n` +
-      `⭐⭐⭐⭐⭐\n\n` +
       `👉 ${feedbackLink}\n\n` +
-      `Your feedback helps us improve our services and serve you better.\n\n` +
-      `━━━━━━━━━━━━━━━━━━\n\n` +
-      `Thank you for choosing ${salon?.name || 'our salon'} ❤️\n\n` +
-      `We look forward to welcoming you again.\n\n` +
-      `📍 ${salon?.address || ''}\n` +
-      `📞 ${salon?.phone || ''}`;
+      `Thank you for choosing ${salon?.name || 'our salon'} ❤️`;
 
     const phone = `91${appointment.customerPhone}`;
     const encodedMessage = encodeURIComponent(message);
     const whatsappUrl = `https://api.whatsapp.com/send?phone=${phone}&text=${encodedMessage}`;
     window.open(whatsappUrl, '_blank');
-  }
-
+  };
 
   async function onSubmit(data: BillFormValues) {
     startTransition(async () => {
@@ -204,8 +190,8 @@ export function CreateBillForm({
         return;
       }
       
-      const loyaltyPercentage = salon?.loyaltyPointsRatio || 5; // Default to 5%
-      const pointsToRedeem = loyaltyEnabled ? data.redeemPoints : 0;
+      const loyaltyPercentage = salon?.loyaltyPointsRatio || 5;
+      const pointsToRedeem = loyaltyEnabled ? (Number(data.redeemPoints) || 0) : 0;
       
       const appointmentData = {
         serviceIds: data.serviceIds,
@@ -239,64 +225,68 @@ export function CreateBillForm({
 
       const customerRef = doc(firestore, `salons/${salonId}/customers`, customer.id);
       const updateData: any = {
-          visitHistory: arrayUnion(apptId)
+          visitHistory: arrayUnion(apptId),
+          lastVisit: Timestamp.now(),
+          totalVisits: increment(1),
+          totalSpent: increment(data.finalAmount),
       };
 
-      // Award and Redeem loyalty points if enabled
       if (loyaltyEnabled) {
         const pointsEarned = Math.floor(data.finalAmount * (loyaltyPercentage / 100));
         const pointsChange = pointsEarned - pointsToRedeem;
-        
         if (pointsChange !== 0) {
-          updateData.loyaltyPoints = increment(pointsChange)
+          updateData.loyaltyPoints = increment(pointsChange);
         }
       }
-      
-      if(Object.keys(updateData).length > 0) {
-        updateDocumentNonBlocking(customerRef, updateData);
-      }
 
+      await updateDocumentNonBlocking(customerRef, updateData);
 
-      const newAppointment: Appointment = {
-          id: apptId,
-          ...appointmentData
-      }
+      const now = new Date();
+      const datePrefix = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}`;
+      const invoiceNo = `INV-${datePrefix}-${Math.floor(1000 + Math.random() * 9000)}`;
 
-      onBillCreated(newAppointment);
+      const invoiceData = {
+        invoiceNo,
+        appointmentId: apptId,
+        customer: customer.name,
+        phone: customer.phone,
+        items: data.serviceIds.map(id => services.find(s => s.id === id)?.name).filter(Boolean).join(', '),
+        subtotal: serviceTotal,
+        discount: pointsToRedeem,
+        total: data.finalAmount,
+        method: data.paymentMethod,
+        status: 'Paid',
+        pointsEarned: loyaltyEnabled ? Math.floor(data.finalAmount * (loyaltyPercentage / 100)) : 0,
+        loyaltyBalance: (customer.loyaltyPoints || 0) + (loyaltyEnabled ? Math.floor(data.finalAmount * (loyaltyPercentage / 100)) - pointsToRedeem : 0),
+        date: now.toISOString().split('T')[0],
+        createdAt: now.toISOString(),
+      };
 
-      let invoiceNumber = `INV-${new Date().getFullYear()}${String(new Date().getMonth() + 1).padStart(2, '0')}${String(new Date().getDate()).padStart(2, '0')}-${apptId.slice(-6).toUpperCase()}`;
-      let invoiceUrl = '';
-      try {
-        // Await the backend invoicing pipeline to prevent browser from aborting the request on modal close
-        const res = await fetch('/api/billing/invoice', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            salonId,
-            appointmentId: apptId,
-            sendWhatsApp: data.sendWhatsApp && salon?.automatedWhatsappEnabled
-          })
-        });
-        if (res.ok) {
-          const resData = await res.json();
-          if (resData.success) {
-            invoiceNumber = resData.invoiceNumber;
-            invoiceUrl = resData.invoiceUrl;
-          }
-        } else {
-          console.error('[Billing Checkout] Invoicing pipeline error:', res.statusText);
-        }
-      } catch (err) {
-        console.error('[Billing Checkout] Invoicing pipeline fetch error:', err);
-      }
+      await addDocumentNonBlocking(collection(firestore, `salons/${salonId}/invoices`), invoiceData);
+
+      const invoiceUrl = `${window.location.origin}/invoice/${salonId}_${apptId}`;
+      const createdAppt: Appointment = {
+        ...appointmentData,
+        id: apptId,
+      } as any;
 
       setSuccessData({
-        appointment: newAppointment,
-        invoiceNumber,
-        invoiceUrl
+        appointment: createdAppt,
+        invoiceNumber: invoiceNo,
+        invoiceUrl,
       });
+
+      onBillCreated(createdAppt);
+
+      if (data.sendWhatsApp && salon?.automatedWhatsappEnabled) {
+        sendWhatsAppMessage(createdAppt, invoiceNo, invoiceUrl);
+      }
+
+      toast({
+        title: 'Bill Created & Checked In! 🎉',
+        description: `Invoice ${invoiceNo} generated for ${customer.name}.`,
+      });
+
       setIsSuccess(true);
     });
   }
@@ -304,47 +294,47 @@ export function CreateBillForm({
   if (isSuccess && successData) {
     const { appointment, invoiceNumber, invoiceUrl } = successData;
     return (
-      <div className="flex flex-col items-center justify-center space-y-4 py-6 text-center">
-        <CheckCircle className="h-16 w-16 text-green-500" />
+      <div className="flex flex-col items-center justify-center space-y-4 py-4 text-center">
+        <CheckCircle className="h-12 w-12 text-emerald-600" />
         <div>
-          <h3 className="text-xl font-semibold font-headline">Payment Recorded Successfully!</h3>
-          <p className="text-sm text-muted-foreground mt-1">Invoice No: {invoiceNumber}</p>
+          <h3 className="text-lg font-bold text-slate-900">Bill Created Successfully!</h3>
+          <p className="text-xs text-slate-500 mt-0.5 font-mono">{invoiceNumber}</p>
         </div>
 
-        <div className="w-full bg-accent/50 rounded-lg p-4 space-y-2 text-sm">
-          <div className="flex justify-between">
-            <span className="text-muted-foreground">Customer:</span>
-            <span className="font-medium">{appointment.customerName}</span>
+        <div className="w-full bg-slate-50 rounded-2xl p-4 space-y-2 text-xs border border-slate-100">
+          <div className="flex justify-between text-slate-600">
+            <span>Customer</span>
+            <span className="font-semibold text-slate-900">{appointment.customerName}</span>
           </div>
-          <div className="flex justify-between">
-            <span className="text-muted-foreground">Amount Paid:</span>
-            <span className="font-medium">₹{appointment.amountPaid}</span>
+          <div className="flex justify-between text-slate-600">
+            <span>Total to Pay</span>
+            <span className="font-bold text-purple-700 text-sm">₹{appointment.amountPaid}</span>
           </div>
-          <div className="flex justify-between">
-            <span className="text-muted-foreground">Payment Method:</span>
-            <span className="font-medium">{appointment.paymentMethod}</span>
+          <div className="flex justify-between text-slate-600">
+            <span>Payment Mode</span>
+            <span className="font-semibold text-slate-900">{appointment.paymentMethod}</span>
           </div>
         </div>
 
         <div className="w-full space-y-2 pt-2">
           {form.getValues('sendWhatsApp') && (
             <Button
+              type="button"
               onClick={() => sendWhatsAppMessage(appointment, invoiceNumber, invoiceUrl)}
-              className="w-full bg-green-600 hover:bg-green-700 text-white flex items-center justify-center gap-2"
+              className="w-full h-11 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs flex items-center justify-center gap-2 shadow-sm"
             >
-              <MessageCircle className="h-4 w-4" />
-              Open WhatsApp to Share
+              <Smartphone className="h-4 w-4" />
+              Share Invoice on WhatsApp
             </Button>
           )}
           
           <Button 
+            type="button"
             variant="outline" 
-            onClick={() => {
-              setOpen(false);
-            }} 
-            className="w-full"
+            onClick={() => setOpen(false)} 
+            className="w-full h-10 rounded-xl border-slate-200 text-xs font-semibold"
           >
-            Close
+            Done
           </Button>
         </div>
       </div>
@@ -353,28 +343,40 @@ export function CreateBillForm({
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 text-slate-900">
+        
+        {/* Customer Header Info */}
+        <div className="pb-3 border-b border-slate-100">
+          <div className="font-bold text-slate-900 text-base">{customer.name}</div>
+          <div className="text-xs text-slate-500 font-mono">+91 {customer.phone}</div>
+        </div>
+
+        {/* 1. Services */}
         <FormField
           control={form.control}
           name="serviceIds"
           render={({ field }) => (
-            <FormItem className="flex flex-col">
-              <FormLabel>Services</FormLabel>
+            <FormItem className="space-y-1.5">
+              <FormLabel className="text-xs font-bold text-slate-700 uppercase tracking-wide">1. Services</FormLabel>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <FormControl>
-                    <Button variant="outline" className="w-full justify-between font-normal">
+                    <Button 
+                      type="button"
+                      variant="outline" 
+                      className="w-full h-10 px-3 rounded-xl border-slate-200 bg-white hover:bg-slate-50 text-slate-800 text-xs font-medium justify-between shadow-xs"
+                    >
                       <span>
                         {field.value?.length > 0
                           ? `${field.value.length} service(s) selected`
                           : 'Select services'}
                       </span>
-                      <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                      <span className="text-slate-400 text-xs">▼</span>
                     </Button>
                   </FormControl>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent className="w-[--radix-dropdown-menu-trigger-width]">
-                  <DropdownMenuLabel>Available Services</DropdownMenuLabel>
+                <DropdownMenuContent className="w-[--radix-dropdown-menu-trigger-width] max-h-56 overflow-y-auto bg-white rounded-xl shadow-lg border border-slate-200 p-1">
+                  <DropdownMenuLabel className="text-xs font-bold text-slate-500 px-2 py-1">Available Services</DropdownMenuLabel>
                   <DropdownMenuSeparator />
                   {services.map((service) => (
                     <DropdownMenuCheckboxItem
@@ -391,26 +393,31 @@ export function CreateBillForm({
                             );
                       }}
                       onSelect={(e) => e.preventDefault()}
+                      className="text-xs py-1.5 px-2 rounded-lg cursor-pointer flex items-center justify-between"
                     >
-                      <span className="flex-grow">{service.name}</span>
-                      <span className="text-muted-foreground text-xs ml-4">₹{service.price}</span>
+                      <span className="font-medium text-slate-800">{service.name}</span>
+                      <span className="font-semibold text-purple-700 ml-2">₹{service.price}</span>
                     </DropdownMenuCheckboxItem>
                   ))}
                 </DropdownMenuContent>
               </DropdownMenu>
-              <FormMessage />
+
+              {/* Selected Services Tags */}
               {field.value?.length > 0 && (
-                <div className="flex flex-wrap gap-2 pt-2">
+                <div className="flex flex-wrap gap-1.5 pt-1">
                   {field.value.map((serviceId) => {
                     const service = services.find((s) => s.id === serviceId);
                     if (!service) return null;
                     return (
-                      <Badge key={serviceId} variant="secondary" className="py-1 pl-3 pr-1.5 text-sm">
-                        {service.name}
+                      <span 
+                        key={serviceId} 
+                        className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-purple-50 border border-purple-200 text-purple-800 text-xs font-medium"
+                      >
+                        <span>{service.name} (₹{service.price})</span>
                         <button
                           type="button"
                           aria-label={`Remove ${service.name}`}
-                          className="ml-2 rounded-full outline-none ring-offset-background focus:ring-2 focus:ring-ring focus:ring-offset-2 hover:bg-background/50"
+                          className="text-purple-500 hover:text-purple-800 rounded-full"
                           onClick={() => {
                             field.onChange(
                               field.value?.filter((id) => id !== serviceId)
@@ -419,156 +426,160 @@ export function CreateBillForm({
                         >
                           <X className="h-3 w-3" />
                         </button>
-                      </Badge>
+                      </span>
                     );
                   })}
                 </div>
               )}
+              <FormMessage className="text-xs text-rose-500" />
             </FormItem>
           )}
         />
+
+        {/* 2. Assign Staff */}
         <FormField
           control={form.control}
           name="staffId"
           render={({ field }) => (
-            <FormItem>
-              <FormLabel>Assign Staff</FormLabel>
+            <FormItem className="space-y-1.5">
+              <FormLabel className="text-xs font-bold text-slate-700 uppercase tracking-wide">2. Assign Staff</FormLabel>
               <Select onValueChange={field.onChange} defaultValue={field.value}>
                 <FormControl>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select a staff member" />
+                  <SelectTrigger className="w-full h-10 px-3 rounded-xl border-slate-200 bg-white text-slate-800 text-xs font-medium shadow-xs">
+                    <SelectValue placeholder="Select staff member" />
                   </SelectTrigger>
                 </FormControl>
-                <SelectContent>
+                <SelectContent className="bg-white rounded-xl shadow-lg border border-slate-200">
                   {staff.map((s) => (
-                    <SelectItem key={s.id} value={s.id}>
-                      {s.name}
+                    <SelectItem key={s.id} value={s.id} className="text-xs py-1.5 cursor-pointer">
+                      {s.name} ({s.role})
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
-              <FormMessage />
+              <FormMessage className="text-xs text-rose-500" />
             </FormItem>
           )}
         />
         
-        <div className="space-y-2 rounded-lg border bg-accent/50 p-4">
-             <div className="flex justify-between items-center text-sm">
-                <span className="text-muted-foreground">Service Total</span>
-                <span className="font-medium">₹{serviceTotal}</span>
-             </div>
+        {/* 3. Bill Summary */}
+        <div className="rounded-2xl border border-slate-200 bg-slate-50/80 p-3.5 space-y-2">
+          <div className="text-xs font-bold text-slate-700 uppercase tracking-wide">3. Bill Summary</div>
+          
+          <div className="flex justify-between items-center text-xs text-slate-600">
+            <span>Service Total</span>
+            <span className="font-semibold text-slate-900">₹{serviceTotal}</span>
+          </div>
 
-            {loyaltyEnabled && (
-                 <FormField
-                    control={form.control}
-                    name="redeemPoints"
-                    render={({ field }) => (
-                        <FormItem>
-                            <div className='flex justify-between items-center text-sm'>
-                                <FormLabel className="flex items-center gap-2">
-                                    <Star className='h-4 w-4 text-amber-400' />
-                                    <span>Redeem Points</span>
-                                    <span className='text-xs text-muted-foreground'>(Avail: {customerPoints})</span>
-                                </FormLabel>
-                                <div className="flex items-center gap-2">
-                                    <span className='text-muted-foreground'>- ₹</span>
-                                    <FormControl>
-                                        <Input
-                                          type="text"
-                                          inputMode="numeric"
-                                          className="h-8 w-20 text-right"
-                                          ref={field.ref}
-                                          name={field.name}
-                                          value={field.value}
-                                          onFocus={(e) => {
-                                            if (e.target.value === '0') {
-                                              field.onChange('');
-                                            }
-                                          }}
-                                          onBlur={(e) => {
-                                            field.onBlur();
-                                            if (e.target.value === '') {
-                                              field.onChange(0);
-                                            }
-                                          }}
-                                          onChange={(e) => {
-                                            const val = e.target.value;
-                                            if (/^\d*$/.test(val)) {
-                                              field.onChange(val === '' ? '' : Number(val));
-                                            }
-                                          }}
-                                        />
-                                    </FormControl>
-                                </div>
-                            </div>
-                            <FormMessage className="text-right" />
-                        </FormItem>
-                    )}
-                />
-            )}
-            <div className="flex justify-between items-center text-lg font-bold pt-2 border-t border-dashed">
-                <span>To Pay</span>
-                <span>₹{finalAmountForDisplay}</span>
-            </div>
-        </div>
-        
-
-        <FormField
-            control={form.control}
-            name="paymentMethod"
-            render={({ field }) => (
-                <FormItem className="space-y-3">
-                <FormLabel>Payment Method</FormLabel>
-                <FormControl>
-                    <RadioGroup
-                    onValueChange={field.onChange}
-                    defaultValue={field.value}
-                    className="flex space-x-4"
-                    >
-                    <FormItem className="flex items-center space-x-2 space-y-0">
-                        <FormControl><RadioGroupItem value="Cash" /></FormControl>
-                        <FormLabel className="font-normal">Cash</FormLabel>
-                    </FormItem>
-                    <FormItem className="flex items-center space-x-2 space-y-0">
-                        <FormControl><RadioGroupItem value="Card" /></FormControl>
-                        <FormLabel className="font-normal">Card</FormLabel>
-                    </FormItem>
-                    <FormItem className="flex items-center space-x-2 space-y-0">
-                        <FormControl><RadioGroupItem value="UPI" /></FormControl>
-                        <FormLabel className="font-normal">UPI</FormLabel>
-                    </FormItem>
-                    </RadioGroup>
-                </FormControl>
-                <FormMessage />
+          {loyaltyEnabled && customerPoints > 0 && (
+            <FormField
+              control={form.control}
+              name="redeemPoints"
+              render={({ field }) => (
+                <FormItem className="space-y-0">
+                  <div className="flex justify-between items-center text-xs text-slate-600">
+                    <div>
+                      <span>Redeem Points</span>
+                      <span className="text-[10px] text-slate-400 ml-1">({customerPoints} avail)</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <span className="text-slate-400">- ₹</span>
+                      <FormControl>
+                        <Input
+                          type="text"
+                          inputMode="numeric"
+                          className="h-7 w-16 text-right text-xs rounded-lg border-slate-200 bg-white"
+                          value={field.value}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            if (/^\d*$/.test(val)) {
+                              field.onChange(val === '' ? 0 : Number(val));
+                            }
+                          }}
+                        />
+                      </FormControl>
+                    </div>
+                  </div>
+                  <FormMessage className="text-right text-xs text-rose-500" />
                 </FormItem>
-            )}
+              )}
+            />
+          )}
+
+          <div className="flex justify-between items-center text-sm font-extrabold text-slate-900 pt-2 border-t border-slate-200">
+            <span>Total to Pay</span>
+            <span className="text-purple-700 text-base">₹{finalAmountForDisplay}</span>
+          </div>
+        </div>
+
+        {/* 4. Payment Method */}
+        <FormField
+          control={form.control}
+          name="paymentMethod"
+          render={({ field }) => (
+            <FormItem className="space-y-1.5">
+              <FormLabel className="text-xs font-bold text-slate-700 uppercase tracking-wide">4. Payment Method</FormLabel>
+              <FormControl>
+                <RadioGroup
+                  onValueChange={field.onChange}
+                  defaultValue={field.value}
+                  className="grid grid-cols-3 gap-2"
+                >
+                  {['Cash', 'Card', 'UPI'].map((method) => (
+                    <label
+                      key={method}
+                      className={`flex items-center justify-center gap-2 p-2.5 rounded-xl border cursor-pointer text-xs font-semibold transition-all ${
+                        field.value === method
+                          ? 'border-purple-600 bg-purple-50 text-purple-800 shadow-2xs'
+                          : 'border-slate-200 bg-white hover:bg-slate-50 text-slate-700'
+                      }`}
+                    >
+                      <RadioGroupItem value={method} className="text-purple-600" />
+                      <span>{method}</span>
+                    </label>
+                  ))}
+                </RadioGroup>
+              </FormControl>
+              <FormMessage className="text-xs text-rose-500" />
+            </FormItem>
+          )}
         />
 
+        {/* 5. WhatsApp Notification */}
         <FormField
           control={form.control}
           name="sendWhatsApp"
           render={({ field }) => (
-            <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
+            <FormItem className="flex items-center justify-between rounded-xl border border-slate-200 bg-white p-3 shadow-xs">
               <div className="space-y-0.5">
-                <FormLabel>Send WhatsApp Notification</FormLabel>
-                <FormDescription>
-                  Send bill and feedback link to the customer.
-                </FormDescription>
+                <FormLabel className="text-xs font-semibold text-slate-800 cursor-pointer">
+                  Send bill & feedback link to customer
+                </FormLabel>
+                <div className="text-[10px] text-slate-400">
+                  Direct WhatsApp receipt delivery
+                </div>
               </div>
               <FormControl>
                 <Switch
                   checked={field.value}
                   onCheckedChange={field.onChange}
+                  className="data-[state=checked]:bg-purple-600"
                 />
               </FormControl>
             </FormItem>
           )}
         />
         
-        <Button type="submit" className="w-full" disabled={isPending}>
+        {/* Full-width Purple Button */}
+        <Button 
+          type="submit" 
+          className="w-full h-11 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs sm:text-sm shadow-md shadow-purple-600/20 transition-all mt-2" 
+          disabled={isPending}
+        >
           {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
           Create Bill & Check-in
         </Button>
+
       </form>
     </Form>
   );
