@@ -31,6 +31,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
+import { AnalogClockPicker } from '@/components/ui/analog-clock-picker';
 
 interface AppointmentItem {
   id: string;
@@ -447,103 +448,17 @@ export default function AppointmentsPage() {
         </div>
       </div>
 
-      {/* Clock / Time Picker Popup Dialog */}
+      {/* Analog Clock / Time Picker Popup Dialog */}
       <Dialog open={isClockPickerOpen} onOpenChange={setClockPickerOpen}>
-        <DialogContent className="max-w-[360px] rounded-3xl p-5 bg-white shadow-2xl text-center space-y-4">
-          <DialogHeader className="pb-1 text-center">
-            <DialogTitle className="text-base font-extrabold text-slate-900 flex items-center justify-center gap-1.5">
-              <Clock className="w-4 h-4 text-purple-600" />
-              <span>Select Time</span>
-            </DialogTitle>
-          </DialogHeader>
-
-          {/* Big Time Display */}
-          <div className="py-3 px-4 rounded-2xl bg-purple-50 border border-purple-100 flex items-center justify-center gap-3">
-            <span className="text-3xl font-black text-slate-900 font-mono">
-              {selectedHour} : {selectedMinute}
-            </span>
-            <span className="px-2.5 py-1 rounded-xl bg-purple-700 text-white text-xs font-bold shadow-xs">
-              {selectedPeriod}
-            </span>
-          </div>
-
-          {/* Hour Selector (1-12) */}
-          <div className="space-y-1.5 text-left">
-            <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Hour</span>
-            <div className="grid grid-cols-6 gap-1">
-              {['09', '10', '11', '12', '01', '02', '03', '04', '05', '06', '07', '08'].map((hr) => (
-                <button
-                  key={hr}
-                  type="button"
-                  onClick={() => setSelectedHour(hr)}
-                  className={`py-1.5 rounded-lg text-xs font-bold transition-all ${
-                    selectedHour === hr
-                      ? 'bg-purple-700 text-white shadow-2xs'
-                      : 'bg-slate-100/80 text-slate-700 hover:bg-slate-200/60'
-                  }`}
-                >
-                  {hr}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Minute Selector (00, 15, 30, 45) */}
-          <div className="space-y-1.5 text-left">
-            <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Minute</span>
-            <div className="grid grid-cols-4 gap-1.5">
-              {['00', '15', '30', '45'].map((min) => (
-                <button
-                  key={min}
-                  type="button"
-                  onClick={() => setSelectedMinute(min)}
-                  className={`py-1.5 rounded-lg text-xs font-bold transition-all ${
-                    selectedMinute === min
-                      ? 'bg-purple-700 text-white shadow-2xs'
-                      : 'bg-slate-100/80 text-slate-700 hover:bg-slate-200/60'
-                  }`}
-                >
-                  :{min}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* AM / PM Toggle */}
-          <div className="grid grid-cols-2 gap-2 pt-1">
-            {(['AM', 'PM'] as const).map((period) => (
-              <button
-                key={period}
-                type="button"
-                onClick={() => setSelectedPeriod(period)}
-                className={`py-2 rounded-xl text-xs font-bold transition-all border ${
-                  selectedPeriod === period
-                    ? 'bg-purple-700 text-white border-purple-700 shadow-xs'
-                    : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100'
-                }`}
-              >
-                {period}
-              </button>
-            ))}
-          </div>
-
-          {/* Buttons */}
-          <div className="flex items-center gap-2 pt-2 border-t border-slate-100">
-            <button
-              type="button"
-              onClick={() => setClockPickerOpen(false)}
-              className="flex-1 h-9 rounded-xl border border-slate-200 text-xs font-bold text-slate-600 hover:bg-slate-50"
-            >
-              Cancel
-            </button>
-            <button
-              type="button"
-              onClick={handleConfirmClockTime}
-              className="flex-1 h-9 rounded-xl bg-purple-700 hover:bg-purple-800 text-white text-xs font-bold shadow-sm shadow-purple-600/20"
-            >
-              Set Time
-            </button>
-          </div>
+        <DialogContent className="max-w-[360px] rounded-3xl p-5 bg-white shadow-2xl text-center">
+          <AnalogClockPicker
+            initialTime={formTime}
+            onConfirm={(time) => {
+              setFormTime(time);
+              setClockPickerOpen(false);
+            }}
+            onCancel={() => setClockPickerOpen(false)}
+          />
         </DialogContent>
       </Dialog>
 
