@@ -13,13 +13,11 @@ import {
   BarChart3,
   Settings,
   Zap,
-  CheckCircle2,
 } from 'lucide-react';
 import type { Salon } from '@/lib/data';
 
 export const MainNavItems = [
   { href: '/dashboard/overview', label: 'Dashboard', icon: LayoutGrid },
-  { href: '/dashboard/home', label: 'Fast Check-in & POS', icon: Zap },
   { href: '/dashboard/appointments', label: 'Appointments', icon: Calendar },
   { href: '/dashboard/customers', label: 'Customers', icon: Users },
   { href: '/dashboard/services', label: 'Services', icon: Scissors },
@@ -28,6 +26,7 @@ export const MainNavItems = [
   { href: '/dashboard/billing', label: 'Billing', icon: IndianRupee },
   { href: '/dashboard/reports', label: 'Reports', icon: BarChart3 },
   { href: '/dashboard/settings', label: 'Settings', icon: Settings },
+  { href: '/dashboard/home', label: '⚡ Fast Check-in Desk', icon: Zap },
 ];
 
 export function MainNav({ 
