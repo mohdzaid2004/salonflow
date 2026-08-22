@@ -14,7 +14,7 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-import { Loader2, CheckCircle } from 'lucide-react';
+import { Loader2, CheckCircle, User, Phone } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import {
   useFirestore,
@@ -22,7 +22,6 @@ import {
   updateDocumentNonBlocking,
 } from '@/firebase';
 import { doc } from 'firebase/firestore';
-import { Textarea } from '@/components/ui/textarea';
 import type { Staff } from '@/lib/data';
 import { PREDEFINED_ROLES } from '@/lib/data';
 import {
@@ -36,12 +35,11 @@ import {
 const editStaffFormSchema = z.object({
   name: z.string().min(1, 'Staff name is required.'),
   role: z.string().optional(),
-  aadharNumber: z.union([z.string().length(12, { message: "Aadhar number must be 12 digits." }), z.literal("")]).optional(),
-  phone: z.union([z.string().length(10, { message: "Phone number must be 10 digits." }), z.literal("")]).optional(),
+  aadharNumber: z.union([z.string().length(12, { message: "Must be 12 digits." }), z.literal("")]).optional(),
+  phone: z.union([z.string().length(10, { message: "Must be 10 digits." }), z.literal("")]).optional(),
   address: z.string().optional(),
   dob: z.string().optional(),
 });
-
 
 type EditStaffFormValues = z.infer<typeof editStaffFormSchema>;
 
@@ -91,15 +89,19 @@ export function EditStaffForm({
   }
 
   if (isSuccess) {
-     return (
-      <div className="flex flex-col items-center justify-center space-y-4 py-8">
-        <CheckCircle className="h-16 w-16 text-green-500" />
-        <h3 className="text-xl font-semibold">Staff Member Updated!</h3>
-        <p className="text-center text-muted-foreground">
-          The details for '{form.getValues('name')}' have been saved.
-        </p>
-        <Button onClick={() => setOpen(false)} className="w-full">
-          Close
+    return (
+      <div className="flex flex-col items-center justify-center space-y-3 py-6 text-center">
+        <div className="h-12 w-12 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center border border-emerald-100">
+          <CheckCircle className="h-6 w-6" />
+        </div>
+        <div>
+          <h3 className="text-base font-bold text-slate-900">Staff Member Updated!</h3>
+          <p className="text-xs text-slate-500 mt-0.5">
+            The details for &apos;{form.getValues('name')}&apos; have been saved.
+          </p>
+        </div>
+        <Button onClick={() => setOpen(false)} className="w-full h-9 rounded-xl bg-purple-700 hover:bg-purple-800 text-xs font-bold mt-2">
+          Done
         </Button>
       </div>
     );
@@ -107,104 +109,136 @@ export function EditStaffForm({
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-        <div className="space-y-4">
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-3 pt-1">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+          
+          {/* Staff Name */}
           <FormField
             control={form.control}
             name="name"
             render={({ field }) => (
-              <FormItem>
-                <FormLabel>Staff Name <span className="text-red-500">*</span></FormLabel>
-                <FormControl>
-                  <Input placeholder="e.g., Priya Sharma" {...field} />
-                </FormControl>
-                <FormMessage />
+              <FormItem className="space-y-0.5 sm:col-span-2">
+                <FormLabel className="text-[10px] font-bold text-slate-700 uppercase tracking-wider">
+                  Staff Name <span className="text-rose-500">*</span>
+                </FormLabel>
+                <div className="relative">
+                  <User className="w-3.5 h-3.5 text-purple-600 absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                  <FormControl>
+                    <Input placeholder="e.g., Priya Sharma" className="h-8 pl-8 rounded-xl text-xs bg-slate-50/50 border-slate-200" {...field} />
+                  </FormControl>
+                </div>
+                <FormMessage className="text-[10px] text-rose-500" />
               </FormItem>
             )}
           />
+
+          {/* Role */}
           <FormField
             control={form.control}
             name="role"
             render={({ field }) => (
-              <FormItem>
-                <FormLabel>Role</FormLabel>
+              <FormItem className="space-y-0.5">
+                <FormLabel className="text-[10px] font-bold text-slate-700 uppercase tracking-wider">Role</FormLabel>
                 <Select onValueChange={field.onChange} defaultValue={field.value}>
                   <FormControl>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select a role" />
+                    <SelectTrigger className="h-8 rounded-xl text-xs bg-slate-50/50 border-slate-200">
+                      <SelectValue placeholder="Select role" />
                     </SelectTrigger>
                   </FormControl>
-                  <SelectContent>
+                  <SelectContent className="rounded-xl text-xs">
                     {PREDEFINED_ROLES.map((role) => (
-                      <SelectItem key={role} value={role}>
+                      <SelectItem key={role} value={role} className="text-xs">
                         {role}
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
-                <FormMessage />
+                <FormMessage className="text-[10px] text-rose-500" />
               </FormItem>
             )}
           />
+
+          {/* Phone */}
           <FormField
             control={form.control}
             name="phone"
             render={({ field }) => (
-              <FormItem>
-                <FormLabel>Phone Number</FormLabel>
-                <FormControl>
-                  <Input placeholder="10-digit mobile number" {...field} />
-                </FormControl>
-                <FormMessage />
+              <FormItem className="space-y-0.5">
+                <FormLabel className="text-[10px] font-bold text-slate-700 uppercase tracking-wider">Phone Number</FormLabel>
+                <div className="relative">
+                  <Phone className="w-3.5 h-3.5 text-purple-600 absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                  <FormControl>
+                    <Input placeholder="9876543210" className="h-8 pl-8 rounded-xl text-xs bg-slate-50/50 border-slate-200" {...field} />
+                  </FormControl>
+                </div>
+                <FormMessage className="text-[10px] text-rose-500" />
               </FormItem>
             )}
           />
-           <FormField
+
+          {/* Aadhar */}
+          <FormField
             control={form.control}
             name="aadharNumber"
             render={({ field }) => (
-              <FormItem>
-                <FormLabel>Aadhar Card Number</FormLabel>
+              <FormItem className="space-y-0.5">
+                <FormLabel className="text-[10px] font-bold text-slate-700 uppercase tracking-wider">Aadhar Number</FormLabel>
                 <FormControl>
-                  <Input placeholder="12-digit Aadhar number" {...field} />
+                  <Input placeholder="12-digit number" className="h-8 rounded-xl text-xs bg-slate-50/50 border-slate-200" {...field} />
                 </FormControl>
-                <FormMessage />
+                <FormMessage className="text-[10px] text-rose-500" />
               </FormItem>
             )}
           />
-           <FormField
+
+          {/* DOB */}
+          <FormField
             control={form.control}
             name="dob"
             render={({ field }) => (
-              <FormItem>
-                <FormLabel>Date of Birth</FormLabel>
+              <FormItem className="space-y-0.5">
+                <FormLabel className="text-[10px] font-bold text-slate-700 uppercase tracking-wider">Date of Birth</FormLabel>
                 <FormControl>
-                  <Input type="date" {...field} />
+                  <Input type="date" className="h-8 rounded-xl text-xs bg-slate-50/50 border-slate-200" {...field} />
                 </FormControl>
-                <FormMessage />
+                <FormMessage className="text-[10px] text-rose-500" />
               </FormItem>
             )}
           />
+
+          {/* Address */}
           <FormField
             control={form.control}
             name="address"
             render={({ field }) => (
-              <FormItem>
-                <FormLabel>Address</FormLabel>
+              <FormItem className="space-y-0.5 sm:col-span-2">
+                <FormLabel className="text-[10px] font-bold text-slate-700 uppercase tracking-wider">Address</FormLabel>
                 <FormControl>
-                  <Textarea placeholder="Enter full address" {...field} />
+                  <Input placeholder="City, locality, state" className="h-8 rounded-xl text-xs bg-slate-50/50 border-slate-200" {...field} />
                 </FormControl>
-                <FormMessage />
+                <FormMessage className="text-[10px] text-rose-500" />
               </FormItem>
             )}
           />
+
         </div>
 
-        <Button type="submit" className="w-full" disabled={isPending}>
-          {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-          Save Changes
+        <Button 
+          type="submit" 
+          className="w-full h-9 rounded-xl bg-purple-700 hover:bg-purple-800 text-white font-bold text-xs shadow-md shadow-purple-600/20 transition-all mt-2" 
+          disabled={isPending}
+        >
+          {isPending ? (
+            <>
+              <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />
+              Saving...
+            </>
+          ) : (
+            'Save Changes'
+          )}
         </Button>
       </form>
     </Form>
   );
 }
+

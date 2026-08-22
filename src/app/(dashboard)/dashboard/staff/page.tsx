@@ -275,14 +275,14 @@ export default function StaffPage({}) {
             </div>
             <Dialog open={isAddDialogOpen} onOpenChange={setAddDialogOpen}>
                 <DialogTrigger asChild>
-                    <Button>
+                    <Button className="h-9 px-4 rounded-xl bg-purple-700 hover:bg-purple-800 font-bold text-xs shadow-sm">
                     <PlusCircle className="mr-2 h-4 w-4" />
                     Add Staff
                     </Button>
                 </DialogTrigger>
-                <DialogContent className="sm:max-w-[425px]">
-                    <DialogHeader>
-                    <DialogTitle>Add a New Staff Member</DialogTitle>
+                <DialogContent className="max-w-[480px] max-h-[88vh] overflow-y-auto rounded-3xl p-5 sm:p-6 bg-white shadow-2xl">
+                    <DialogHeader className="pb-1">
+                    <DialogTitle className="text-lg font-bold text-slate-900">Add a New Staff Member</DialogTitle>
                     </DialogHeader>
                     <AddStaffForm setOpen={setAddDialogOpen} />
                 </DialogContent>
@@ -379,9 +379,9 @@ export default function StaffPage({}) {
 
     {/* Edit Dialog */}
     <Dialog open={isEditDialogOpen} onOpenChange={setEditDialogOpen}>
-        <DialogContent className="sm:max-w-[425px]">
-            <DialogHeader>
-                <DialogTitle>Edit Staff Member</DialogTitle>
+        <DialogContent className="max-w-[480px] max-h-[88vh] overflow-y-auto rounded-3xl p-5 sm:p-6 bg-white shadow-2xl">
+            <DialogHeader className="pb-1">
+                <DialogTitle className="text-lg font-bold text-slate-900">Edit Staff Member</DialogTitle>
             </DialogHeader>
             {selectedStaff && (
                 <EditStaffForm
