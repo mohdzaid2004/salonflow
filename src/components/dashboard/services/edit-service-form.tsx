@@ -120,7 +120,7 @@ export function EditServiceForm({
                 <div className="relative">
                   <Scissors className="w-3.5 h-3.5 text-purple-600 absolute left-2.5 top-1/2 -translate-y-1/2" />
                   <FormControl>
-                    <Input placeholder="e.g., Haircut" className="h-8 pl-8 rounded-xl text-xs bg-slate-50/50 border-slate-200" {...field} />
+                    <Input placeholder="e.g., Haircut" className="h-8 pl-8 rounded-xl text-xs bg-slate-50 border-slate-200 text-slate-900 font-semibold focus:border-purple-600" {...field} />
                   </FormControl>
                 </div>
                 <FormMessage className="text-[10px] text-rose-500" />
@@ -137,13 +137,13 @@ export function EditServiceForm({
                 <FormLabel className="text-[10px] font-bold text-slate-700 uppercase tracking-wider">Category</FormLabel>
                 <Select onValueChange={field.onChange} defaultValue={field.value}>
                   <FormControl>
-                    <SelectTrigger className="h-8 rounded-xl text-xs bg-slate-50/50 border-slate-200">
+                    <SelectTrigger className="h-8 rounded-xl text-xs bg-slate-50 border-slate-200 text-slate-900 font-semibold">
                       <SelectValue placeholder="Category" />
                     </SelectTrigger>
                   </FormControl>
-                  <SelectContent className="rounded-xl text-xs">
+                  <SelectContent className="rounded-xl text-xs bg-white text-slate-900 font-medium">
                     {SERVICE_CATEGORIES.map((cat) => (
-                      <SelectItem key={cat} value={cat} className="text-xs">
+                      <SelectItem key={cat} value={cat} className="text-xs text-slate-900 font-medium">
                         {cat}
                       </SelectItem>
                     ))}
@@ -166,7 +166,7 @@ export function EditServiceForm({
                 <div className="relative">
                   <IndianRupee className="w-3.5 h-3.5 text-purple-600 absolute left-2.5 top-1/2 -translate-y-1/2" />
                   <FormControl>
-                    <Input type="number" placeholder="250" className="h-8 pl-8 rounded-xl text-xs bg-slate-50/50 border-slate-200" {...field} />
+                    <Input type="number" placeholder="250" className="h-8 pl-8 rounded-xl text-xs bg-slate-50 border-slate-200 text-slate-900 font-bold focus:border-purple-600" {...field} />
                   </FormControl>
                 </div>
                 <FormMessage className="text-[10px] text-rose-500" />
