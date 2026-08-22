@@ -165,50 +165,55 @@ export default function DashboardLayout({
     return null;
   }
 
-  // Once user and salon data are confirmed, render the full dashboard layout.
+  if (isHomePage) {
+    return (
+      <HeaderActionsProvider>
+        {children}
+      </HeaderActionsProvider>
+    );
+  }
+
   return (
     <div>
       <HeaderActionsProvider>
         <SidebarProvider>
-          {!isHomePage && (
-            <Sidebar>
-              <SidebarHeader>
-                <div className="flex h-16 items-center gap-2 border-b border-sidebar-border p-2">
-                  <Logo className="h-8 w-8 shrink-0 text-primary" />
-                  <div className="flex flex-col overflow-hidden">
-                    <span className="truncate font-headline text-lg font-bold tracking-tight">
-                      SALON FLOW
-                    </span>
-                    <span className="truncate text-xs text-sidebar-foreground/70">
-                      Your Dashboard
-                    </span>
-                  </div>
+          <Sidebar>
+            <SidebarHeader>
+              <div className="flex h-16 items-center gap-2 border-b border-sidebar-border p-2">
+                <Logo className="h-8 w-8 shrink-0 text-primary" />
+                <div className="flex flex-col overflow-hidden">
+                  <span className="truncate font-headline text-lg font-bold tracking-tight">
+                    SALON FLOW
+                  </span>
+                  <span className="truncate text-xs text-sidebar-foreground/70">
+                    Your Dashboard
+                  </span>
                 </div>
-              </SidebarHeader>
-              <SidebarContent className="p-2">
-                <MainNav salon={salon} />
-              </SidebarContent>
-              <SidebarFooter>
-                <Separator className="my-2 bg-sidebar-border" />
-                <div className="p-2 text-center text-xs text-sidebar-foreground/70">
-                  <p>&copy; {new Date().getFullYear()} SalonFlow India</p>
-                </div>
-              </SidebarFooter>
-            </Sidebar>
-          )}
+              </div>
+            </SidebarHeader>
+            <SidebarContent className="p-2">
+              <MainNav salon={salon} />
+            </SidebarContent>
+            <SidebarFooter>
+              <Separator className="my-2 bg-sidebar-border" />
+              <div className="p-2 text-center text-xs text-sidebar-foreground/70">
+                <p>&copy; {new Date().getFullYear()} SalonFlow India</p>
+              </div>
+            </SidebarFooter>
+          </Sidebar>
           <SidebarInset>
             <header className="sticky top-0 z-10 flex h-16 items-center gap-4 border-b bg-background px-4 sm:px-6">
-              {!isHomePage && <SidebarTrigger className="md:hidden" />}
+              <SidebarTrigger className="md:hidden" />
               <div className="flex items-center gap-4">
-                {!isHomePage && <PageHeader />}
+                <PageHeader />
               </div>
               <div className="ml-auto flex items-center gap-2">
-                {!isHomePage && <HeaderActions />}
+                <HeaderActions />
                 <UserNav />
               </div>
             </header>
             <SubscriptionBanner salon={salon} />
-            <main className={`flex flex-1 flex-col ${isHomePage ? 'items-center' : ''} gap-4 bg-background p-4`}>
+            <main className="flex flex-1 flex-col gap-4 bg-background p-4">
               {children}
             </main>
           </SidebarInset>
