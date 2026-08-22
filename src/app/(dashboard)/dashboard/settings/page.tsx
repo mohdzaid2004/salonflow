@@ -58,10 +58,10 @@ export default function SettingsPage() {
   const { data: salon } = useDoc<Salon>(salonDocRef);
 
   // Settings State
-  const [salonName, setSalonName] = useState(salon?.name || 'Toni & Guy');
+  const [salonName, setSalonName] = useState(salon?.name || 'SalonFlow');
   const [tagline, setTagline] = useState('Premium Unisex Salon & Spa');
   const [phone, setPhone] = useState('+91 98765 43210');
-  const [email, setEmail] = useState(user?.email || 'contact@toniandguy-salon.com');
+  const [email, setEmail] = useState(user?.email || 'contact@salonflow.com');
   const [address, setAddress] = useState('Plot 42, Bandra West, Mumbai, Maharashtra 400050');
   const [gstin, setGstin] = useState('27AABCT3518Q1ZV');
   

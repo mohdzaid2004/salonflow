@@ -19,7 +19,7 @@ export async function POST(req: NextRequest) {
       if (lower.includes('revenue') || lower.includes('performance') || lower.includes('summary')) {
         fallbackResponse += "📊 **Today's Business Summary**:\n- **Today's Revenue**: ₹12,450 (+18.4% vs yesterday)\n- **Completed Bookings**: 18 clients\n- **Top Performing Stylist**: Rahul Sharma (₹14,800 delivered)\n- **Recommendation**: Your Hydra Glow Facial and Keratin services have highest margins. Consider offering a 10% combo deal on weekdays to boost afternoon slots!";
       } else if (lower.includes('whatsapp') || lower.includes('message') || lower.includes('promo')) {
-        fallbackResponse += "💬 **Client WhatsApp Draft**:\n\n*\"Hi Priya! ✨ We missed you at Toni & Guy. Ready for your hair glow-up? Book your Keratin Smooth or Hair Spa this weekend & get complimentary deep scalp therapy worth ₹800! Reply 'BOOK' to reserve your favorite stylist.\"*";
+        fallbackResponse += "💬 **Client WhatsApp Draft**:\n\n*\"Hi Priya! ✨ We missed you at SalonFlow. Ready for your hair glow-up? Book your Keratin Smooth or Hair Spa this weekend & get complimentary deep scalp therapy worth ₹800! Reply 'BOOK' to reserve your favorite stylist.\"*";
       } else if (lower.includes('hair') || lower.includes('treatment') || lower.includes('skin')) {
         fallbackResponse += "✂️ **Expert Treatment Recommendation**:\n- **Dry/Frizzy Hair**: Recommend *Keratin Smooth & Protein Infusion* (₹4,500) paired with Mythic Oil Argan Serum.\n- **Dull Skin / Tan**: Recommend *Hydra Glow Deep Cleansing Facial* (₹2,800) with Vitamin C peel for instant brightness.";
       } else {

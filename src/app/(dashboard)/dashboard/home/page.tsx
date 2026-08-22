@@ -217,7 +217,7 @@ export default function HomePage() {
 
   const getStaffName = (staffId: string) => staff?.find(s => s.id === staffId)?.name || 'Unknown';
 
-  const salonDisplayName = salon?.name || 'Toni & Guy';
+  const salonDisplayName = salon?.name || 'SalonFlow';
 
   return (
     <div className="relative min-h-screen w-full bg-[#FAF9FD] font-sans flex flex-col justify-between overflow-x-hidden select-none">
