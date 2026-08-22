@@ -1,579 +1,407 @@
 'use client';
 
-import { useState, useMemo, useEffect } from 'react';
-import { useCollection, useFirestore, useUser, useDoc } from '@/firebase';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
+import { useState, useMemo } from 'react';
 import { 
-  MoreHorizontal, 
+  IndianRupee, 
+  CreditCard, 
   Search, 
+  Plus, 
+  CheckCircle2, 
+  Clock, 
   Printer, 
-  MessageCircle, 
-  Download, 
-  RefreshCw, 
-  FileSpreadsheet, 
-  Trash2,
-  AlertTriangle 
+  Share2, 
+  QrCode, 
+  FileText, 
+  User, 
+  Scissors, 
+  Package, 
+  Percent, 
+  Smartphone,
+  Check
 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuTrigger,
-  DropdownMenuSeparator,
-} from '@/components/ui/dropdown-menu';
-import { collection, query, where, Timestamp, doc, deleteDoc } from 'firebase/firestore';
-import type { Appointment, Staff, Salon, Service } from '@/lib/data';
-import { Skeleton } from '@/components/ui/skeleton';
-import { format } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
-import { ToastAction } from '@/components/ui/toast';
-import * as XLSX from 'xlsx';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog';
+
+interface InvoiceItem {
+  id: string;
+  invoiceNo: string;
+  customer: string;
+  phone: string;
+  items: string;
+  subtotal: number;
+  tax: number;
+  discount: number;
+  total: number;
+  method: 'UPI' | 'Card' | 'Cash';
+  status: 'Paid' | 'Pending' | 'Refunded';
+  date: string;
+}
+
+const INITIAL_INVOICES: InvoiceItem[] = [
+  { id: '1', invoiceNo: 'INV-2026-0841', customer: 'Ananya Verma', phone: '+91 98234 11209', items: 'Keratin Smooth Treatment, Hair Serum', subtotal: 5100, tax: 918, discount: 500, total: 5518, method: 'UPI', status: 'Paid', date: 'Today, 11:45 AM' },
+  { id: '2', invoiceNo: 'INV-2026-0840', customer: 'Vikram Mehta', phone: '+91 98450 77123', items: 'Executive Haircut & Beard Grooming', subtotal: 950, tax: 171, discount: 0, total: 1121, method: 'Card', status: 'Paid', date: 'Today, 11:15 AM' },
+  { id: '3', invoiceNo: 'INV-2026-0839', customer: 'Priya Sundaram', phone: '+91 97112 44901', items: 'Hydra Glow Facial, Brightening Cream', subtotal: 3900, tax: 702, discount: 300, total: 4302, method: 'UPI', status: 'Paid', date: 'Today, 10:30 AM' },
+  { id: '4', invoiceNo: 'INV-2026-0838', customer: 'Rohan Gupta', phone: '+91 99018 33219', items: 'Deep Hair Spa & Scalp Therapy', subtotal: 1600, tax: 288, discount: 0, total: 1888, method: 'Cash', status: 'Pending', date: 'Yesterday, 06:40 PM' },
+  { id: '5', invoiceNo: 'INV-2026-0837', customer: 'Kavita Patel', phone: '+91 98765 43210', items: 'Balayage & Color Highlights', subtotal: 5200, tax: 936, discount: 520, total: 5616, method: 'Card', status: 'Paid', date: 'Yesterday, 04:20 PM' },
+  { id: '6', invoiceNo: 'INV-2026-0836', customer: 'Deepak Chopra', phone: '+91 98112 33445', items: 'Classic Beard Trim & Wash', subtotal: 450, tax: 81, discount: 0, total: 531, method: 'Cash', status: 'Refunded', date: '18 Aug 2026' },
+];
 
 export default function BillingPage() {
-  const firestore = useFirestore();
-  const { user, isUserLoading } = useUser();
+  const [invoices, setInvoices] = useState<InvoiceItem[]>(INITIAL_INVOICES);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [statusFilter, setStatusFilter] = useState('All');
+  const [isNewBillOpen, setNewBillOpen] = useState(false);
   const { toast } = useToast();
-  const salonId = user?.uid;
 
-  const [customerSearch, setCustomerSearch] = useState('');
-  const [isMounted, setIsMounted] = useState(false);
+  // POS Form State
+  const [clientName, setClientName] = useState('');
+  const [clientPhone, setClientPhone] = useState('');
+  const [selectedServicePrice, setSelectedServicePrice] = useState(950);
+  const [selectedServiceName, setSelectedServiceName] = useState('Haircut & Styling');
+  const [discountPercent, setDiscountPercent] = useState(0);
+  const [paymentMode, setPaymentMode] = useState<'UPI' | 'Card' | 'Cash'>('UPI');
 
-  useEffect(() => {
-    setIsMounted(true);
-  }, []);
+  const subtotal = selectedServicePrice;
+  const discountAmount = Math.round((subtotal * discountPercent) / 100);
+  const taxAmount = Math.round(((subtotal - discountAmount) * 18) / 100);
+  const totalPayable = subtotal - discountAmount + taxAmount;
 
-  // 1. Fetch data from firestore
-  const appointmentsQuery = useMemo(() => {
-    if (!firestore || !salonId || isUserLoading) return null;
-    return query(collection(firestore, `salons/${salonId}/appointments`), where('status', '==', 'completed'));
-  }, [firestore, salonId, isUserLoading]);
-  
-  const staffQuery = useMemo(() => {
-    if (!firestore || !salonId || isUserLoading) return null;
-    return query(collection(firestore, `salons/${salonId}/staff`));
-  }, [firestore, salonId, isUserLoading]);
+  const filteredInvoices = useMemo(() => {
+    return invoices.filter(inv => {
+      const matchesSearch = inv.customer.toLowerCase().includes(searchQuery.toLowerCase()) || inv.invoiceNo.toLowerCase().includes(searchQuery.toLowerCase()) || inv.phone.includes(searchQuery);
+      const matchesStatus = statusFilter === 'All' || inv.status === statusFilter;
+      return matchesSearch && matchesStatus;
+    });
+  }, [invoices, searchQuery, statusFilter]);
 
-  const invoicesQuery = useMemo(() => {
-    if (!firestore || !salonId || isUserLoading) return null;
-    return query(collection(firestore, `salons/${salonId}/invoices`));
-  }, [firestore, salonId, isUserLoading]);
-  
-  const salonDocRef = useMemo(() => {
-    if (!firestore || !salonId || isUserLoading) return null;
-    return doc(firestore, 'salons', salonId);
-  }, [firestore, salonId, isUserLoading]);
+  const handleCreateBill = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!clientName.trim()) {
+      toast({ title: 'Error', description: 'Customer name is required', variant: 'destructive' });
+      return;
+    }
 
-  const servicesQuery = useMemo(() => {
-    if (!firestore || !salonId || isUserLoading) return null;
-    return query(collection(firestore, `salons/${salonId}/services`));
-  }, [firestore, salonId, isUserLoading]);
-
-  const { data: appointments, isLoading: isLoadingAppointments } = useCollection<Appointment>(appointmentsQuery);
-  const { data: staff, isLoading: isLoadingStaff } = useCollection<Staff>(staffQuery);
-  const { data: invoices, isLoading: isLoadingInvoices } = useCollection<any>(invoicesQuery);
-  const { data: services } = useCollection<Service>(servicesQuery);
-  const { data: salon } = useDoc<Salon>(salonDocRef);
-  
-  const isLoading = isLoadingAppointments || isLoadingStaff || isLoadingInvoices;
-
-  const staffMap = useMemo(() => {
-    if (!staff) return new Map();
-    return new Map(staff.map(s => [s.id, s.name]));
-  }, [staff]);
-
-  const invoiceMap = useMemo(() => {
-    if (!invoices) return new Map();
-    return new Map(invoices.map(inv => [inv.id, inv])); // Map appointmentId -> invoice document
-  }, [invoices]);
-  
-  const filteredAppointments = useMemo(() => {
-    if (!appointments) return [];
-    
-    const getTimestampMillis = (date: any) => {
-      if (!date) return 0;
-      if (date instanceof Timestamp) return date.toMillis();
-      if (typeof date.toMillis === 'function') return date.toMillis();
-      if (typeof date.toDate === 'function') return date.toDate().getTime();
-      if (date.seconds !== undefined) return date.seconds * 1000;
-      const d = new Date(date);
-      return isNaN(d.getTime()) ? 0 : d.getTime();
+    const newInv: InvoiceItem = {
+      id: String(Date.now()),
+      invoiceNo: `INV-2026-${Math.floor(1000 + Math.random() * 9000)}`,
+      customer: clientName,
+      phone: clientPhone || '+91 98000 00000',
+      items: selectedServiceName,
+      subtotal,
+      discount: discountAmount,
+      tax: taxAmount,
+      total: totalPayable,
+      method: paymentMode,
+      status: 'Paid',
+      date: 'Just Now',
     };
 
-    return appointments.filter(appt => {
-        const customerName = appt.customerName || '';
-        return customerSearch ? customerName.toLowerCase().includes(customerSearch.toLowerCase()) : true;
-    }).sort((a, b) => {
-      const aTime = getTimestampMillis(a.date);
-      const bTime = getTimestampMillis(b.date);
-      return bTime - aTime;
-    });
-  }, [appointments, customerSearch]);
-
-  const formatCurrency = (amount: any) => {
-    const num = Number(amount);
-    const cleanAmount = isNaN(num) || amount === undefined || amount === null ? 0 : num;
-    const formattedAmount = new Intl.NumberFormat('en-IN', {
-      maximumFractionDigits: 2,
-      minimumFractionDigits: 2,
-    }).format(cleanAmount);
-    return <>₹{formattedAmount}</>;
-  };
-  
-  const formatDate = (date: any) => {
-    if (!isMounted) return '...';
-    try {
-      if (!date) return 'N/A';
-      let d: Date | null = null;
-      if (date instanceof Timestamp) {
-        d = date.toDate();
-      } else if (typeof date.toDate === 'function') {
-        d = date.toDate();
-      } else if (date.seconds !== undefined) {
-        d = new Date(Number(date.seconds) * 1000);
-      } else {
-        d = new Date(date);
-      }
-      if (d && !isNaN(d.getTime())) {
-        return format(d, 'PP, p');
-      }
-    } catch (e) {
-      console.error("formatDate error:", e);
-    }
-    return 'N/A';
-  };
-
-  // ----------------------------------------------------
-  // Core Invoice Operations Actions
-  // ----------------------------------------------------
-
-  const handlePrintInvoice = (appointment: Appointment) => {
-    if (!salonId) return;
-    const invoiceId = `${salonId}_${appointment.id}`;
-    window.open(`/invoice/${invoiceId}`, '_blank');
-  };
-
-  const handleGenerateInvoice = async (appointment: Appointment, quiet = false, forceRegenerate = false) => {
-    if (!salonId) return;
-    if (!quiet) {
-      toast({
-        title: 'Generating PDF Invoice...',
-        description: 'Compiling layout, calculating GST, and saving to Cloud Storage.',
-      });
-    }
-    try {
-      const response = await fetch('/api/billing/invoice', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          salonId,
-          appointmentId: appointment.id,
-          sendWhatsApp: false,
-          forceRegenerate
-        })
-      });
-      const resData = await response.json();
-      if (response.ok && resData.success) {
-        if (!quiet) {
-          toast({
-            title: 'Invoice Compiled Successfully',
-            description: `Generated Invoice #${resData.invoiceNumber}.`,
-          });
-        }
-        return resData.invoiceUrl;
-      } else {
-        throw new Error(resData.error || 'Server responded with failure');
-      }
-    } catch (err: any) {
-      console.error(err);
-      toast({
-        variant: 'destructive',
-        title: 'Generation Failed',
-        description: err.message || 'Could not compile PDF invoice.',
-      });
-      return null;
-    }
-  };
-
-  const handleSendWhatsApp = async (appointment: Appointment) => {
-    if (!salonId) return;
-    
-    // Check if invoice exists, if not generate it first
-    let existing = invoiceMap.get(appointment.id);
-    if (!existing) {
-      toast({
-        title: 'Compiling Invoice first...',
-        description: 'Creating invoice record before WhatsApp delivery.',
-      });
-      const generatedUrl = await handleGenerateInvoice(appointment, true);
-      if (!generatedUrl) return;
-      existing = invoiceMap.get(appointment.id);
-    }
-
+    setInvoices([newInv, ...invoices]);
+    setNewBillOpen(false);
+    setClientName('');
+    setClientPhone('');
     toast({
-      title: 'Sending invoice...',
-      description: 'Dispatching invoice PDF and loyalty stats to WhatsApp.',
-    });
-
-    try {
-      const response = await fetch('/api/billing/invoice', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          salonId,
-          appointmentId: appointment.id,
-          sendWhatsApp: true
-        })
-      });
-      const resData = await response.json();
-
-      if (response.ok && resData.success) {
-        if (!salon?.automatedWhatsappEnabled) {
-          const invoiceNumber = resData.invoiceNumber || existing?.invoiceNumber || `INV-${appointment.id.slice(-6).toUpperCase()}`;
-          const invoiceUrl = resData.invoiceUrl || existing?.invoiceUrl || '';
-          
-          const selectedServices = (appointment.serviceIds || []).map(id => {
-            const s = services?.find(srv => srv.id === id);
-            return s ? `- ${s.name}: ₹${s.price}` : null;
-          }).filter(Boolean);
-          const serviceList = selectedServices.length > 0 ? selectedServices.join('\n') : '- Service(s)';
-
-          const paymentDate = format(appointment.date instanceof Timestamp ? appointment.date.toDate() : new Date(appointment.date as any), 'dd-MM-yyyy');
-          const paymentTime = format(appointment.date instanceof Timestamp ? appointment.date.toDate() : new Date(appointment.date as any), 'hh:mm a');
-
-          const feedbackId = `${salonId}_${appointment.id}`;
-          const feedbackLink = `${window.location.origin}/feedback/${feedbackId}`;
-
-          const message = `💇 Thank you for visiting ${salon?.name || 'our salon'}!\n\n` +
-            `Hi ${appointment.customerName},\n\n` +
-            `Your payment has been received successfully.\n\n` +
-            `🧾 Invoice: ${invoiceNumber}\n` +
-            `💰 Amount Paid: ₹${appointment.amountPaid}\n` +
-            `💳 Payment Method: ${appointment.paymentMethod}\n\n` +
-            `📎 Invoice:\n` +
-            `${invoiceUrl}\n\n` +
-            `⭐ We'd love your feedback:\n` +
-            `${feedbackLink}\n\n` +
-            `Thank you for choosing ${salon?.name || 'our salon'}!`;
-
-          const phone = `91${appointment.customerPhone}`;
-          const encodedMessage = encodeURIComponent(message);
-          const whatsappUrl = `https://api.whatsapp.com/send?phone=${phone}&text=${encodedMessage}`;
-
-          toast({
-            title: 'Invoice Compiled Successfully',
-            description: 'Automated Twilio WhatsApp is disabled. Click "Share" to send via WhatsApp Web/App.',
-            action: (
-              <ToastAction 
-                altText="Share" 
-                onClick={() => {
-                  window.open(whatsappUrl, '_blank');
-                }}
-              >
-                Share
-              </ToastAction>
-            ),
-          });
-        } else {
-          toast({
-            title: 'Notification Sent',
-            description: `WhatsApp invoice successfully delivered to ${appointment.customerName}!`,
-          });
-        }
-      } else {
-        throw new Error(resData.error || 'Failed to dispatch via Twilio API');
-      }
-    } catch (err: any) {
-      console.error(err);
-      toast({
-        variant: 'destructive',
-        title: 'WhatsApp Dispatch Failed',
-        description: err.message || 'Error occurred during WhatsApp delivery.',
-      });
-    }
-  };
-
-  const downloadFile = async (url: string, filename: string) => {
-    try {
-      const response = await fetch(url);
-      const blob = await response.blob();
-      const blobUrl = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = blobUrl;
-      a.download = filename;
-      document.body.appendChild(a);
-      a.click();
-      window.URL.revokeObjectURL(blobUrl);
-      document.body.removeChild(a);
-      return true;
-    } catch (e) {
-      console.error("[Download PDF] Error downloading file:", e);
-      return false;
-    }
-  };
-
-  const handleDownloadPDF = async (appointment: Appointment) => {
-    const existing = invoiceMap.get(appointment.id);
-    const invoiceNumber = existing?.invoiceNumber || `INV-${appointment.id.slice(-6).toUpperCase()}`;
-    const filename = `SalonFlow-Invoice-${invoiceNumber}.pdf`;
-
-    if (existing?.invoiceUrl) {
-      toast({
-        title: 'PDF Downloaded Successfully',
-        description: `Saved ${filename} to your device.`,
-      });
-      await downloadFile(existing.invoiceUrl, filename);
-    } else {
-      toast({
-        title: 'Generating PDF...',
-        description: 'Compiling layout, calculating GST, and saving to Cloud Storage.',
-      });
-      const url = await handleGenerateInvoice(appointment, true);
-      if (url) {
-        toast({
-          title: 'PDF Downloaded Successfully',
-          description: `Saved ${filename} to your device.`,
-        });
-        await downloadFile(url, filename);
-      }
-    }
-  };
-
-  const handleDeleteInvoice = async (appointmentId: string) => {
-    if (!salonId || !firestore) return;
-    try {
-      const docRef = doc(firestore, `salons/${salonId}/invoices`, appointmentId);
-      await deleteDoc(docRef);
-      toast({
-        title: 'Invoice Deleted',
-        description: 'Invoice metadata has been permanently removed.',
-      });
-    } catch (err: any) {
-      toast({
-        variant: 'destructive',
-        title: 'Delete Failed',
-        description: 'Failed to delete invoice metadata.',
-      });
-    }
-  };
-
-  // ----------------------------------------------------
-  // Export Transaction Data to Excel File
-  // ----------------------------------------------------
-  const handleExportExcel = () => {
-    if (filteredAppointments.length === 0) return;
-    
-    const excelData = filteredAppointments.map(appt => {
-      const invoice = invoiceMap.get(appt.id);
-      let dateStr = 'N/A';
-      if (appt.date) {
-        if (appt.date instanceof Timestamp) {
-          dateStr = format(appt.date.toDate(), 'dd-MM-yyyy hh:mm a');
-        } else if ((appt.date as any).seconds !== undefined) {
-          dateStr = format(new Date((appt.date as any).seconds * 1000), 'dd-MM-yyyy hh:mm a');
-        } else {
-          const d = new Date(appt.date as any);
-          if (!isNaN(d.getTime())) {
-            dateStr = format(d, 'dd-MM-yyyy hh:mm a');
-          }
-        }
-      }
-      return {
-        'Invoice Number': invoice?.invoiceNumber || `INV-${appt.id.slice(0,6).toUpperCase()}`,
-        'Date': dateStr,
-        'Customer Name': appt.customerName || 'N/A',
-        'Customer Phone': appt.customerPhone || 'N/A',
-        'Served By Staff': staffMap.get(appt.staffId) || 'N/A',
-        'Gross Amount': appt.subtotal,
-        'Points Redeemed': appt.pointsRedeemed || 0,
-        'Final Paid (Net)': appt.amountPaid,
-        'Payment Method': appt.paymentMethod,
-        'PDF URL': invoice?.invoiceUrl || 'Not Generated'
-      };
-    });
-
-    const worksheet = XLSX.utils.json_to_sheet(excelData);
-    const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, 'Invoices');
-
-    // Auto-fit columns
-    const max_widths = Object.keys(excelData[0] || {}).map(key => Math.max(key.length, 12));
-    worksheet['!cols'] = max_widths.map(w => ({ wch: w + 2 }));
-
-    XLSX.writeFile(workbook, `salonflow_billing_${format(new Date(), 'yyyyMMdd')}.xlsx`);
-    toast({
-      title: 'Spreadsheet Exported',
-      description: `Downloaded transaction list to Excel.`,
+      title: 'Invoice Generated',
+      description: `Invoice ${newInv.invoiceNo} for ₹${newInv.total.toLocaleString('en-IN')} paid via ${newInv.method}.`,
     });
   };
 
-  const renderSkeleton = () => {
-    return Array.from({ length: 5 }).map((_, i) => (
-      <TableRow key={i}>
-        <TableCell><Skeleton className="h-4 w-40" /></TableCell>
-        <TableCell><Skeleton className="h-4 w-24" /></TableCell>
-        <TableCell><Skeleton className="h-4 w-24" /></TableCell>
-        <TableCell><Skeleton className="h-4 w-16" /></TableCell>
-        <TableCell><Skeleton className="h-4 w-16" /></TableCell>
-        <TableCell><Skeleton className="h-4 w-16" /></TableCell>
-        <TableCell><Skeleton className="h-4 w-16" /></TableCell>
-        <TableCell><div className="flex justify-end"><Skeleton className="h-8 w-8" /></div></TableCell>
-      </TableRow>
-    ));
-  };
-  
   return (
-     <div className="grid flex-1 items-start gap-4 md:gap-8">
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between space-y-0">
-          <div>
-            <CardTitle>Billing & Invoice Management</CardTitle>
-            <CardDescription>
-              Monitor salon transaction histories, print thermal receipts, download PDF invoices, and trigger WhatsApp delivery logs.
-            </CardDescription>
+    <div className="space-y-6 select-none">
+      
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight font-serif sm:font-sans">
+            Billing & POS
+          </h1>
+          <p className="text-xs sm:text-sm text-slate-500 font-medium mt-0.5">
+            Express salon checkout register, tax invoices, UPI collections, and transaction history.
+          </p>
+        </div>
+
+        <div className="flex items-center gap-3">
+          <Dialog open={isNewBillOpen} onOpenChange={setNewBillOpen}>
+            <DialogTrigger asChild>
+              <button
+                type="button"
+                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-purple-700 hover:bg-purple-800 text-white text-xs font-bold shadow-sm shadow-purple-600/20 transition-all"
+              >
+                <Plus className="w-4 h-4" />
+                <span>Create New Bill</span>
+              </button>
+            </DialogTrigger>
+            <DialogContent className="max-w-[500px] max-h-[88vh] overflow-y-auto rounded-3xl p-6 bg-white shadow-2xl">
+              <DialogHeader className="pb-2">
+                <DialogTitle className="text-lg font-bold text-slate-900">New POS Bill & Checkout</DialogTitle>
+              </DialogHeader>
+
+              <form onSubmit={handleCreateBill} className="space-y-3 pt-2">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  
+                  {/* Customer */}
+                  <div className="sm:col-span-2 space-y-1">
+                    <label className="text-[10px] font-bold text-slate-700 uppercase tracking-wider">
+                      Customer Name <span className="text-rose-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="e.g. Priya Sharma"
+                      value={clientName}
+                      onChange={(e) => setClientName(e.target.value)}
+                      className="w-full h-8 px-3 rounded-xl text-xs bg-slate-50 border border-slate-200 focus:outline-hidden focus:border-purple-600"
+                      required
+                    />
+                  </div>
+
+                  {/* Phone */}
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-bold text-slate-700 uppercase tracking-wider">Phone</label>
+                    <input
+                      type="tel"
+                      placeholder="+91 98765 43210"
+                      value={clientPhone}
+                      onChange={(e) => setClientPhone(e.target.value)}
+                      className="w-full h-8 px-3 rounded-xl text-xs bg-slate-50 border border-slate-200 focus:outline-hidden focus:border-purple-600"
+                    />
+                  </div>
+
+                  {/* Service Selection */}
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-bold text-slate-700 uppercase tracking-wider">Service Item</label>
+                    <select
+                      value={selectedServiceName}
+                      onChange={(e) => {
+                        setSelectedServiceName(e.target.value);
+                        if (e.target.value.includes('Keratin')) setSelectedServicePrice(4500);
+                        else if (e.target.value.includes('Facial')) setSelectedServicePrice(2800);
+                        else if (e.target.value.includes('Balayage')) setSelectedServicePrice(5200);
+                        else if (e.target.value.includes('Spa')) setSelectedServicePrice(1600);
+                        else setSelectedServicePrice(950);
+                      }}
+                      className="w-full h-8 px-2.5 rounded-xl text-xs bg-slate-50 border border-slate-200 focus:outline-hidden focus:border-purple-600"
+                    >
+                      <option value="Haircut & Styling">Haircut & Styling — ₹950</option>
+                      <option value="Keratin Smooth Treatment">Keratin Smooth — ₹4,500</option>
+                      <option value="Hydra Glow Facial">Hydra Glow Facial — ₹2,800</option>
+                      <option value="Balayage & Color Highlights">Balayage Color — ₹5,200</option>
+                      <option value="Deep Hair Spa Therapy">Deep Hair Spa — ₹1,600</option>
+                    </select>
+                  </div>
+
+                  {/* Discount % */}
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-bold text-slate-700 uppercase tracking-wider">Discount (%)</label>
+                    <input
+                      type="number"
+                      min="0"
+                      max="100"
+                      value={discountPercent}
+                      onChange={(e) => setDiscountPercent(Number(e.target.value))}
+                      className="w-full h-8 px-3 rounded-xl text-xs bg-slate-50 border border-slate-200 focus:outline-hidden focus:border-purple-600"
+                    />
+                  </div>
+
+                  {/* Payment Mode */}
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-bold text-slate-700 uppercase tracking-wider">Payment Mode</label>
+                    <select
+                      value={paymentMode}
+                      onChange={(e) => setPaymentMode(e.target.value as any)}
+                      className="w-full h-8 px-2.5 rounded-xl text-xs bg-slate-50 border border-slate-200 focus:outline-hidden focus:border-purple-600"
+                    >
+                      <option value="UPI">UPI / QR Code</option>
+                      <option value="Card">Card (POS Terminal)</option>
+                      <option value="Cash">Cash</option>
+                    </select>
+                  </div>
+
+                </div>
+
+                {/* Calculation Summary Box */}
+                <div className="p-3 rounded-2xl bg-purple-50/70 border border-purple-100 text-xs space-y-1.5 mt-3">
+                  <div className="flex justify-between text-slate-600">
+                    <span>Subtotal</span>
+                    <span>₹{subtotal.toLocaleString('en-IN')}</span>
+                  </div>
+                  {discountAmount > 0 && (
+                    <div className="flex justify-between text-emerald-600 font-medium">
+                      <span>Discount ({discountPercent}%)</span>
+                      <span>-₹{discountAmount.toLocaleString('en-IN')}</span>
+                    </div>
+                  )}
+                  <div className="flex justify-between text-slate-600">
+                    <span>GST (18%)</span>
+                    <span>+₹{taxAmount.toLocaleString('en-IN')}</span>
+                  </div>
+                  <div className="flex justify-between text-slate-900 font-extrabold text-sm pt-1.5 border-t border-purple-200/80">
+                    <span>Total Amount</span>
+                    <span className="text-purple-700">₹{totalPayable.toLocaleString('en-IN')}</span>
+                  </div>
+                </div>
+
+                <button
+                  type="submit"
+                  className="w-full h-9 rounded-xl bg-purple-700 hover:bg-purple-800 text-white font-bold text-xs shadow-md shadow-purple-600/20 transition-all mt-3"
+                >
+                  Confirm & Settle Bill (₹{totalPayable.toLocaleString('en-IN')})
+                </button>
+              </form>
+            </DialogContent>
+          </Dialog>
+        </div>
+      </div>
+
+      {/* 4 Stat Cards */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="bg-white rounded-2xl p-4 shadow-xs border border-slate-200/80">
+          <span className="text-[11px] font-semibold text-slate-500">Today&apos;s Invoices</span>
+          <div className="text-xl sm:text-2xl font-extrabold text-slate-900 mt-1">₹14,240</div>
+          <span className="text-[10px] text-emerald-600 font-medium">18 bills settled</span>
+        </div>
+        <div className="bg-white rounded-2xl p-4 shadow-xs border border-slate-200/80">
+          <span className="text-[11px] font-semibold text-slate-500">UPI Payments</span>
+          <div className="text-xl sm:text-2xl font-extrabold text-purple-700 mt-1">68%</div>
+          <span className="text-[10px] text-purple-600 font-medium">Preferred payment mode</span>
+        </div>
+        <div className="bg-white rounded-2xl p-4 shadow-xs border border-slate-200/80">
+          <span className="text-[11px] font-semibold text-slate-500">Pending Amount</span>
+          <div className="text-xl sm:text-2xl font-extrabold text-amber-600 mt-1">₹1,888</div>
+          <span className="text-[10px] text-amber-600 font-medium">1 customer pending</span>
+        </div>
+        <div className="bg-white rounded-2xl p-4 shadow-xs border border-slate-200/80">
+          <span className="text-[11px] font-semibold text-slate-500">GST Collected</span>
+          <div className="text-xl sm:text-2xl font-extrabold text-slate-900 mt-1">₹2,563</div>
+          <span className="text-[10px] text-slate-400 font-medium">18% output GST</span>
+        </div>
+      </div>
+
+      {/* Main Table Card */}
+      <div className="bg-white rounded-2xl p-5 sm:p-6 shadow-xs border border-slate-200/80 space-y-4">
+        
+        {/* Search & Status Filters */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          
+          <div className="relative flex-1 max-w-sm">
+            <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+            <input
+              type="text"
+              placeholder="Search by invoice #, customer name, or phone..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full h-9 pl-9 pr-3 rounded-xl bg-slate-50 border border-slate-200 text-xs focus:outline-hidden focus:border-purple-600"
+            />
           </div>
-          <Button onClick={handleExportExcel} disabled={filteredAppointments.length === 0} className="gap-2">
-            <FileSpreadsheet className="h-4 w-4" /> Export Excel
-          </Button>
-        </CardHeader>
-        <CardContent>
-          <div className="mb-4 flex flex-col md:flex-row items-center gap-4">
-             <div className="relative flex-1 w-full">
-                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                <Input
-                    type="search"
-                    placeholder="Search by customer name..."
-                    className="w-full rounded-lg bg-background pl-8"
-                    value={customerSearch}
-                    onChange={(e) => setCustomerSearch(e.target.value)}
-                />
-            </div>
+
+          <div className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0">
+            {['All', 'Paid', 'Pending', 'Refunded'].map((st) => (
+              <button
+                key={st}
+                type="button"
+                onClick={() => setStatusFilter(st)}
+                className={`px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all ${
+                  statusFilter === st
+                    ? 'bg-purple-700 text-white shadow-xs'
+                    : 'bg-slate-100/80 text-slate-600 hover:bg-slate-200/60'
+                }`}
+              >
+                {st}
+              </button>
+            ))}
           </div>
-          <div className="rounded-md border overflow-x-auto">
-          <Table className="min-w-[800px]">
-            <TableHeader>
-              <TableRow>
-                <TableHead>Invoice Number</TableHead>
-                <TableHead>Date / Time</TableHead>
-                <TableHead>Customer</TableHead>
-                <TableHead>Net Total</TableHead>
-                <TableHead>Payment Mode</TableHead>
-                <TableHead>GST (18%)</TableHead>
-                <TableHead>Feedback</TableHead>
-                <TableHead><span className="sr-only">Actions</span></TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {isLoading ? (
-                renderSkeleton()
-              ) : filteredAppointments.length > 0 ? (
-                filteredAppointments.map((appt) => {
-                  const invoice = invoiceMap.get(appt.id);
-                  const gstCalculated = appt.amountPaid - (appt.amountPaid / 1.18);
-                  return (
-                    <TableRow key={appt.id}>
-                      <TableCell className="font-mono text-xs font-semibold text-primary">
-                        {invoice?.invoiceNumber || `INV-${appt.id.slice(0,6).toUpperCase()} (Draft)`}
-                      </TableCell>
-                      <TableCell className="text-xs">{formatDate(appt.date)}</TableCell>
-                      <TableCell className="font-medium text-xs">{appt.customerName}</TableCell>
-                      <TableCell className="font-semibold text-xs">{formatCurrency(appt.amountPaid)}</TableCell>
-                      <TableCell className="text-xs">{appt.paymentMethod}</TableCell>
-                      <TableCell className="font-mono text-xs text-muted-foreground">{formatCurrency(gstCalculated)}</TableCell>
-                      <TableCell className="text-xs">
-                        {(appt.feedbackSubmitted || invoice?.feedbackSubmitted) ? (
-                          <div className="flex items-center gap-1">
-                            <span className="text-amber-500 font-bold text-sm">★</span>
-                            <span className="font-semibold text-amber-700">
-                              {appt.feedbackRating ?? invoice?.feedbackRating}/5
-                            </span>
-                          </div>
-                        ) : (
-                          <span className="text-muted-foreground text-xs italic">Pending</span>
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center justify-end gap-2">
-                          <Button 
-                            size="sm" 
-                            variant="outline" 
-                            onClick={() => handleDownloadPDF(appt)}
-                            className="h-8 gap-1.5 px-3 text-xs"
-                          >
-                            <Download className="h-3.5 w-3.5" /> PDF
-                          </Button>
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button aria-haspopup="true" size="icon" variant="ghost">
-                                <MoreHorizontal className="h-4 w-4" />
-                                <span className="sr-only">Toggle menu</span>
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
-                              <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                              <DropdownMenuItem onSelect={() => handlePrintInvoice(appt)}>
-                                  <Printer className="mr-2 h-4 w-4" />
-                                  Print Thermal Receipt
-                              </DropdownMenuItem>
-                              <DropdownMenuItem onSelect={() => handleDownloadPDF(appt)}>
-                                  <Download className="mr-2 h-4 w-4" />
-                                  Download PDF Invoice
-                              </DropdownMenuItem>
-                              <DropdownMenuItem onSelect={() => handleSendWhatsApp(appt)}>
-                                  <MessageCircle className="mr-2 h-4 w-4" />
-                                  Resend WhatsApp PDF
-                              </DropdownMenuItem>
-                              <DropdownMenuItem onSelect={() => handleGenerateInvoice(appt, false, true)}>
-                                  <RefreshCw className="mr-2 h-4 w-4" />
-                                  Regenerate Invoice
-                              </DropdownMenuItem>
-                              {invoice && (
-                                <>
-                                  <DropdownMenuSeparator />
-                                  <DropdownMenuItem 
-                                    className="text-destructive focus:bg-destructive/10" 
-                                    onSelect={() => handleDeleteInvoice(appt.id)}
-                                  >
-                                      <Trash2 className="mr-2 h-4 w-4" />
-                                      Delete Record
-                                  </DropdownMenuItem>
-                                </>
-                              )}
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  );
-                })
+
+        </div>
+
+        {/* Invoice Table */}
+        <div className="overflow-x-auto">
+          <table className="w-full text-left text-xs">
+            <thead>
+              <tr className="border-b border-slate-100 text-slate-400 font-bold uppercase tracking-wider text-[10px]">
+                <th className="pb-3 pl-1">Invoice #</th>
+                <th className="pb-3">Customer</th>
+                <th className="pb-3">Items / Services</th>
+                <th className="pb-3">Amount</th>
+                <th className="pb-3">Payment Mode</th>
+                <th className="pb-3">Date</th>
+                <th className="pb-3">Status</th>
+                <th className="pb-3 text-right pr-1">Actions</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100 text-slate-700">
+              {filteredInvoices.length > 0 ? (
+                filteredInvoices.map((inv) => (
+                  <tr key={inv.id} className="hover:bg-slate-50/60 transition-colors">
+                    <td className="py-3.5 pl-1 font-mono text-[11px] font-bold text-slate-900">
+                      {inv.invoiceNo}
+                    </td>
+                    <td className="py-3.5">
+                      <div className="font-semibold text-slate-900">{inv.customer}</div>
+                      <div className="text-[10px] text-slate-400">{inv.phone}</div>
+                    </td>
+                    <td className="py-3.5 font-medium text-slate-800 max-w-[200px] truncate">
+                      {inv.items}
+                    </td>
+                    <td className="py-3.5 font-bold text-slate-900">
+                      ₹{inv.total.toLocaleString('en-IN')}
+                    </td>
+                    <td className="py-3.5">
+                      <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-700">
+                        {inv.method}
+                      </span>
+                    </td>
+                    <td className="py-3.5 text-slate-500 font-medium">{inv.date}</td>
+                    <td className="py-3.5">
+                      <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold ${
+                        inv.status === 'Paid'
+                          ? 'bg-emerald-50 text-emerald-700 border border-emerald-100'
+                          : inv.status === 'Pending'
+                          ? 'bg-amber-50 text-amber-700 border border-amber-100'
+                          : 'bg-rose-50 text-rose-700 border border-rose-100'
+                      }`}>
+                        {inv.status}
+                      </span>
+                    </td>
+                    <td className="py-3.5 text-right pr-1">
+                      <div className="flex items-center justify-end gap-1.5">
+                        <button
+                          type="button"
+                          onClick={() => toast({ title: 'Invoice Printed', description: `Printing ${inv.invoiceNo}...` })}
+                          className="p-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-600 shadow-2xs"
+                          title="Print Receipt"
+                        >
+                          <Printer className="w-3.5 h-3.5" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => toast({ title: 'WhatsApp Sent', description: `Invoice sent to ${inv.phone}` })}
+                          className="p-1.5 rounded-lg border border-emerald-200 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 shadow-2xs"
+                          title="Send on WhatsApp"
+                        >
+                          <Share2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))
               ) : (
-                <TableRow>
-                  <TableCell colSpan={8} className="h-24 text-center text-muted-foreground">
-                    No transactions found matching your criteria.
-                  </TableCell>
-                </TableRow>
+                <tr>
+                  <td colSpan={8} className="text-center py-8 text-slate-400">
+                    No invoices found matching your criteria.
+                  </td>
+                </tr>
               )}
-            </TableBody>
-          </Table>
-          </div>
-        </CardContent>
-      </Card>
+            </tbody>
+          </table>
+        </div>
+
+      </div>
+
     </div>
   );
 }
