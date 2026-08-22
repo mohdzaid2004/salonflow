@@ -220,17 +220,8 @@ export default function HomePage() {
   const salonDisplayName = salon?.name || 'Toni & Guy';
 
   return (
-    <div className="relative min-h-screen w-full bg-[#F5F2F9] font-sans flex flex-col justify-between overflow-x-hidden select-none">
+    <div className="relative min-h-screen w-full bg-[#FAF9FD] font-sans flex flex-col justify-between overflow-x-hidden select-none">
       
-      {/* Background Beauty Salon Interior with Lavender Overlay */}
-      <div 
-        className="absolute inset-0 z-0 bg-cover bg-center bg-no-repeat opacity-40 mix-blend-multiply pointer-events-none"
-        style={{
-          backgroundImage: `url('https://images.unsplash.com/photo-1560066984-138dadb4c035?q=80&w=2000')`
-        }}
-      />
-      <div className="absolute inset-0 z-0 bg-gradient-to-b from-[#F5F2F9]/70 via-[#F5F2F9]/90 to-[#F5F2F9] backdrop-blur-[6px] pointer-events-none" />
-
       {/* Top Header Navigation Bar */}
       <header className="relative z-10 w-full max-w-7xl mx-auto px-6 sm:px-10 py-6 flex items-center justify-between">
         <div className="flex items-center gap-3">

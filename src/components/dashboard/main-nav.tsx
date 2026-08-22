@@ -12,6 +12,7 @@ import {
   IndianRupee,
   BarChart3,
   Settings,
+  Zap,
 } from 'lucide-react';
 import type { Salon } from '@/lib/data';
 
@@ -25,6 +26,7 @@ export const MainNavItems = [
   { href: '/dashboard/billing', label: 'Billing', icon: IndianRupee },
   { href: '/dashboard/reports', label: 'Reports', icon: BarChart3 },
   { href: '/dashboard/settings', label: 'Settings', icon: Settings },
+  { href: '/dashboard/home', label: 'Check-In', icon: UserCheck },
 ];
 
 export function MainNav({ 
@@ -39,7 +41,7 @@ export function MainNav({
   return (
     <nav className="flex flex-col gap-1 px-1.5 select-none">
       {MainNavItems.map((link) => {
-        const isActive = pathname === link.href || (link.href !== '/dashboard/overview' && pathname.startsWith(`${link.href}/`)) || (link.href === '/dashboard/overview' && (pathname === '/dashboard' || pathname === '/dashboard/overview'));
+        const isActive = pathname === link.href || (link.href !== '/dashboard/overview' && link.href !== '/dashboard/home' && pathname.startsWith(`${link.href}/`)) || (link.href === '/dashboard/overview' && (pathname === '/dashboard' || pathname === '/dashboard/overview'));
         const Icon = link.icon;
         
         return (
@@ -62,6 +64,8 @@ export function MainNav({
               className={`w-4 h-4 shrink-0 transition-colors duration-200 ${
                 isActive 
                   ? 'text-[#A855F7]' 
+                  : link.href === '/dashboard/home'
+                  ? 'text-amber-400 group-hover:text-amber-300'
                   : 'text-[#9CA3AF] group-hover:text-[#D1D5DB]'
               }`} 
             />
