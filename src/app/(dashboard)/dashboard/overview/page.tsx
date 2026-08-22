@@ -151,27 +151,6 @@ export default function OverviewPage() {
             Welcome back, <span className="font-semibold text-slate-800">{displayName}</span>. Real-time salon operations from live database.
           </p>
         </div>
-
-        <div className="flex items-center gap-2">
-          <Link
-            href="/dashboard/appointments?new=true"
-            title="Press N to create a new booking"
-            className="group inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-purple-700 hover:bg-purple-800 text-white text-xs font-bold shadow-sm shadow-purple-600/20 transition-all"
-          >
-            <Plus className="w-4 h-4" />
-            <span>New Booking</span>
-            <span className="hidden sm:inline-flex items-center justify-center px-1.5 py-0.5 rounded-md bg-white/20 text-[10px] font-mono font-medium text-white/90">
-              N
-            </span>
-          </Link>
-          <Link
-            href="/dashboard/billing"
-            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-bold shadow-xs transition-all"
-          >
-            <CreditCard className="w-4 h-4 text-purple-600" />
-            <span>Create Bill</span>
-          </Link>
-        </div>
       </div>
 
       {/* 4 Real Live KPI Cards */}
