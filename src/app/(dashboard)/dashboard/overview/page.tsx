@@ -27,7 +27,8 @@ import {
   Sparkles, 
   Plus,
   Clock,
-  User
+  User,
+  Users
 } from 'lucide-react';
 
 const SERVICE_COLORS = [
@@ -279,6 +280,64 @@ export default function OverviewPage() {
           <p className="text-[11px] text-slate-400 mt-1 font-medium">Awaiting checkout settlement</p>
         </div>
 
+      </div>
+
+      {/* Quick Actions Bar — App-Like Fast Access */}
+      <div className="bg-white rounded-2xl p-3.5 sm:p-4 shadow-xs border border-slate-200/80">
+        <div className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2.5 px-1">
+          Quick Salon Actions
+        </div>
+        <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 sm:gap-3">
+          <Link
+            href="/dashboard/appointments?new=true"
+            className="flex items-center gap-2 p-2.5 rounded-xl bg-purple-50 hover:bg-purple-100/80 border border-purple-100 text-purple-900 transition-all font-semibold text-xs shadow-2xs group"
+          >
+            <div className="h-7 w-7 rounded-lg bg-purple-600 text-white flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+              <Calendar className="w-3.5 h-3.5" />
+            </div>
+            <span className="truncate">New Booking</span>
+          </Link>
+
+          <Link
+            href="/dashboard/home"
+            className="flex items-center gap-2 p-2.5 rounded-xl bg-amber-50 hover:bg-amber-100/80 border border-amber-100 text-amber-900 transition-all font-semibold text-xs shadow-2xs group"
+          >
+            <div className="h-7 w-7 rounded-lg bg-amber-600 text-white flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+              <User className="w-3.5 h-3.5" />
+            </div>
+            <span className="truncate">Check-In Desk</span>
+          </Link>
+
+          <Link
+            href="/dashboard/customers"
+            className="flex items-center gap-2 p-2.5 rounded-xl bg-blue-50 hover:bg-blue-100/80 border border-blue-100 text-blue-900 transition-all font-semibold text-xs shadow-2xs group"
+          >
+            <div className="h-7 w-7 rounded-lg bg-blue-600 text-white flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+              <Users className="w-3.5 h-3.5" />
+            </div>
+            <span className="truncate">Customers</span>
+          </Link>
+
+          <Link
+            href="/dashboard/billing"
+            className="flex items-center gap-2 p-2.5 rounded-xl bg-emerald-50 hover:bg-emerald-100/80 border border-emerald-100 text-emerald-900 transition-all font-semibold text-xs shadow-2xs group"
+          >
+            <div className="h-7 w-7 rounded-lg bg-emerald-600 text-white flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+              <IndianRupee className="w-3.5 h-3.5" />
+            </div>
+            <span className="truncate">Billing POS</span>
+          </Link>
+
+          <Link
+            href="/dashboard/services"
+            className="col-span-2 sm:col-span-1 flex items-center gap-2 p-2.5 rounded-xl bg-pink-50 hover:bg-pink-100/80 border border-pink-100 text-pink-900 transition-all font-semibold text-xs shadow-2xs group"
+          >
+            <div className="h-7 w-7 rounded-lg bg-pink-600 text-white flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+              <Scissors className="w-3.5 h-3.5" />
+            </div>
+            <span className="truncate">Services Catalog</span>
+          </Link>
+        </div>
       </div>
 
       {/* 2 Visual Charts */}

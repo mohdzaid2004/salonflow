@@ -1,13 +1,27 @@
 {
   "name": "SalonFlow — Salon Management SaaS",
   "short_name": "SalonFlow",
-  "description": "Commercial-grade Salon Management SaaS for bookings, billing, WhatsApp invoices, and customer loyalty.",
+  "description": "Professional salon management platform for appointments, billing, digital receipts, customer CRM, and staff scheduling.",
   "start_url": "/dashboard/overview",
+  "id": "com.salonflow.app",
   "display": "standalone",
+  "display_override": ["window-controls-overlay", "standalone", "minimal-ui"],
   "background_color": "#000000",
   "theme_color": "#7C3AED",
   "orientation": "portrait-primary",
   "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "512x512 192x192 128x128 64x64 32x32",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon.svg",
+      "sizes": "512x512 192x192",
+      "type": "image/svg+xml",
+      "purpose": "maskable"
+    },
     {
       "src": "/favicon.ico",
       "sizes": "64x64 32x32 24x24 16x16",
@@ -22,19 +36,19 @@
       "description": "View appointment schedule and active chair visits"
     },
     {
-      "name": "New Booking",
-      "url": "/dashboard/appointments?new=true",
-      "description": "Create a new customer booking"
+      "name": "Check-In Desk",
+      "url": "/dashboard/home",
+      "description": "Customer check-in and quick bill generation"
     },
     {
-      "name": "Billing",
+      "name": "Billing & Invoices",
       "url": "/dashboard/billing",
-      "description": "View tax invoices and billing history"
+      "description": "View receipts and billing register"
     },
     {
-      "name": "Customers",
+      "name": "Customer Directory",
       "url": "/dashboard/customers",
-      "description": "Manage client directory and loyalty points"
+      "description": "Manage client profiles and loyalty points"
     }
   ]
 }

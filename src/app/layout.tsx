@@ -22,6 +22,11 @@ export const metadata: Metadata = {
   },
 };
 
+import { PWASplashScreen } from '@/components/pwa-splash-screen';
+import { OfflineIndicator } from '@/components/offline-indicator';
+import { PWAInstallPrompt } from '@/components/pwa-install-prompt';
+import { PWAUpdateBanner } from '@/components/pwa-update-banner';
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -39,14 +44,18 @@ export default function RootLayout({
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
       </head>
       <body className="font-body antialiased bg-slate-950 text-slate-100">
+        <PWASplashScreen />
+        <OfflineIndicator />
         <FirebaseClientProvider>
           {children}
         </FirebaseClientProvider>
+        <PWAInstallPrompt />
+        <PWAUpdateBanner />
         <Toaster />
         <script
           dangerouslySetInnerHTML={{
             __html: `
-              if ('serviceWorker' in navigator && window.location.protocol === 'https:') {
+              if ('serviceWorker' in navigator && (window.location.protocol === 'https:' || window.location.hostname === 'localhost')) {
                 window.addEventListener('load', function() {
                   navigator.serviceWorker.register('/sw.js').catch(function(err) {
                     console.log('ServiceWorker registration ignored:', err);

@@ -20,7 +20,8 @@ import {
   UserCheck, 
   IndianRupee, 
   MoreHorizontal,
-  ChevronRight
+  ChevronRight,
+  Users
 } from 'lucide-react';
 import { doc } from 'firebase/firestore';
 import { signOut } from 'firebase/auth';
@@ -296,65 +297,69 @@ export default function DashboardLayout({
           <GlobalShortcuts />
         </div>
 
-        {/* Bottom Navigation Bar for Phones (< md) */}
-        <div className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-[#000000] border-t border-[#1F1F1F] px-2 py-1.5 flex items-center justify-around select-none">
+        {/* Bottom Navigation Bar for Mobile (< md) with Safe Area padding */}
+        <nav className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-[#000000] border-t border-[#1F1F1F] px-2 py-1.5 pb-safe flex items-center justify-around select-none shadow-2xl">
           <Link
             href="/dashboard/overview"
-            className={`flex flex-col items-center justify-center py-1 px-2.5 rounded-xl transition-all ${
+            className={`flex flex-col items-center justify-center py-1 px-2 rounded-xl transition-all ${
               pathname === '/dashboard' || pathname === '/dashboard/overview'
-                ? 'text-[#A855F7]'
+                ? 'text-[#A855F7] font-bold'
                 : 'text-[#9CA3AF] hover:text-[#D1D5DB]'
             }`}
           >
             <LayoutGrid className="w-4 h-4" />
-            <span className="text-[10px] font-semibold mt-0.5">Overview</span>
+            <span className="text-[10px] font-medium mt-0.5">Home</span>
           </Link>
 
           <Link
             href="/dashboard/appointments"
-            className={`flex flex-col items-center justify-center py-1 px-2.5 rounded-xl transition-all ${
+            className={`flex flex-col items-center justify-center py-1 px-2 rounded-xl transition-all ${
               pathname.startsWith('/dashboard/appointments')
-                ? 'text-[#A855F7]'
+                ? 'text-[#A855F7] font-bold'
                 : 'text-[#9CA3AF] hover:text-[#D1D5DB]'
             }`}
           >
             <Calendar className="w-4 h-4" />
-            <span className="text-[10px] font-semibold mt-0.5">Bookings</span>
+            <span className="text-[10px] font-medium mt-0.5">Appointments</span>
           </Link>
 
           <Link
-            href="/dashboard/home"
-            className={`flex flex-col items-center justify-center py-1 px-2.5 rounded-xl transition-all ${
-              pathname === '/dashboard/home'
-                ? 'text-[#A855F7]'
+            href="/dashboard/customers"
+            className={`flex flex-col items-center justify-center py-1 px-2 rounded-xl transition-all ${
+              pathname.startsWith('/dashboard/customers')
+                ? 'text-[#A855F7] font-bold'
                 : 'text-[#9CA3AF] hover:text-[#D1D5DB]'
             }`}
           >
-            <UserCheck className="w-4 h-4" />
-            <span className="text-[10px] font-semibold mt-0.5">Check-In</span>
+            <Users className="w-4 h-4" />
+            <span className="text-[10px] font-medium mt-0.5">Customers</span>
           </Link>
 
           <Link
             href="/dashboard/billing"
-            className={`flex flex-col items-center justify-center py-1 px-2.5 rounded-xl transition-all ${
+            className={`flex flex-col items-center justify-center py-1 px-2 rounded-xl transition-all ${
               pathname.startsWith('/dashboard/billing')
-                ? 'text-[#A855F7]'
+                ? 'text-[#A855F7] font-bold'
                 : 'text-[#9CA3AF] hover:text-[#D1D5DB]'
             }`}
           >
             <IndianRupee className="w-4 h-4" />
-            <span className="text-[10px] font-semibold mt-0.5">Billing</span>
+            <span className="text-[10px] font-medium mt-0.5">Billing</span>
           </Link>
 
           <button
             type="button"
             onClick={() => setMobileMenuOpen(true)}
-            className="flex flex-col items-center justify-center py-1 px-2.5 rounded-xl text-[#9CA3AF] hover:text-[#D1D5DB] transition-all"
+            className={`flex flex-col items-center justify-center py-1 px-2 rounded-xl transition-all ${
+              mobileMenuOpen
+                ? 'text-[#A855F7] font-bold'
+                : 'text-[#9CA3AF] hover:text-[#D1D5DB]'
+            }`}
           >
             <MoreHorizontal className="w-4 h-4" />
-            <span className="text-[10px] font-semibold mt-0.5">More</span>
+            <span className="text-[10px] font-medium mt-0.5">More</span>
           </button>
-        </div>
+        </nav>
 
       </div>
     </HeaderActionsProvider>
