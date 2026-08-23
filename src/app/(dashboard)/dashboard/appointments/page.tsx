@@ -82,6 +82,11 @@ export default function AppointmentsPage() {
     return query(collection(firestore, `salons/${salonId}/customers`));
   }, [firestore, salonId]);
 
+  const staffQuery = useMemo(() => {
+    if (!firestore || !salonId) return null;
+    return query(collection(firestore, `salons/${salonId}/staff`));
+  }, [firestore, salonId]);
+
   const salonDocRef = useMemo(() => {
     if (!firestore || !salonId) return null;
     return doc(firestore, 'salons', salonId);
@@ -90,6 +95,7 @@ export default function AppointmentsPage() {
   const { data: dbAppointments } = useCollection<any>(apptQuery);
   const { data: dbServices } = useCollection<Service>(servicesQuery);
   const { data: dbCustomers } = useCollection<Customer>(customersQuery);
+  const { data: dbStaff } = useCollection<any>(staffQuery);
   const { data: salon } = useDoc<any>(salonDocRef);
 
   const [localAppointments, setLocalAppointments] = useState<AppointmentItem[]>([]);
@@ -97,6 +103,19 @@ export default function AppointmentsPage() {
   const [statusFilter, setStatusFilter] = useState('All');
   const [isNewDialogOpen, setNewDialogOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Success Confirmation Modal State
+  const [bookedSuccessAppt, setBookedSuccessAppt] = useState<{
+    bookingId: string;
+    customer: string;
+    phone: string;
+    service: string;
+    staff: string;
+    date: string;
+    time: string;
+    price: number;
+    status: string;
+  } | null>(null);
 
   // Clock / Time Picker Modal State
   const [isClockPickerOpen, setClockPickerOpen] = useState(false);
@@ -138,6 +157,7 @@ export default function AppointmentsPage() {
   const [formCustomer, setFormCustomer] = useState('');
   const [formPhone, setFormPhone] = useState('');
   const [formService, setFormService] = useState('');
+  const [formStaff, setFormStaff] = useState('');
   const [formDate, setFormDate] = useState(() => new Date().toISOString().split('T')[0]);
   const [formTime, setFormTime] = useState('10:30 AM');
   const [formPrice, setFormPrice] = useState(500);
@@ -177,14 +197,16 @@ export default function AppointmentsPage() {
     if (dbAppointments) {
       return dbAppointments.map((a: any) => ({
         id: a.id,
-        customer: a.customer || a.customerName || 'Client',
-        phone: a.phone || '+91 98000 00000',
-        service: a.service || 'Salon Service',
+        bookingId: a.bookingId || `BK-${a.id.slice(0, 6).toUpperCase()}`,
+        customer: a.customer || a.customerName || 'Customer',
+        phone: a.phone || a.customerPhone || '+91 98000 00000',
+        service: a.service || (a.services && Array.isArray(a.services) ? a.services.map((s: any) => s.name).join(', ') : 'Salon Service'),
+        staff: a.staff || a.staffName || a.stylist || 'Assigned Stylist',
         time: a.time || '10:30 AM',
         date: a.date || 'Today',
-        price: Number(a.price) || 0,
+        price: Number(a.price ?? a.amountPaid ?? a.finalAmount ?? 350),
         status: (a.status as any) || 'Confirmed',
-        payment: (a.payment as any) || 'Pending',
+        payment: (a.payment || a.paymentStatus || 'Pending') as any,
         startedAt: a.startedAt,
         completedAt: a.completedAt,
       }));
@@ -220,15 +242,29 @@ export default function AppointmentsPage() {
     }
 
     setIsSubmitting(true);
+    const bookingId = `BK-${Date.now().toString().slice(-6)}`;
+    const selectedStaffName = formStaff || (dbStaff && dbStaff[0] ? dbStaff[0].name : 'Assigned Stylist');
+    const matchingCust = dbCustomers?.find(c => c.name.toLowerCase() === formCustomer.toLowerCase() || (formPhone && c.phone === formPhone));
+    const matchingStaff = dbStaff?.find(s => s.name.toLowerCase() === selectedStaffName.toLowerCase());
+
     const newAppt = {
+      bookingId,
       customer: formCustomer,
+      customerName: formCustomer,
+      customerId: matchingCust?.id || '',
       phone: formPhone || '+91 98000 00000',
-      service: formService || 'Custom Service',
+      customerPhone: formPhone || '+91 98000 00000',
+      service: formService || 'Salon Service',
+      staff: selectedStaffName,
+      staffName: selectedStaffName,
+      stylist: selectedStaffName,
+      staffId: matchingStaff?.id || '',
       date: formDate,
       time: formTime,
-      price: Number(formPrice) || 0,
+      price: Number(formPrice) || 350,
       status: 'Confirmed',
       payment: 'Pending',
+      paymentStatus: 'Pending',
     };
 
     if (firestore && salonId) {
@@ -240,9 +276,21 @@ export default function AppointmentsPage() {
       });
     }
 
+    setBookedSuccessAppt({
+      bookingId,
+      customer: formCustomer,
+      phone: formPhone || '+91 98000 00000',
+      service: formService || 'Salon Service',
+      staff: selectedStaffName,
+      date: formDate,
+      time: formTime,
+      price: Number(formPrice) || 350,
+      status: 'Confirmed',
+    });
+
     toast({
-      title: 'Booking Created',
-      description: `Appointment for ${formCustomer} scheduled for ${formTime}.`,
+      title: 'Appointment Booked Successfully 🎉',
+      description: `Booking ${bookingId} confirmed for ${formCustomer}.`,
     });
 
     setNewDialogOpen(false);
@@ -250,6 +298,7 @@ export default function AppointmentsPage() {
     setFormCustomer('');
     setFormPhone('');
     setFormService('');
+    setFormStaff('');
   };
 
   const handleStartVisit = (appt: AppointmentItem) => {
@@ -487,6 +536,27 @@ ${salonAddress ? `📍 ${salonAddress}\n` : ''}📞 ${salonPhone}`;
                     </div>
                   </div>
 
+                  {/* Staff Selection */}
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-bold text-slate-700 uppercase tracking-wider">
+                      Assign Staff / Stylist
+                    </label>
+                    <div className="relative">
+                      <User className="w-3.5 h-3.5 text-purple-600 absolute left-2.5 top-1/2 -translate-y-1/2" />
+                      <input
+                        type="text"
+                        list="staff-datalist"
+                        placeholder="Select or enter staff member..."
+                        value={formStaff}
+                        onChange={(e) => setFormStaff(e.target.value)}
+                        className="w-full h-8 pl-8 pr-3 rounded-xl text-xs bg-slate-50 border border-slate-200 focus:outline-hidden focus:border-purple-600"
+                      />
+                      <datalist id="staff-datalist">
+                        {dbStaff?.map(s => <option key={s.id} value={s.name} />)}
+                      </datalist>
+                    </div>
+                  </div>
+
                   {/* Date & Time Picker */}
                   <div className="grid grid-cols-2 gap-3">
                     <div className="space-y-1">
@@ -543,6 +613,65 @@ ${salonAddress ? `📍 ${salonAddress}\n` : ''}📞 ${salonPhone}`;
           </Dialog>
         </div>
       </div>
+
+      {/* Appointment Booked Successfully Dialog */}
+      {bookedSuccessAppt && (
+        <Dialog open={!!bookedSuccessAppt} onOpenChange={(open) => !open && setBookedSuccessAppt(null)}>
+          <DialogContent className="max-w-[420px] rounded-3xl p-6 bg-white shadow-2xl space-y-4 text-center">
+            <div className="mx-auto h-12 w-12 rounded-full bg-emerald-50 text-emerald-600 border border-emerald-100 flex items-center justify-center">
+              <CheckCircle2 className="w-6 h-6" />
+            </div>
+
+            <div>
+              <DialogTitle className="text-lg font-bold text-slate-900">Appointment Booked Successfully</DialogTitle>
+              <p className="text-xs text-slate-500 mt-0.5 font-mono font-semibold text-purple-700">
+                Booking ID: {bookedSuccessAppt.bookingId}
+              </p>
+            </div>
+
+            <div className="bg-slate-50 rounded-2xl p-4 border border-slate-200/80 text-left space-y-2 text-xs">
+              <div className="flex justify-between">
+                <span className="text-slate-500 font-medium">Customer:</span>
+                <span className="font-bold text-slate-900">{bookedSuccessAppt.customer}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-slate-500 font-medium">Phone:</span>
+                <span className="font-mono text-slate-700">{bookedSuccessAppt.phone}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-slate-500 font-medium">Service:</span>
+                <span className="font-semibold text-purple-700">{bookedSuccessAppt.service}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-slate-500 font-medium">Staff:</span>
+                <span className="font-medium text-slate-800">{bookedSuccessAppt.staff}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-slate-500 font-medium">Date & Time:</span>
+                <span className="font-medium text-slate-800">{bookedSuccessAppt.date} • {bookedSuccessAppt.time}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-slate-500 font-medium">Status:</span>
+                <span className="inline-flex px-2 py-0.5 rounded-full text-[10px] font-bold bg-purple-50 text-purple-700 border border-purple-100">
+                  {bookedSuccessAppt.status}
+                </span>
+              </div>
+              <div className="flex justify-between border-t border-slate-200 pt-2 font-bold text-slate-900">
+                <span>Price:</span>
+                <span className="text-sm">₹{bookedSuccessAppt.price.toLocaleString('en-IN')}</span>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => setBookedSuccessAppt(null)}
+              className="w-full h-10 rounded-xl bg-purple-700 hover:bg-purple-800 text-white font-bold text-xs shadow-md shadow-purple-600/20 transition-all"
+            >
+              Done & View Schedule
+            </button>
+          </DialogContent>
+        </Dialog>
+      )}
 
       {/* Analog Clock / Time Picker Popup Dialog */}
       <Dialog open={isClockPickerOpen} onOpenChange={setClockPickerOpen}>
