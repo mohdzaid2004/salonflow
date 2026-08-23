@@ -618,18 +618,22 @@ ${salonAddress ? `📍 ${salonAddress}\n` : ''}📞 ${salonPhone}`;
       {bookedSuccessAppt && (
         <Dialog open={!!bookedSuccessAppt} onOpenChange={(open) => !open && setBookedSuccessAppt(null)}>
           <DialogContent className="max-w-[420px] rounded-3xl p-6 bg-white shadow-2xl space-y-4 text-center">
-            <div className="mx-auto h-12 w-12 rounded-full bg-emerald-50 text-emerald-600 border border-emerald-100 flex items-center justify-center">
-              <CheckCircle2 className="w-6 h-6" />
+            <div className="mx-auto h-12 w-12 rounded-full bg-purple-50 text-purple-700 border border-purple-100 flex items-center justify-center">
+              <CheckCircle2 className="w-6 h-6 text-purple-600" />
             </div>
 
             <div>
-              <DialogTitle className="text-lg font-bold text-slate-900">Appointment Booked Successfully</DialogTitle>
-              <p className="text-xs text-slate-500 mt-0.5 font-mono font-semibold text-purple-700">
-                Booking ID: {bookedSuccessAppt.bookingId}
-              </p>
+              <DialogTitle className="text-lg font-bold text-slate-900 flex items-center justify-center gap-1.5">
+                <span>✨</span>
+                <span>Appointment Booked Successfully</span>
+              </DialogTitle>
             </div>
 
-            <div className="bg-slate-50 rounded-2xl p-4 border border-slate-200/80 text-left space-y-2 text-xs">
+            <div className="bg-slate-50 rounded-2xl p-4 border border-slate-200/80 text-left space-y-2.5 text-xs">
+              <div className="flex justify-between">
+                <span className="text-slate-500 font-medium">Booking ID:</span>
+                <span className="font-mono font-bold text-purple-700">{bookedSuccessAppt.bookingId}</span>
+              </div>
               <div className="flex justify-between">
                 <span className="text-slate-500 font-medium">Customer:</span>
                 <span className="font-bold text-slate-900">{bookedSuccessAppt.customer}</span>
@@ -640,25 +644,21 @@ ${salonAddress ? `📍 ${salonAddress}\n` : ''}📞 ${salonPhone}`;
               </div>
               <div className="flex justify-between">
                 <span className="text-slate-500 font-medium">Service:</span>
-                <span className="font-semibold text-purple-700">{bookedSuccessAppt.service}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-slate-500 font-medium">Staff:</span>
-                <span className="font-medium text-slate-800">{bookedSuccessAppt.staff}</span>
+                <span className="font-semibold text-slate-900">{bookedSuccessAppt.service}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-slate-500 font-medium">Date & Time:</span>
                 <span className="font-medium text-slate-800">{bookedSuccessAppt.date} • {bookedSuccessAppt.time}</span>
               </div>
-              <div className="flex justify-between">
+              <div className="flex justify-between items-center">
                 <span className="text-slate-500 font-medium">Status:</span>
-                <span className="inline-flex px-2 py-0.5 rounded-full text-[10px] font-bold bg-purple-50 text-purple-700 border border-purple-100">
+                <span className="inline-flex px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-100">
                   {bookedSuccessAppt.status}
                 </span>
               </div>
-              <div className="flex justify-between border-t border-slate-200 pt-2 font-bold text-slate-900">
+              <div className="flex justify-between items-center border-t border-slate-200 pt-2 font-bold text-slate-900">
                 <span>Price:</span>
-                <span className="text-sm">₹{bookedSuccessAppt.price.toLocaleString('en-IN')}</span>
+                <span className="text-sm font-extrabold text-purple-700">₹{bookedSuccessAppt.price.toLocaleString('en-IN')}</span>
               </div>
             </div>
 
