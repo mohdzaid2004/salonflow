@@ -47,10 +47,15 @@ import Link from 'next/link';
 import { Logo } from '@/components/logo';
 
 const loginFormSchema = z.object({
-  email: z.string().email({ message: 'Please enter a valid business email address.' }),
+  email: z
+    .string()
+    .min(1, { message: 'Please enter your registered email address.' })
+    .regex(/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/, {
+      message: 'Please enter a valid email address (e.g. name@company.com).',
+    }),
   password: z
     .string()
-    .min(6, { message: 'Password must be at least 6 characters.' }),
+    .min(1, { message: 'Please enter your password.' }),
   rememberMe: z.boolean().default(true),
 });
 
@@ -108,20 +113,20 @@ export default function LoginPage() {
       if (error instanceof FirebaseError) {
         switch (error.code) {
           case 'auth/user-not-found':
-            errorMessage = 'No account found with this email. Please sign up first.';
+            errorMessage = 'No account found with this email. Please sign up to create your salon.';
             break;
           case 'auth/wrong-password':
           case 'auth/invalid-credential':
-            errorMessage = 'Incorrect email or password. Please try again.';
+            errorMessage = 'Incorrect email or password. Please check your credentials or reset your password.';
             break;
           case 'auth/invalid-email':
-            errorMessage = 'Please enter a valid email address.';
+            errorMessage = 'Please enter a valid email address format.';
             break;
           case 'auth/user-disabled':
             errorMessage = 'This account has been disabled. Please contact support.';
             break;
           case 'auth/too-many-requests':
-            errorMessage = 'Too many failed login attempts. Please try again later.';
+            errorMessage = 'Too many failed login attempts. Please wait a few moments and try again.';
             break;
           case 'auth/operation-not-allowed':
             errorMessage = 'Email/Password authentication is disabled in your Firebase Console.';

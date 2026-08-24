@@ -79,11 +79,10 @@ const signupFormSchema = z.object({
     .max(60, { message: 'Salon name cannot exceed 60 characters.' }),
   email: z
     .string()
-    .email({ message: 'Please enter a valid business email address.' })
-    .refine((val) => {
-      const parts = val.split('@');
-      return parts.length === 2 && parts[0].length >= 2 && parts[1].includes('.') && parts[1].split('.')[1]?.length >= 2;
-    }, { message: 'Please enter a complete and valid domain name (e.g. name@salon.com).' }),
+    .min(1, { message: 'Please enter your email address.' })
+    .regex(/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/, {
+      message: 'Please enter a valid business email address (e.g. name@company.com).',
+    }),
   phone: z
     .string()
     .regex(/^[6-9]\d{9}$/, { message: 'Please enter a valid 10-digit Indian mobile number starting with 6, 7, 8, or 9.' })
