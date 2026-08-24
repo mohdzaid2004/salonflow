@@ -227,6 +227,12 @@ export default function LoginPage() {
       let message = 'Could not sign in with Google. Please try again or use email.';
       if (error.code === 'auth/popup-closed-by-user') {
         message = 'Google sign-in popup was closed before completing.';
+      } else if (error.code === 'auth/cancelled-popup-request') {
+        message = 'Google sign-in request was cancelled. Please try again.';
+      } else if (error.code === 'auth/account-exists-with-different-credential') {
+        message = 'An account already exists with this email address. Please sign in with your email and password.';
+      } else if (error.code === 'auth/popup-blocked') {
+        message = 'Google sign-in popup was blocked by your browser. Please allow popups and try again.';
       } else if (error.code === 'auth/operation-not-allowed') {
         message = 'Google Sign-In is not enabled in Firebase Authentication.';
       }
