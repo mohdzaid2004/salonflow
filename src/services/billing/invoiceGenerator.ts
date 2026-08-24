@@ -98,7 +98,6 @@ export async function generateInvoicePDF(details: InvoiceDetails): Promise<Buffe
   doc.setFontSize(9);
   doc.text(salon.address || 'Address not configured', 45, 25);
   doc.text(`Phone: ${salon.phone || 'N/A'} | Email: ${salon.email || 'N/A'}`, 45, 30);
-  doc.text(`GSTIN: ${salon.id ? salon.id.slice(0, 15).toUpperCase() + 'IND' : 'N/A'}`, 45, 35);
 
   // Large "INVOICE" heading on the right
   doc.setFont('helvetica', 'bold');

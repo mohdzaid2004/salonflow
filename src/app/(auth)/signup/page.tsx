@@ -44,19 +44,57 @@ import {
   updateProfile, 
   signOut,
   GoogleAuthProvider,
-  signInWithPopup
+  OAuthProvider,
+  signInWithPopup,
+  sendEmailVerification
 } from 'firebase/auth';
 import { doc, setDoc, getDoc, Timestamp } from 'firebase/firestore';
 import Link from 'next/link';
 import { Logo } from '@/components/logo';
 
+const invalidPhonePatterns = [
+  '0000000000',
+  '1111111111',
+  '2222222222',
+  '3333333333',
+  '4444444444',
+  '5555555555',
+  '6666666666',
+  '7777777777',
+  '8888888888',
+  '9999999999',
+  '1234567890',
+  '0123456789',
+];
+
 const signupFormSchema = z.object({
-  fullName: z.string().min(1, { message: 'Please enter your full name.' }),
-  salonName: z.string().min(2, { message: 'Salon name must be at least 2 characters.' }),
-  email: z.string().email({ message: 'Please enter a valid email address.' }),
-  phone: z.string().min(10, { message: 'Please enter a valid 10-digit phone number.' }),
-  password: z.string().min(6, { message: 'Password must be at least 6 characters.' }),
-  confirmPassword: z.string().min(6, { message: 'Please confirm your password.' }),
+  fullName: z
+    .string()
+    .min(2, { message: 'Full name must be at least 2 characters.' })
+    .max(50, { message: 'Full name cannot exceed 50 characters.' })
+    .regex(/^[a-zA-Z\s.'-]+$/, { message: 'Please enter a valid human name without numbers or special symbols.' }),
+  salonName: z
+    .string()
+    .min(2, { message: 'Salon name must be at least 2 characters.' })
+    .max(60, { message: 'Salon name cannot exceed 60 characters.' }),
+  email: z
+    .string()
+    .email({ message: 'Please enter a valid business email address.' })
+    .refine((val) => {
+      const parts = val.split('@');
+      return parts.length === 2 && parts[0].length >= 2 && parts[1].includes('.') && parts[1].split('.')[1]?.length >= 2;
+    }, { message: 'Please enter a complete and valid domain name (e.g. name@salon.com).' }),
+  phone: z
+    .string()
+    .regex(/^[6-9]\d{9}$/, { message: 'Please enter a valid 10-digit Indian mobile number starting with 6, 7, 8, or 9.' })
+    .refine((val) => !invalidPhonePatterns.includes(val), { message: 'Please enter a genuine, active mobile number.' }),
+  password: z
+    .string()
+    .min(8, { message: 'Password must be at least 8 characters long.' })
+    .regex(/[A-Z]/, { message: 'Password must include at least one uppercase letter (A-Z).' })
+    .regex(/[a-z]/, { message: 'Password must include at least one lowercase letter (a-z).' })
+    .regex(/[0-9]/, { message: 'Password must include at least one number (0-9).' }),
+  confirmPassword: z.string().min(8, { message: 'Please confirm your password.' }),
 }).refine((data) => data.password === data.confirmPassword, {
   message: "Passwords do not match.",
   path: ["confirmPassword"],
@@ -220,14 +258,19 @@ export default function SignupPage() {
       const userCredential = await createUserWithEmailAndPassword(auth, data.email, data.password);
       const user = userCredential.user;
       
+      // Dispatch email verification link to user's registered email
+      await sendEmailVerification(user).catch((err) => {
+        console.warn("Could not dispatch verification email:", err);
+      });
+      
       await setupSalonData(user, data.fullName, data.email, data.phone, data.salonName);
 
       // Sign out user to allow clean redirect to login page
       await signOut(auth);
 
       toast({
-        title: 'Salon Created Successfully! 🎉',
-        description: 'Your 15-day free trial has been activated. Please log in to continue.',
+        title: 'Salon Account Created! 🎉',
+        description: 'A verification email has been sent. Your 15-day free trial is activated—please log in to continue.',
       });
 
       router.push('/login');

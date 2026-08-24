@@ -136,7 +136,7 @@ export default function SettingsPage() {
           Salon Settings
         </h1>
         <p className="text-xs sm:text-sm text-slate-500 font-medium mt-0.5">
-          Configure your business profile, operating hours, billing & GST, WhatsApp automation, and review links.
+          Configure your business profile, operating hours, billing & UPI, WhatsApp automation, and review links.
         </p>
       </div>
 

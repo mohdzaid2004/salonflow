@@ -14,6 +14,14 @@
     "webContentsDebuggingEnabled": false,
     "backgroundColor": "#000000"
   },
+  "ios": {
+    "contentInset": "always",
+    "allowsLinkPreview": false,
+    "scrollEnabled": true,
+    "backgroundColor": "#000000",
+    "preferredContentMode": "mobile",
+    "scheme": "SalonFlow"
+  },
   "plugins": {
     "SplashScreen": {
       "launchShowDuration": 1500,
