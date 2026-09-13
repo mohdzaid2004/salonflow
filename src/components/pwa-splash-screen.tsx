@@ -4,26 +4,31 @@ import { useState, useEffect } from 'react';
 import { Logo } from '@/components/logo';
 
 export function PWASplashScreen() {
-  const [visible, setVisible] = useState(true);
+  const [visible, setVisible] = useState(false);
   const [fading, setFading] = useState(false);
 
   useEffect(() => {
+    if (typeof window === 'undefined') return;
+
     // Check if session has already seen the splash screen in this session
-    const hasSeenSplash = sessionStorage.getItem('sf_splash_seen');
-    if (hasSeenSplash) {
+    try {
+      const hasSeenSplash = sessionStorage.getItem('sf_splash_seen');
+      if (hasSeenSplash) {
+        return;
+      }
+      setVisible(true);
+      const timer = setTimeout(() => {
+        setFading(true);
+        setTimeout(() => {
+          setVisible(false);
+          sessionStorage.setItem('sf_splash_seen', 'true');
+        }, 400);
+      }, 1000);
+
+      return () => clearTimeout(timer);
+    } catch {
       setVisible(false);
-      return;
     }
-
-    const timer = setTimeout(() => {
-      setFading(true);
-      setTimeout(() => {
-        setVisible(false);
-        sessionStorage.setItem('sf_splash_seen', 'true');
-      }, 400);
-    }, 1100);
-
-    return () => clearTimeout(timer);
   }, []);
 
   if (!visible) return null;
