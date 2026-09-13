@@ -2,17 +2,9 @@
 # https://firebase.google.com/docs/app-hosting/configure
 
 runConfig:
-  # Increase this value if you'd like to automatically spin up
-  # more instances in response to increased traffic.
-  maxInstances: 1
+  cpu: 1
+  memoryMiB: 512
+  minInstances: 0
+  maxInstances: 10
+  concurrency: 80
 
-# Secrets/environment variable injection at runtime
-env:
-  - variable: TWILIO_ACCOUNT_SID
-    secret: TWILIO_ACCOUNT_SID
-  - variable: TWILIO_AUTH_TOKEN
-    secret: TWILIO_AUTH_TOKEN
-  - variable: TWILIO_WHATSAPP_NUMBER
-    secret: TWILIO_WHATSAPP_NUMBER
-  - variable: RAZORPAY_WEBHOOK_SECRET
-    secret: RAZORPAY_WEBHOOK_SECRET
